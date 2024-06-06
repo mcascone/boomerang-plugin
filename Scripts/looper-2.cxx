@@ -13,7 +13,8 @@
 /*  Effect Description
  *
  */
-string name="Looper+";
+string name="Looper-2";
+string description="An attempt to emulate the Boomerang+ Looper pedal";
 
 /* Parameters Description.
  */
@@ -33,10 +34,10 @@ enum RecordMode
 {
     kRecLoopOver=0, ///< standard looper: records over existing material and keep original loop length
     kRecExtend,     ///< records over existing material and extends original loop length when reaching end of loop
-    kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached)
+    kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached) <-- stack mode?
     kRecOverWrite,  ///< overwrite loop content with new material, and extend original loop until recording ends
     kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
-    kRecClear       ///< clear original loop when recording starts
+    kRecClear       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record
 };
 
 enum SnapMode
@@ -47,10 +48,48 @@ enum SnapMode
 };
 
 array<string> inputParametersNames={"Record","Play","Clear","Rec Trigger","Rec Mode","Snap","Reverse","Mix"};
-array<double> inputParametersDefault={0,1,0,0,0,0,0,.5};
-array<double> inputParametersMax={1,1,1,1,5,2,1};
-array<int>    inputParametersSteps={2,2,2,2,6,3,2};
-array<string> inputParametersEnums={"Stop;Rec","Stop;Play",";","Manual;Detect","Loop;Repeat;Append;Overwrite;Punch;Clear","No Sync;Measure;Beat","No;Yes"};
+array<double> inputParametersDefault={
+    0, // Record
+    1, // Play
+    0, // Clear
+    0, // Rec Trigger
+    0, // Rec Mode
+    0, // Snap
+    0, // Reverse
+    .5 // Mix
+};
+array<double> inputParametersMax={
+    1, // Record
+    1, // Play
+    1, // Clear
+    1, // Rec Trigger
+    5, // Rec Mode
+    2, // Snap
+    1, // Reverse
+    // 1  // Mix is not entered, defaults to percentage
+};
+
+// these are the number of available steps/modes for each parameter - 1-based
+array<int>    inputParametersSteps={
+    2, // Record
+    2, // Play
+    2, // Clear
+    2, // Rec Trigger
+    6, // Rec Mode
+    3, // Snap
+    2  // Reverse
+};
+
+// these are the labels under each input control
+array<string> inputParametersEnums={
+    ";Recording",        // Record
+    ";Playing",       // Play
+    ";",               // Clear
+    "Manual;Detect",   // Rec Trigger
+    "Loop;Repeat;Append;Overwrite;Punch;Clear", // Rec Mode
+    "No Sync;Measure;Beat", // Snap
+    "No;Yes"                // Reverse
+};
 array<double> inputParameters(inputParametersNames.length);
 
 
@@ -58,7 +97,7 @@ array<string> outputParametersNames={"Play","Rec","PlayHead","RecordHead","Loop 
 array<double> outputParameters(outputParametersNames.length);
 array<double> outputParametersMin={0,0};
 array<double> outputParametersMax={1,1};
-array<string>  outputParametersEnums={"Stopped;Playing","Stopped;Recording"};
+array<string>  outputParametersEnums={";",";"};
 
 /* Internal Variables.
  *

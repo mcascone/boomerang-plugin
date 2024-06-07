@@ -18,14 +18,14 @@ string description="An attempt to emulate the Boomerang+ Looper pedal";
  */
 enum InputParamsIndexes
 {
-    kRecordParam=0,
+    kThruMtureParam=0,
+    kRecordParam,
     kPlayParam,
     kResetParam,
-    kRecTriggerMode,
     kRecMode,
     kSnapMode,
-    kReverse,
-    kMixParam
+    kDirection,
+    kOutputLevelParam
 };
 
 enum RecordMode
@@ -45,57 +45,60 @@ enum SnapMode
     kSnapQuarter
 };
 
-array<string> inputParametersNames={"Record","Play","Clear","Rec Trigger","Rec Mode","Snap","Reverse","Mix"};
+
+array<string> inputParametersNames={"Thru Mute", "Record","Play (Stop)","Clear","Rec Mode","Snap","Direction","Output Level"};
 array<double> inputParametersDefault={
+    0, // Thru Mute
     0, // Record
     0, // Play
     0, // Clear
-    0, // Rec Trigger
     5, // Rec Mode
     0, // Snap
-    0, // Reverse
-    .5 // Mix
+    0, // Direction
+    5  // OutputLevel
 };
 array<double> inputParametersMax={
+    1, // Thru Mute
     1, // Record
     1, // Play
     1, // Clear
-    1, // Rec Trigger
     4, // Rec Mode
     2, // Snap
-    1, // Reverse
-    // 1  // Mix is not entered, defaults to percentage
+    1, // Direction
+    10  // if not entered, defaults to percentage
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
 array<int>    inputParametersSteps={
-    2, // Record
-    2, // Play
-    2, // Clear
-    2, // Rec Trigger
-    6, // Rec Mode
-    3, // Snap
-    2  // Reverse
+    2,  // Thru Mute
+    2,  // Record
+    2,  // Play
+    2,  // Clear
+    6,  // Rec Mode
+    3,  // Snap
+    2,  // Direction
+    -1  // OutputLevel // -1 means continuous
 };
 
 // these are the labels under each input control
 array<string> inputParametersEnums={
+    ";THRU MUTE",                 // Thru Mute
     ";Recording",        // Record
-    ";Playing",       // Play
-    ";",               // Clear
-    "Manual;Detect",   // Rec Trigger
-    "Loop;Repeat;Append;Overwrite;Punch;Clear", // Rec Mode
-    "No Sync;Measure;Beat", // Snap
-    "No;Yes"                // Reverse
+    ";Playing",          // Play
+    ";",                 // Clear
+    "Loop;Extend;Append;Overwrite;Punch;Clear", // Rec Mode
+    "No Snap;Measure;Beat",  // Snap
+    "Fwd;Rev",               // Direction
 };
 array<double> inputParameters(inputParametersNames.length);
 
-
-array<string> outputParametersNames={"Play","Rec","PlayHead","RecordHead","Loop Len"};
+array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack (Speed)", "1/2 Speed"};
 array<double> outputParameters(outputParametersNames.length);
-array<double> outputParametersMin={0,0};
-array<double> outputParametersMax={1,1};
-array<string>  outputParametersEnums={";",";"};
+array<double> outputParametersMin={0,0,0,0,0,0,0};
+array<double> outputParametersMax={1,1,1,1,1,1,1};
+array<string> outputParametersEnums={";",";",";",";",";",";",";"};
+
+
 
 /* Internal Variables.
  *
@@ -106,7 +109,7 @@ int allocatedLength=int(sampleRate*60); // 60 seconds max recording
 bool recording=false;
 bool recordingArmed=false;
 bool autoTrigger=false;
-double mix=0;
+double OutputLevel=0;
 double playbackGain=0;
 double recordGain=0;
 double playbackGainInc=0;
@@ -121,8 +124,8 @@ const double triggerThreshold=.005;
 SnapMode snap=kSnapNone;
 RecordMode recordingMode=kRecLoopOver;
 bool triggered=false;
-bool reverse=false;
-bool reverseArmed=false;
+bool Direction=false;
+bool DirectionArmed=false;
 bool playArmed=false;
 bool playing=false;
 
@@ -229,22 +232,22 @@ bool isPlaying()
     return (playing || (playbackGainInc!=0)) && !(recording && ((recordingMode==kRecOverWrite || recordingMode==kRecAppend) && currentRecordingIndex>loopDuration));
 }
 
-void startReverse()
+void startDirection()
 {
-    if(reverse==false && loopDuration>0)
+    if(Direction==false && loopDuration>0)
     {
         currentPlayingIndex=(loopDuration-1-currentPlayingIndex);
     }
-    reverse=true;
+    Direction=true;
 }
 
-void stopReverse()
+void stopDirection()
 {
-    if(reverse==true && loopDuration>0)
+    if(Direction==true && loopDuration>0)
     {
         currentPlayingIndex=(loopDuration-1-currentPlayingIndex);
     }
-    reverse=false;
+    Direction=false;
 }
 
 void processBlock(BlockData& data)
@@ -254,8 +257,8 @@ void processBlock(BlockData& data)
     int stopRecordingSample=-1; // sample number in buffer when recording should be stopped
     int startPlayingSample=-1; // sample number in buffer when playback should be started	
     int stopPlayingSample=-1; // sample number in buffer when playback should be stopped
-    int startReverseSample=-1; // sample number in buffer when reverse should be started
-    int stopReverseSample=-1; // sample number in buffer when reverse should be stopped
+    int startDirectionSample=-1; // sample number in buffer when Direction should be started
+    int stopDirectionSample=-1; // sample number in buffer when Direction should be stopped
 
     // Auto Trigger mode: check if there is any sound before starting new recording
     if(!recording && loopDuration==0 && recordingArmed==true && autoTrigger==true && !triggered)
@@ -327,20 +330,20 @@ void processBlock(BlockData& data)
         }
         
         // manage reversing
-        if(!reverse && reverseArmed==true)
+        if(!Direction && DirectionArmed==true)
         {
-            startReverseSample=nextSample;
+            startDirectionSample=nextSample;
         }
-        else if (playing && reverseArmed==false)
+        else if (playing && DirectionArmed==false)
         {
-            stopReverseSample=nextSample;
+            stopDirectionSample=nextSample;
         }
     }
     
-    // smooth mix update: use begin and end values
+    // smooth OutputLevel update: use begin and end values
     // since the actual gain is exponential, we can use the ratio between begin and end values
     // as an incremental multiplier for the actual gain
-    double mixInc=(data.endParamValues[kMixParam]-data.beginParamValues[kMixParam])/data.samplesToProcess;
+    double OutputLevelInc=(data.endParamValues[kOutputLevelParam]-data.beginParamValues[kOutputLevelParam])/data.samplesToProcess;
     
     // actual audio processing happens here
     for(uint i=0;i<data.samplesToProcess;i++)
@@ -367,14 +370,14 @@ void processBlock(BlockData& data)
             stopPlayback();
         }
 
-        // manage reverse state
-        bool startReversal=(int(i)==startReverseSample);
-        bool stopReversal=(int(i)==stopReverseSample);
+        // manage Direction state
+        bool startReversal=(int(i)==startDirectionSample);
+        bool stopReversal=(int(i)==stopDirectionSample);
         
         if(startReversal)
-            startReverse();
+            startDirection();
         else if(stopReversal)
-            stopReverse();
+            stopDirection();
         
         const bool currentlyPlaying=isPlaying();
         
@@ -390,7 +393,7 @@ void processBlock(BlockData& data)
             {
                 // read loop content
                 int index=currentPlayingIndex;
-                if(reverse && loopDuration>0)
+                if(Direction && loopDuration>0)
                     index=loopDuration-1-index;
                 playback=channelBuffer[index]*playbackGain;
             }
@@ -401,8 +404,8 @@ void processBlock(BlockData& data)
                 channelBuffer[currentRecordingIndex]=playback+recordGain*input;
             }
             
-            // copy to output with mix
-            samplesBuffer[i]=input+mix*playback;
+            // copy to output with OutputLevel
+            samplesBuffer[i]=input+OutputLevel*playback;
         }
         // end process audio for each channel--------------------------------------------------
         
@@ -477,7 +480,7 @@ void processBlock(BlockData& data)
                 recordGainInc=0;
             }
         }
-        mix+=mixInc;
+        OutputLevel+=OutputLevelInc;
     }
 }
 
@@ -485,14 +488,14 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 {
     snap=SnapMode(inputParameters[kSnapMode]+.5);
     
-    // reverse--------------------------------------------------------------------------
-    reverseArmed=inputParameters[kReverse]>.5;
+    // Direction--------------------------------------------------------------------------
+    DirectionArmed=inputParameters[kDirection]>.5;
     if(snap==kSnapNone) // toggle right now if no sync
     {
-        if(reverseArmed)
-            startReverse();
+        if(DirectionArmed)
+            startDirection();
         else
-            stopReverse();
+            stopDirection();
     }
   
     // playing--------------------------------------------------------------------------
@@ -512,7 +515,6 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     bool wasRecording=recording;
     bool wasArmed=recordingArmed;
     recordingArmed=inputParameters[kRecordParam]>.5;
-    autoTrigger=inputParameters[kRecTriggerMode]>.5;
     recordingMode=RecordMode(inputParameters[kRecMode]+.5);
     
     // reset triggered state
@@ -547,8 +549,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             recording=false;
     }
     
-    // mix
-    mix=inputParameters[kMixParam];
+    // OutputLevel
+    OutputLevel=inputParameters[kOutputLevelParam];
 }
 
 void computeOutputData()
@@ -568,7 +570,7 @@ void computeOutputData()
     // current loop playback
     if(loopDuration>0)
     {
-        if(reverse)
+        if(Direction)
             outputParameters[2]=double(loopDuration-1-currentPlayingIndex)/double(loopDuration);            
         else
             outputParameters[2]=double(currentPlayingIndex)/double(loopDuration);

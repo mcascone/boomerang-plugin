@@ -113,7 +113,6 @@ int allocatedLength=int(sampleRate*60); // 60 seconds max recording
 bool recording=false;
 bool recordingArmed=false;
 
-// bool autoTrigger=false;
 double OutputLevel=0;
 double playbackGain=0;
 double recordGain=0;
@@ -129,8 +128,6 @@ bool eraseValueMem=false;
 const int fadeTime=int(.001*sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);
 
-const double triggerThreshold=.005;
-
 RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode
 
 // bool triggered=false;
@@ -138,6 +135,8 @@ bool Reverse=false;
 bool ReverseArmed=false;
 bool playArmed=false;
 bool playing=false;
+
+bool bufferFilled=false;
 
 /* Initialization
  *
@@ -460,6 +459,7 @@ void processBlock(BlockData& data)
                 recordGainInc=0; // avoid post buffer recording
                 // TODO: turn on all LEDs if this happens
                 // wait for Record or Play to be pressed
+                bufferFilled=true;
             }
         }
         
@@ -498,6 +498,7 @@ void processBlock(BlockData& data)
     }
 }
 
+// This is called when an input param is changed
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
     
@@ -538,6 +539,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // stop recording
     if(wasRecording) {
         stopRecording();
+        startPlayback();
     }
     
     // start recording at current playback index
@@ -567,8 +569,9 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 void computeOutputData()
 {
     // playback status
-    if(isPlaying() && loopDuration!=0)
+    if(isPlaying() && loopDuration!=0) {
         outputParameters[kPlayLed]=1;
+    }
     else
         outputParameters[kPlayLed]=0;
 
@@ -577,36 +580,13 @@ void computeOutputData()
         outputParameters[kRecordLed]=1;
     else
         outputParameters[kRecordLed]=0;
-    
-    // // current loop playback
-    // if(loopDuration>0)
-    // {
-    //     if(Reverse)
-    //         outputParameters[2]=double(loopDuration-1-currentPlayingIndex)/double(loopDuration);            
-    //     else
-    //         outputParameters[2]=double(currentPlayingIndex)/double(loopDuration);
-    // }
-    // else
-    //     outputParameters[2]=0;
-    
-    // if(loopDuration!=0 && recording)
-    //     outputParameters[3]=double(currentRecordingIndex)/double(loopDuration);
-    // else if(recording)
-    //     outputParameters[3]=1;
-    // else	
-    //     outputParameters[3]=0;
-    
-    // if(outputParameters[3]>1)
-    //     outputParameters[3]=1;
-    
-    // relative length of current loop
-    // outputParameters[4]=0;
-    // if(loopDuration!=0)
-    // {
-    //     outputParameters[4]=1;
-    //     if(currentRecordingIndex>loopDuration)
-    //         outputParameters[4]=double(loopDuration)/double(currentRecordingIndex);
-    // }
+
+    // Reverse status
+    if(Reverse)
+        outputParameters[kReverseLed]=1;
+    else
+        outputParameters[kReverseLed]=0;
+
 }
 
 

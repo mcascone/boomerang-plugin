@@ -458,6 +458,8 @@ void processBlock(BlockData& data)
             {
                 stopRecording();
                 recordGainInc=0; // avoid post buffer recording
+                // TODO: turn on all LEDs if this happens
+                // wait for Record or Play to be pressed
             }
         }
         
@@ -528,7 +530,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     bool wasArmed=recordingArmed;
     recordingArmed=inputParameters[kRecordParam]>.5;
     
-    // start recording if already recorded
+    // continue recording if already recording
     if(recordingArmed && loopDuration !=0) {
         recording=true;
     }

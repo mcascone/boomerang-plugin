@@ -3,10 +3,11 @@
  *   Record and loop/overdub
  */
 
-// TODO: remove rec trigger
-// TODO: set default rec mode to boomerang mode
-// TODO: remove snap
+// DONE: remove rec trigger
+// DONE: set default rec mode to boomerang mode
+// DONE: remove snap
 // TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
+// TODO: link leds to switches
 
 /*  Effect Description
  *
@@ -23,7 +24,6 @@ enum InputParamsIndexes
     kPlayParam,
     kResetParam,
     kRecMode,
-    kSnapMode,
     kDirection,
     kOutputLevelParam
 };
@@ -38,22 +38,15 @@ enum RecordMode
     kRecClear       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record
 };
 
-enum SnapMode
-{
-    kSnapNone=0,
-    kSnapMeasure,
-    kSnapQuarter
-};
 
 
-array<string> inputParametersNames={"Thru Mute", "Record","Play (Stop)","Clear","Rec Mode","Snap","Direction","Output Level"};
+array<string> inputParametersNames={"Thru Mute", "Record","Play (Stop)","Clear","Rec Mode","Direction","Output Level"};
 array<double> inputParametersDefault={
     0, // Thru Mute
     0, // Record
     0, // Play
     0, // Clear
     5, // Rec Mode
-    0, // Snap
     0, // Direction
     5  // OutputLevel
 };
@@ -63,7 +56,6 @@ array<double> inputParametersMax={
     1, // Play
     1, // Clear
     4, // Rec Mode
-    2, // Snap
     1, // Direction
     10  // if not entered, defaults to percentage
 };
@@ -75,7 +67,6 @@ array<int>    inputParametersSteps={
     2,  // Play
     2,  // Clear
     6,  // Rec Mode
-    3,  // Snap
     2,  // Direction
     -1  // OutputLevel // -1 means continuous
 };
@@ -87,7 +78,6 @@ array<string> inputParametersEnums={
     ";Playing",          // Play
     ";",                 // Clear
     "Loop;Extend;Append;Overwrite;Punch;Clear", // Rec Mode
-    "No Snap;Measure;Beat",  // Snap
     "Fwd;Rev",               // Direction
 };
 array<double> inputParameters(inputParametersNames.length);
@@ -121,7 +111,6 @@ bool eraseValueMem=false;
 const int fadeTime=int(.001*sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);
 const double triggerThreshold=.005;
-SnapMode snap=kSnapNone;
 RecordMode recordingMode=kRecLoopOver;
 bool triggered=false;
 bool Direction=false;
@@ -252,7 +241,7 @@ void stopDirection()
 
 void processBlock(BlockData& data)
 {
-    // indexes used by auto record trigger or snapped play/stop
+    // // indexes used by auto record trigger or snapped play/stop
     int startRecordingSample=-1; // sample number in buffer when recording should be started
     int stopRecordingSample=-1; // sample number in buffer when recording should be stopped
     int startPlayingSample=-1; // sample number in buffer when playback should be started	
@@ -260,85 +249,85 @@ void processBlock(BlockData& data)
     int startDirectionSample=-1; // sample number in buffer when Direction should be started
     int stopDirectionSample=-1; // sample number in buffer when Direction should be stopped
 
-    // Auto Trigger mode: check if there is any sound before starting new recording
-    if(!recording && loopDuration==0 && recordingArmed==true && autoTrigger==true && !triggered)
-    {
-        for(uint channel=0;channel<audioInputsCount && startRecordingSample==-1;channel++)
-        {
-            array<double>@ samplesBuffer=@data.samples[channel];
-            for(uint i=0;i<data.samplesToProcess && startRecordingSample==-1;i++)
-            {
-                if(abs(samplesBuffer[i])>triggerThreshold)
-                {
-                    startRecordingSample=i;
-                    triggered=true;
-                }
-            }
-        }
-        // not found? next buffer
-        if(startRecordingSample==-1)
-            startRecordingSample=data.samplesToProcess;
-    }
+    // // Auto Trigger mode: check if there is any sound before starting new recording
+    // if(!recording && loopDuration==0 && recordingArmed==true && autoTrigger==true && !triggered)
+    // {
+    //     for(uint channel=0;channel<audioInputsCount && startRecordingSample==-1;channel++)
+    //     {
+    //         array<double>@ samplesBuffer=@data.samples[channel];
+    //         for(uint i=0;i<data.samplesToProcess && startRecordingSample==-1;i++)
+    //         {
+    //             if(abs(samplesBuffer[i])>triggerThreshold)
+    //             {
+    //                 startRecordingSample=i;
+    //                 triggered=true;
+    //             }
+    //         }
+    //     }
+    //     // not found? next buffer
+    //     if(startRecordingSample==-1)
+    //         startRecordingSample=data.samplesToProcess;
+    // }
 
     // if in snap mode and the host is actually playing: check our position
-    if(snap!=kSnapNone && @data.transport!=null && data.transport.isPlaying)
-    {
-        // start position is either buffer start, or startRecordingSample if we are detecting automatically
-        double currentPos=data.transport.positionInQuarterNotes;
-        if(startRecordingSample>=0)
-            currentPos+=samplesToQuarterNotes(startRecordingSample,data.transport.bpm);
+    // if(snap!=kSnapNone && @data.transport!=null && data.transport.isPlaying)
+    // {
+    //     // start position is either buffer start, or startRecordingSample if we are detecting automatically
+    //     double currentPos=data.transport.positionInQuarterNotes;
+    //     if(startRecordingSample>=0)
+    //         currentPos+=samplesToQuarterNotes(startRecordingSample,data.transport.bpm);
         
-        double expectedPos=0;
+    //     double expectedPos=0;
         
-        // snap to next quarter note
-        if(snap==kSnapQuarter)
-        {
-            expectedPos=floor(currentPos);
-            if(expectedPos!=currentPos)
-                expectedPos++;
-        }
-        // expected position is next down beat (except if buffer is exactly on beat
-        else if(snap==kSnapMeasure)
-        {
-            expectedPos=data.transport.currentMeasureDownBeat;
-            if(expectedPos!=0)
-                expectedPos+=(data.transport.timeSigTop)/(data.transport.timeSigBottom)*4.0;
-            while(expectedPos<currentPos)
-                expectedPos+=(data.transport.timeSigTop)/(data.transport.timeSigBottom)*4.0;
-        }
-        double expectedSamplePosition=quarterNotesToSamples(expectedPos,data.transport.bpm);
-        int nextSample=int(floor(expectedSamplePosition+.5))-data.transport.positionInSamples;
+    //     // snap to next quarter note
+    //     if(snap==kSnapQuarter)
+    //     {
+    //         expectedPos=floor(currentPos);
+    //         if(expectedPos!=currentPos)
+    //             expectedPos++;
+    //     }
+    //     // expected position is next down beat (except if buffer is exactly on beat
+    //     else if(snap==kSnapMeasure)
+    //     {
+    //         expectedPos=data.transport.currentMeasureDownBeat;
+    //         if(expectedPos!=0)
+    //             expectedPos+=(data.transport.timeSigTop)/(data.transport.timeSigBottom)*4.0;
+    //         while(expectedPos<currentPos)
+    //             expectedPos+=(data.transport.timeSigTop)/(data.transport.timeSigBottom)*4.0;
+    //     }
+    //     double expectedSamplePosition=quarterNotesToSamples(expectedPos,data.transport.bpm);
+    //     int nextSample=int(floor(expectedSamplePosition+.5))-data.transport.positionInSamples;
         
-        // manage recording
-        if(!recording && (loopDuration==0 || recordingMode==kRecClear) && recordingArmed==true)
-        {
-            startRecordingSample=nextSample;
-        }
-        else if (recording && recordingArmed==false)
-        {
-            stopRecordingSample=nextSample;
-        }
+    //     // manage recording
+    //     if(!recording && (loopDuration==0 || recordingMode==kRecClear) && recordingArmed==true)
+    //     {
+    //         startRecordingSample=nextSample;
+    //     }
+    //     else if (recording && recordingArmed==false)
+    //     {
+    //         stopRecordingSample=nextSample;
+    //     }
         
-        // manage playing
-        if(!playing && playArmed==true)
-        {
-            startPlayingSample=nextSample;
-        }
-        else if (playing && playArmed==false)
-        {
-            stopPlayingSample=nextSample;
-        }
+    //     // manage playing
+    //     if(!playing && playArmed==true)
+    //     {
+    //         startPlayingSample=nextSample;
+    //     }
+    //     else if (playing && playArmed==false)
+    //     {
+    //         stopPlayingSample=nextSample;
+    //     }
         
-        // manage reversing
-        if(!Direction && DirectionArmed==true)
-        {
-            startDirectionSample=nextSample;
-        }
-        else if (playing && DirectionArmed==false)
-        {
-            stopDirectionSample=nextSample;
-        }
-    }
+    //     // manage reversing
+    //     if(!Direction && DirectionArmed==true)
+    //     {
+    //         startDirectionSample=nextSample;
+    //     }
+    //     else if (playing && DirectionArmed==false)
+    //     {
+    //         stopDirectionSample=nextSample;
+    //     }
+    // }
     
     // smooth OutputLevel update: use begin and end values
     // since the actual gain is exponential, we can use the ratio between begin and end values
@@ -486,30 +475,26 @@ void processBlock(BlockData& data)
 
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
-    snap=SnapMode(inputParameters[kSnapMode]+.5);
     
     // Direction--------------------------------------------------------------------------
     DirectionArmed=inputParameters[kDirection]>.5;
-    if(snap==kSnapNone) // toggle right now if no sync
-    {
-        if(DirectionArmed)
-            startDirection();
-        else
-            stopDirection();
+    if(DirectionArmed) {
+        startDirection();
     }
-  
+    else {
+        stopDirection();
+    }
+
     // playing--------------------------------------------------------------------------
     bool wasPlaying=playing;
     bool playWasArmed=playArmed;
     playArmed=inputParameters[kPlayParam]>.5;
     
-    // start playing right now, if not in snap mode
-    if(!wasPlaying && playArmed && (snap==kSnapNone))
-        startPlayback();
+    // start playing right now
+    if(!wasPlaying && playArmed) { startPlayback(); }
 
-    // stop playing right now, if not in snapping mode
-    if(wasPlaying && playWasArmed && !playArmed && (snap==kSnapNone))
-        stopPlayback();
+    // stop playing right now
+    if(wasPlaying && playWasArmed && !playArmed) { stopPlayback(); }
 
     // recording------------------------------------------------------------------------
     bool wasRecording=recording;
@@ -518,16 +503,17 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     recordingMode=RecordMode(inputParameters[kRecMode]+.5);
     
     // reset triggered state
-    if(!wasArmed && recordingArmed)
-        triggered=false;
+    if(!wasArmed && recordingArmed) { 
+        triggered=false; 
+    }
     
-    // start recording, if not in auto trigger mode nor snap, or if already recorded (except for clear mode that should sync)
-    if(recordingArmed && (!autoTrigger || loopDuration!=0) && (snap==kSnapNone || (loopDuration!=0 && recordingMode!=kRecClear)))
+    // start recording, if not in auto trigger mode, or if already recorded (except for clear mode that should sync)
+    if(recordingArmed && (!autoTrigger || loopDuration!=0) || (loopDuration!=0 && recordingMode!=kRecClear)) {
         recording=true;
-    
-    // stop recording, if not in snapping mode
-    if(wasRecording && !recordingArmed && (snap==kSnapNone))
-    {
+    }
+
+    // stop recording
+    if(wasRecording && !recordingArmed) {
         stopRecording();
     }
     
@@ -545,8 +531,9 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         loopDuration=0;
         currentRecordingIndex=0;
         currentPlayingIndex=0;
-        if(!recordingArmed || autoTrigger || (snap!=kSnapNone))
+        if(!recordingArmed || autoTrigger) {
             recording=false;
+        }
     }
     
     // OutputLevel

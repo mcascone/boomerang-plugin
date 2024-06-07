@@ -283,6 +283,9 @@ void processBlock(BlockData& data)
                 startRecordingSample=i;
             }
         }
+        // not found? next buffer
+        if(startRecordingSample==-1)
+            startRecordingSample=data.samplesToProcess;
     }
 
     // if in snap mode and the host is actually playing: check our position

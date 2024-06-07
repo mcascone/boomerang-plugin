@@ -10,6 +10,7 @@
 // TODO: link leds to switches
 // TODO: add stack mode
 // TODO: add ONCE mode
+// TODO: Flash record LED when loop cycles around
 
 /*  Effect Description
  *
@@ -26,7 +27,7 @@ enum InputParamsIndexes
     kRecordParam,
     kPlayParam,
     kResetParam,
-    kDirection,
+    kReverse,
     kStack
 };
 
@@ -49,7 +50,7 @@ array<double> inputParametersDefault={
     0, // Record
     0, // Play/Stop
     0, // Once
-    0, // Direction
+    0, // Reverse
     0, // Stack
 };
 array<double> inputParametersMax={
@@ -58,7 +59,7 @@ array<double> inputParametersMax={
     1,   // Record
     1,   // Play/Stop
     1,   // Once
-    1,   // Direction
+    1,   // Reverse
     1,   // Stack
 };
 
@@ -69,7 +70,7 @@ array<int> inputParametersSteps={
     2,  // Record
     2,  // Play
     2,  // Once
-    2,  // Direction
+    2,  // Reverse
     2,  // Stack
 };
 
@@ -80,7 +81,7 @@ array<string> inputParametersEnums={
     ";Recording",  // Record
     ";Playing",    // Play
     ";Once",       // Once
-    "Fwd;Rev",     // Direction
+    "Fwd;Rev",     // Reverse
     ";STACK"       // Stack
 };
 
@@ -111,23 +112,30 @@ array<array<double>> buffers(audioInputsCount);
 int allocatedLength=int(sampleRate*60); // 60 seconds max recording
 bool recording=false;
 bool recordingArmed=false;
+
 // bool autoTrigger=false;
 double OutputLevel=0;
 double playbackGain=0;
 double recordGain=0;
 double playbackGainInc=0;
 double recordGainInc=0;
+
 int currentPlayingIndex=0;
 int currentRecordingIndex=0;
+
 int loopDuration=0;
 bool eraseValueMem=false;
+
 const int fadeTime=int(.001*sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);
+
 const double triggerThreshold=.005;
+
 RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode
-bool triggered=false;
-bool Direction=false;
-bool DirectionArmed=false;
+
+// bool triggered=false;
+bool Reverse=false;
+bool ReverseArmed=false;
 bool playArmed=false;
 bool playing=false;
 
@@ -164,25 +172,26 @@ int getTailSize()
 void startRecording()
 {
     // clear recording if required
+    // should be hardcoded to boomerang mode
     if(recordingMode==kRecClear)
     {
         loopDuration=0;
         currentPlayingIndex=0;
     }
-    else if(recordingMode==kRecOverWrite)
-    {
-        // truncate loop duration to current position (+ crossfade time)
-        int newLoopDuration=currentPlayingIndex+int(fadeTime+1);
-        if(newLoopDuration<loopDuration)
-        {
-            loopDuration=newLoopDuration;
-        }
-    }
-    else if(recordingMode==kRecPunch)
-    {
-        // decrease playback gain to start fade out
-        playbackGainInc=-xfadeInc;
-    }
+    // else if(recordingMode==kRecOverWrite)
+    // {
+    //     // truncate loop duration to current position (+ crossfade time)
+    //     int newLoopDuration=currentPlayingIndex+int(fadeTime+1);
+    //     if(newLoopDuration<loopDuration)
+    //     {
+    //         loopDuration=newLoopDuration;
+    //     }
+    // }
+    // else if(recordingMode==kRecPunch)
+    // {
+    //     // decrease playback gain to start fade out
+    //     playbackGainInc=-xfadeInc;
+    // }
     // TODO: implement append mode
     
     // actually start recording
@@ -235,22 +244,22 @@ bool isPlaying()
     return (playing || (playbackGainInc!=0)) && !(recording && ((recordingMode==kRecOverWrite || recordingMode==kRecAppend) && currentRecordingIndex>loopDuration));
 }
 
-void startDirection()
+void startReverse()
 {
-    if(Direction==false && loopDuration>0)
+    if(Reverse==false && loopDuration>0)
     {
         currentPlayingIndex=(loopDuration-1-currentPlayingIndex);
     }
-    Direction=true;
+    Reverse=true;
 }
 
-void stopDirection()
+void stopReverse()
 {
-    if(Direction==true && loopDuration>0)
+    if(Reverse==true && loopDuration>0)
     {
         currentPlayingIndex=(loopDuration-1-currentPlayingIndex);
     }
-    Direction=false;
+    Reverse=false;
 }
 
 void processBlock(BlockData& data)
@@ -260,28 +269,21 @@ void processBlock(BlockData& data)
     int stopRecordingSample=-1; // sample number in buffer when recording should be stopped
     int startPlayingSample=-1; // sample number in buffer when playback should be started	
     int stopPlayingSample=-1; // sample number in buffer when playback should be stopped
-    int startDirectionSample=-1; // sample number in buffer when Direction should be started
-    int stopDirectionSample=-1; // sample number in buffer when Direction should be stopped
+    int startReverseSample=-1; // sample number in buffer when Reverse should be started
+    int stopReverseSample=-1; // sample number in buffer when Reverse should be stopped
 
-    // // Auto Trigger mode: check if there is any sound before starting new recording
-    // if(!recording && loopDuration==0 && recordingArmed==true && autoTrigger==true && !triggered)
-    // {
-    //     for(uint channel=0;channel<audioInputsCount && startRecordingSample==-1;channel++)
-    //     {
-    //         array<double>@ samplesBuffer=@data.samples[channel];
-    //         for(uint i=0;i<data.samplesToProcess && startRecordingSample==-1;i++)
-    //         {
-    //             if(abs(samplesBuffer[i])>triggerThreshold)
-    //             {
-    //                 startRecordingSample=i;
-    //                 triggered=true;
-    //             }
-    //         }
-    //     }
-    //     // not found? next buffer
-    //     if(startRecordingSample==-1)
-    //         startRecordingSample=data.samplesToProcess;
-    // }
+    // 
+    if(!recording && loopDuration==0 && recordingArmed==true)
+    {
+        for(uint channel=0;channel<audioInputsCount && startRecordingSample==-1;channel++)
+        {
+            array<double>@ samplesBuffer=@data.samples[channel];
+            for(uint i=0;i<data.samplesToProcess && startRecordingSample==-1;i++)
+            {
+                startRecordingSample=i;
+            }
+        }
+    }
 
     // if in snap mode and the host is actually playing: check our position
     // if(snap!=kSnapNone && @data.transport!=null && data.transport.isPlaying)
@@ -333,13 +335,13 @@ void processBlock(BlockData& data)
     //     }
         
     //     // manage reversing
-    //     if(!Direction && DirectionArmed==true)
+    //     if(!Reverse && ReverseArmed==true)
     //     {
-    //         startDirectionSample=nextSample;
+    //         startReverseSample=nextSample;
     //     }
-    //     else if (playing && DirectionArmed==false)
+    //     else if (playing && ReverseArmed==false)
     //     {
-    //         stopDirectionSample=nextSample;
+    //         stopReverseSample=nextSample;
     //     }
     // }
     
@@ -375,15 +377,15 @@ void processBlock(BlockData& data)
             stopPlayback();
         }
 
-        // manage Direction state
-        bool startReversal=(int(i)==startDirectionSample);
-        bool stopReversal=(int(i)==stopDirectionSample);
+        // manage Reverse state
+        bool startReversal=(int(i)==startReverseSample);
+        bool stopReversal=(int(i)==stopReverseSample);
         
         if(startReversal) {
-            startDirection();
+            startReverse();
         }
         else if(stopReversal) {
-            stopDirection();
+            stopReverse();
         }
         
         const bool currentlyPlaying=isPlaying();
@@ -400,7 +402,7 @@ void processBlock(BlockData& data)
             {
                 // read loop content
                 int index=currentPlayingIndex;
-                if(Direction && loopDuration>0)
+                if(Reverse && loopDuration>0)
                     index=loopDuration-1-index;
                 playback=channelBuffer[index]*playbackGain;
             }
@@ -494,13 +496,13 @@ void processBlock(BlockData& data)
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
     
-    // Direction--------------------------------------------------------------------------
-    DirectionArmed=inputParameters[kDirection]>.5;
-    if(DirectionArmed) {
-        startDirection();
+    // Reverse--------------------------------------------------------------------------
+    ReverseArmed=inputParameters[kReverse]>.5;
+    if(ReverseArmed) {
+        startReverse();
     }
     else {
-        stopDirection();
+        stopReverse();
     }
 
     // playing--------------------------------------------------------------------------
@@ -523,7 +525,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     bool wasArmed=recordingArmed;
     recordingArmed=inputParameters[kRecordParam]>.5;
     
-    // start recording if already recorded (except for clear mode that should sync)
+    // start recording if already recorded
     if(recordingArmed && loopDuration !=0) {
         recording=true;
     }
@@ -574,7 +576,7 @@ void computeOutputData()
     // // current loop playback
     // if(loopDuration>0)
     // {
-    //     if(Direction)
+    //     if(Reverse)
     //         outputParameters[2]=double(loopDuration-1-currentPlayingIndex)/double(loopDuration);            
     //     else
     //         outputParameters[2]=double(currentPlayingIndex)/double(loopDuration);

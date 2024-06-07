@@ -8,11 +8,13 @@
 // DONE: remove snap
 // TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
 // TODO: link leds to switches
+// TODO: add stack mode
+// TODO: add ONCE mode
 
 /*  Effect Description
  *
  */
-string name="Looper-2";
+string name="Boomerang Phrase Sampler";
 string description="An attempt to emulate the Boomerang+ Looper pedal";
 
 /* Parameters Description.
@@ -35,50 +37,56 @@ enum RecordMode
     kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached) <-- stack mode?
     kRecOverWrite,  ///< overwrite loop content with new material, and extend original loop until recording ends
     kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
-    kRecClear       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record
+    kRecClear       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
 };
 
 
 
-array<string> inputParametersNames={"Thru Mute", "Record","Play (Stop)","Rec Mode","Direction","Output Level"};
+
+array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack (Speed)"};
+array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
+    5, // OutputLevel
     0, // Thru Mute
     0, // Record
-    0, // Play
-    5, // Rec Mode
+    0, // Play/Stop
+    0, // Once
     0, // Direction
-    5  // OutputLevel
+    0, // Stack
 };
 array<double> inputParametersMax={
+    10,  // Output Level, if not entered, defaults to percentage
     1, // Thru Mute
     1, // Record
-    1, // Play
-    4, // Rec Mode
+    1, // Play/Stop
+    1, // Once
     1, // Direction
-    10  // if not entered, defaults to percentage
+    1, // Stack
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
 array<int>    inputParametersSteps={
+    -1,  // OutputLevel // -1 means continuous
     2,  // Thru Mute
     2,  // Record
     2,  // Play
-    6,  // Rec Mode
+    2,  // Once
     2,  // Direction
-    -1  // OutputLevel // -1 means continuous
+    2,  // Stack
 };
 
 // these are the labels under each input control
 array<string> inputParametersEnums={
-    ";THRU MUTE",                 // Thru Mute
-    ";Recording",        // Record
-    ";Playing",          // Play
-    "Loop;Extend;Append;Overwrite;Punch;Clear", // Rec Mode
-    "Fwd;Rev",               // Direction
+    "",            // Output Level
+    ";THRU MUTE",  // Thru Mute
+    ";Recording",  // Record
+    ";Playing",    // Play
+    ";Once",       // Once
+    "Fwd;Rev",     // Direction
+    ";STACK"       // Stack
 };
-array<double> inputParameters(inputParametersNames.length);
 
-array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack (Speed)", "1/2 Speed"};
+array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack", "1/2 Speed"};
 array<double> outputParameters(outputParametersNames.length);
 array<double> outputParametersMin={0,0,0,0,0,0,0};
 array<double> outputParametersMax={1,1,1,1,1,1,1};
@@ -107,7 +115,7 @@ bool eraseValueMem=false;
 const int fadeTime=int(.001*sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);
 const double triggerThreshold=.005;
-RecordMode recordingMode=kRecLoopOver;
+RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode
 bool triggered=false;
 bool Direction=false;
 bool DirectionArmed=false;

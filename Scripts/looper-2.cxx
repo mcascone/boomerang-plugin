@@ -40,12 +40,11 @@ enum RecordMode
 
 
 
-array<string> inputParametersNames={"Thru Mute", "Record","Play (Stop)","Clear","Rec Mode","Direction","Output Level"};
+array<string> inputParametersNames={"Thru Mute", "Record","Play (Stop)","Rec Mode","Direction","Output Level"};
 array<double> inputParametersDefault={
     0, // Thru Mute
     0, // Record
     0, // Play
-    0, // Clear
     5, // Rec Mode
     0, // Direction
     5  // OutputLevel
@@ -54,7 +53,6 @@ array<double> inputParametersMax={
     1, // Thru Mute
     1, // Record
     1, // Play
-    1, // Clear
     4, // Rec Mode
     1, // Direction
     10  // if not entered, defaults to percentage
@@ -65,7 +63,6 @@ array<int>    inputParametersSteps={
     2,  // Thru Mute
     2,  // Record
     2,  // Play
-    2,  // Clear
     6,  // Rec Mode
     2,  // Direction
     -1  // OutputLevel // -1 means continuous
@@ -76,7 +73,6 @@ array<string> inputParametersEnums={
     ";THRU MUTE",                 // Thru Mute
     ";Recording",        // Record
     ";Playing",          // Play
-    ";",                 // Clear
     "Loop;Extend;Append;Overwrite;Punch;Clear", // Rec Mode
     "Fwd;Rev",               // Direction
 };

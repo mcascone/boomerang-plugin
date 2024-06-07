@@ -3,12 +3,10 @@
  *   Record and loop/overdub
  */
 
-// todo:
-// - rec and play triggers: button / host
-// - play/pause/rewind (w & without sync)
-// - export to wav file
-// - reverse mode?
-// - optimize
+// TODO: remove rec trigger
+// TODO: set default rec mode to boomerang mode
+// TODO: remove snap
+// TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
 
 /*  Effect Description
  *
@@ -50,10 +48,10 @@ enum SnapMode
 array<string> inputParametersNames={"Record","Play","Clear","Rec Trigger","Rec Mode","Snap","Reverse","Mix"};
 array<double> inputParametersDefault={
     0, // Record
-    1, // Play
+    0, // Play
     0, // Clear
     0, // Rec Trigger
-    0, // Rec Mode
+    5, // Rec Mode
     0, // Snap
     0, // Reverse
     .5 // Mix
@@ -63,7 +61,7 @@ array<double> inputParametersMax={
     1, // Play
     1, // Clear
     1, // Rec Trigger
-    5, // Rec Mode
+    4, // Rec Mode
     2, // Snap
     1, // Reverse
     // 1  // Mix is not entered, defaults to percentage

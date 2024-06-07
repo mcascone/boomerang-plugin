@@ -13,7 +13,7 @@
 /*  Effect Description
  *
  */
-string name="Looper+";
+string name="Looper";
 
 /* Parameters Description.
  */

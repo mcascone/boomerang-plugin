@@ -21,13 +21,13 @@ string description="An attempt to emulate the Boomerang+ Looper pedal";
  */
 enum InputParamsIndexes
 {
-    kThruMtureParam=0,
+    kOutputLevelParam=0,
+    kThruMuteParam,
     kRecordParam,
     kPlayParam,
     kResetParam,
-    kRecMode,
     kDirection,
-    kOutputLevelParam
+    kStack
 };
 
 enum RecordMode
@@ -39,8 +39,6 @@ enum RecordMode
     kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
     kRecClear       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
 };
-
-
 
 
 array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack (Speed)"};
@@ -56,17 +54,17 @@ array<double> inputParametersDefault={
 };
 array<double> inputParametersMax={
     10,  // Output Level, if not entered, defaults to percentage
-    1, // Thru Mute
-    1, // Record
-    1, // Play/Stop
-    1, // Once
-    1, // Direction
-    1, // Stack
+    1,   // Thru Mute
+    1,   // Record
+    1,   // Play/Stop
+    1,   // Once
+    1,   // Direction
+    1,   // Stack
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
-array<int>    inputParametersSteps={
-    -1,  // OutputLevel // -1 means continuous
+array<int> inputParametersSteps={
+    -1, // OutputLevel // -1 means continuous
     2,  // Thru Mute
     2,  // Record
     2,  // Play
@@ -86,6 +84,17 @@ array<string> inputParametersEnums={
     ";STACK"       // Stack
 };
 
+enum OutputParamsIndexes
+{
+    kThruMuteLed=0,
+    kRecordLed,  // 1
+    kPlayLed,    // 2
+    kOnceLed,    // 3
+    kReverseLed, // 4
+    kStackLed,   // 5
+    kSpeedLed    // 6
+};
+
 array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack", "1/2 Speed"};
 array<double> outputParameters(outputParametersNames.length);
 array<double> outputParametersMin={0,0,0,0,0,0,0};
@@ -102,7 +111,7 @@ array<array<double>> buffers(audioInputsCount);
 int allocatedLength=int(sampleRate*60); // 60 seconds max recording
 bool recording=false;
 bool recordingArmed=false;
-bool autoTrigger=false;
+// bool autoTrigger=false;
 double OutputLevel=0;
 double playbackGain=0;
 double recordGain=0;
@@ -142,15 +151,15 @@ int getTailSize()
 }
 
 //sync utils
-double quarterNotesToSamples(double position,double bpm)
-{
-    return position*60.0*sampleRate/bpm;
-}
+// double quarterNotesToSamples(double position,double bpm)
+// {
+//     return position*60.0*sampleRate/bpm;
+// }
 
-double samplesToQuarterNotes(double samples,double bpm)
-{
-    return samples*bpm/(60.0*sampleRate);
-}
+// double samplesToQuarterNotes(double samples,double bpm)
+// {
+//     return samples*bpm/(60.0*sampleRate);
+// }
 
 void startRecording()
 {
@@ -174,6 +183,7 @@ void startRecording()
         // decrease playback gain to start fade out
         playbackGainInc=-xfadeInc;
     }
+    // TODO: implement append mode
     
     // actually start recording
     recording=true;
@@ -345,10 +355,12 @@ void processBlock(BlockData& data)
         bool doStartRecording=(int(i)==startRecordingSample);
         bool doStopRecording=(int(i)==stopRecordingSample);
         
-        if(doStartRecording)
+        if(doStartRecording) {
             startRecording();
-        else if(doStopRecording)
+        }
+        else if(doStopRecording) {
             stopRecording();
+        }
         
         // manage playback state
         bool startPlaying=(int(i)==startPlayingSample);
@@ -367,10 +379,12 @@ void processBlock(BlockData& data)
         bool startReversal=(int(i)==startDirectionSample);
         bool stopReversal=(int(i)==stopDirectionSample);
         
-        if(startReversal)
+        if(startReversal) {
             startDirection();
-        else if(stopReversal)
+        }
+        else if(stopReversal) {
             stopDirection();
+        }
         
         const bool currentlyPlaying=isPlaying();
         
@@ -495,29 +509,27 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     playArmed=inputParameters[kPlayParam]>.5;
     
     // start playing right now
-    if(!wasPlaying && playArmed) { startPlayback(); }
+    if(!wasPlaying && playArmed) { 
+        startPlayback(); 
+    }
 
     // stop playing right now
-    if(wasPlaying && playWasArmed && !playArmed) { stopPlayback(); }
+    if(wasPlaying && playWasArmed && !playArmed) { 
+        stopPlayback(); 
+    }
 
     // recording------------------------------------------------------------------------
     bool wasRecording=recording;
     bool wasArmed=recordingArmed;
     recordingArmed=inputParameters[kRecordParam]>.5;
-    recordingMode=RecordMode(inputParameters[kRecMode]+.5);
     
-    // reset triggered state
-    if(!wasArmed && recordingArmed) { 
-        triggered=false; 
-    }
-    
-    // start recording, if not in auto trigger mode, or if already recorded (except for clear mode that should sync)
-    if(recordingArmed && (!autoTrigger || loopDuration!=0) || (loopDuration!=0 && recordingMode!=kRecClear)) {
+    // start recording if already recorded (except for clear mode that should sync)
+    if(recordingArmed && loopDuration !=0) {
         recording=true;
     }
 
     // stop recording
-    if(wasRecording && !recordingArmed) {
+    if(wasRecording) {
         stopRecording();
     }
     
@@ -528,14 +540,15 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     }
     
     // erase content and restart recording to 0
-    bool eraseVal=inputParameters[kResetParam]>.5;
-    if(eraseVal!=eraseValueMem)
+    // TODO: This should happen when record is pressed while playing
+    bool eraseVal=true;
+    if(eraseVal != eraseValueMem)
     {
         eraseValueMem=eraseVal;
         loopDuration=0;
         currentRecordingIndex=0;
         currentPlayingIndex=0;
-        if(!recordingArmed || autoTrigger) {
+        if(!recordingArmed) {
             recording=false;
         }
     }
@@ -548,43 +561,46 @@ void computeOutputData()
 {
     // playback status
     if(isPlaying() && loopDuration!=0)
-        outputParameters[0]=1;
+        outputParameters[kPlayLed]=1;
     else
-        outputParameters[0]=0;
+        outputParameters[kPlayLed]=0;
 
     // recording status
     if(recording)
-        outputParameters[1]=1;
+        outputParameters[kRecordLed]=1;
     else
-        outputParameters[1]=0;
+        outputParameters[kRecordLed]=0;
     
-    // current loop playback
-    if(loopDuration>0)
-    {
-        if(Direction)
-            outputParameters[2]=double(loopDuration-1-currentPlayingIndex)/double(loopDuration);            
-        else
-            outputParameters[2]=double(currentPlayingIndex)/double(loopDuration);
-    }
-    else
-        outputParameters[2]=0;
+    // // current loop playback
+    // if(loopDuration>0)
+    // {
+    //     if(Direction)
+    //         outputParameters[2]=double(loopDuration-1-currentPlayingIndex)/double(loopDuration);            
+    //     else
+    //         outputParameters[2]=double(currentPlayingIndex)/double(loopDuration);
+    // }
+    // else
+    //     outputParameters[2]=0;
     
-    if(loopDuration!=0 && recording)
-        outputParameters[3]=double(currentRecordingIndex)/double(loopDuration);
-    else if(recording)
-        outputParameters[3]=1;
-    else	
-        outputParameters[3]=0;
+    // if(loopDuration!=0 && recording)
+    //     outputParameters[3]=double(currentRecordingIndex)/double(loopDuration);
+    // else if(recording)
+    //     outputParameters[3]=1;
+    // else	
+    //     outputParameters[3]=0;
     
-    if(outputParameters[3]>1)
-        outputParameters[3]=1;
+    // if(outputParameters[3]>1)
+    //     outputParameters[3]=1;
     
     // relative length of current loop
-    outputParameters[4]=0;
-    if(loopDuration!=0)
-    {
-        outputParameters[4]=1;
-        if(currentRecordingIndex>loopDuration)
-            outputParameters[4]=double(loopDuration)/double(currentRecordingIndex);
-    }
+    // outputParameters[4]=0;
+    // if(loopDuration!=0)
+    // {
+    //     outputParameters[4]=1;
+    //     if(currentRecordingIndex>loopDuration)
+    //         outputParameters[4]=double(loopDuration)/double(currentRecordingIndex);
+    // }
 }
+
+
+

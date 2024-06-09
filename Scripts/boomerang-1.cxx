@@ -34,7 +34,7 @@ enum InputParamsIndexes
     kRecordParam,
     kPlayParam,
     kOnceParam,
-    kReverse,
+    kReverseParam,
     kStack
 };
 
@@ -527,7 +527,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 {
     
     // Reverse--------------------------------------------------------------------------
-    ReverseArmed=inputParameters[kReverse]>.5;
+    ReverseArmed=inputParameters[kReverseParamParam]>.5;
     if(ReverseArmed) {
         startReverse();
     }

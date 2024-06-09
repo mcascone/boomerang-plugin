@@ -47,7 +47,7 @@ enum RecordMode
     kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached) <-- stack mode?
     kRecOverWrite,  ///< overwrite loop content with new material, and extend original loop until recording ends
     kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
-    kRecClear       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
+    kRecClear,       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
 };
 
 
@@ -122,35 +122,48 @@ array<string> outputParametersEnums={";",";",";",";",";",";",";"};
  */
 array<array<double>> buffers(audioInputsCount);
 
-int allocatedLength=int(sampleRate*60); // 60 seconds max recording
-bool recording=false;
-bool recordingArmed=false;
+const int MAX_LOOP_DURATION_SECONDS=60; // 60 seconds max recording
 
-double OutputLevel=0;
-double playbackGain=0;
-double recordGain=0;
-double playbackGainInc=0;
-double recordGainInc=0;
+int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds max recording
 
-int currentPlayingIndex=0;
-int currentRecordingIndex=0;
+bool recording=false;         // currently recording
+bool recordingArmed=false;    // record button is pressed
 
-int loopDuration=0;
-bool eraseValueMem=false;
+double OutputLevel=0;         // output level
 
-const int fadeTime=int(.001*sampleRate); // 1ms fade time
-const double xfadeInc=1/double(fadeTime);
+double playbackGain=0;        // playback gain
+double playbackGainInc=0;     // playback gain increment
 
-RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode
+double recordGain=0;          // record gain
+double recordGainInc=0;       // record gain increment
 
-// bool triggered=false;
-bool Reverse=false;
-bool ReverseArmed=false;
-bool playArmed=false;
-bool playing=false;
+int currentPlayingIndex=0;    // current playback index
+int currentRecordingIndex=0;  // current recording index
 
-bool onceMode=false;
-bool onceArmed=false;
+int loopDuration=0;           // loop duration
+
+bool eraseValueMem=false;     // erase value memory  ???
+
+const int fadeTime=int(.001 * sampleRate); // 1ms fade time
+const double xfadeInc=1/double(fadeTime);  // fade increment
+
+RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode. Clear loop when record is pressed.
+
+///// These are checked in the processBlock function - called for each block of samples
+bool Reverse=false;       // reverse mode
+bool ReverseArmed=false;  // reverse (direction) button is pressed
+
+bool playing=false;       // currently playing state
+bool playArmed=false;     // play button is pressed
+
+bool onceMode=false;      // once mode
+bool onceArmed=false;     // once button is pressed
+
+bool stackMode=false;     // stack mode
+bool stackArmed=false;    // stack button is pressed
+
+bool halfSpeedMode=false; // half speed mode
+bool halfSpeedArmed=false;// half speed button is pressed
 
 bool bufferFilled=false;
 
@@ -172,17 +185,6 @@ int getTailSize()
     // infinite tail (sample player)
     return -1;
 }
-
-//sync utils
-// double quarterNotesToSamples(double position,double bpm)
-// {
-//     return position*60.0*sampleRate/bpm;
-// }
-
-// double samplesToQuarterNotes(double samples,double bpm)
-// {
-//     return samples*bpm/(60.0*sampleRate);
-// }
 
 void startRecording()
 {

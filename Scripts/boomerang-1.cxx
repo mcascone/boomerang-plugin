@@ -35,7 +35,9 @@ enum InputParamsIndexes
     kPlayParam,
     kOnceParam,
     kReverseParam,
-    kStack
+    kStackParam,
+    kHalfSpeedParam
+
 };
 
 enum RecordMode
@@ -59,6 +61,7 @@ array<double> inputParametersDefault={
     0, // Once
     0, // Reverse
     0, // Stack
+    0  // 1/2 Speed
 };
 array<double> inputParametersMax={
     10,  // Output Level, if not entered, defaults to percentage
@@ -68,6 +71,7 @@ array<double> inputParametersMax={
     1,   // Once
     1,   // Reverse
     1,   // Stack
+    1    // 1/2 Speed
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
@@ -79,6 +83,7 @@ array<int> inputParametersSteps={
     2,  // Once
     2,  // Reverse
     2,  // Stack
+    2   // 1/2 Speed
 };
 
 // these are the labels under each input control
@@ -90,6 +95,7 @@ array<string> inputParametersEnums={
     ";Once",       // Once
     "Fwd;Rev",     // Reverse
     ";STACK"       // Stack
+    ";1/2 Speed"   // 1/2 Speed
 };
 
 enum OutputParamsIndexes

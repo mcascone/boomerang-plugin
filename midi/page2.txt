@@ -1,0 +1,134 @@
+[globalsetup]
+# globalsetup items are applied to all pages
+# Lines starting with # are treated as comments
+
+# 0-100
+ledbright = [30]
+
+# 0-100
+screenbright = [80]
+
+# on / off --Selecting black or white fonts according to the wallpaper background
+dark_fonts = [off]
+
+# wp1 --Only one wallpaper coming along with the FW package now, you can add later
+wallpaper = [wp1]
+
+# 1 / 1.5 / 2 / 2.5 --long press time in second
+long_press_timing = [1]
+
+# wireless setup only valid on MIDI Captain Blue/Gold version
+WIRELESS_2.4G = [on]
+
+# ID range 1-99 --Set to be the same with the MIDI MATE
+WIRELESS_ID   = [8]
+
+# 0:12dBm 1:10dBm 2:9dBm 3:8dBm 4:6dBm 5:3dBm 6:0dBm 7:-2dBm 8:-5dBm 9:-10dBm 10:-15dBm 11:-20dBm 12:-25dBm 13:-30dBm 14:-25dBm
+WIRELESS_dB   = [6]
+
+
+[PAGE]
+# Change the "NAME" below in uppercase letters <= 4 characters
+page_name = [FM3S]
+
+# This section sets the global items within a page
+
+exp1_CH = [1]
+exp1_CC = [1]
+
+exp2_CH = [1]
+exp2_CC = [2]
+
+encoder_CC = [82]
+encoder_NAME = [Crtl]
+
+# on / off
+midithrough = [on]
+
+# 123 / abc3 / abc4 / abc5 / abc8 --Only this 5 options
+# Setting 123 is to display the PC as a numerical value
+# abc3 means PC display as 1A,1B,1C,2A... abc5 means 1A,1B,1C,1D,1E,2A...
+display_number_ABC = [123]
+
+# 3 / 4 / 5 / 8 define how many patches in one group or bank
+# This is used when display_number_ABC is selected as '123'
+group_number = [3]
+
+# 0 / 1 
+# set to 1 so that the displayed PC number starting from 1 (Actual PC still 0 )
+# set to 0 so that the displayed PC number starting from 0
+display_pc_offset = [0]
+
+# 0 / 1 
+# set to 0 so that when abcX display selected above, bank is start from 0A,0B,0C...
+# set to 1 so that when abcX display selected above, bank is start from 1A,1B,1C...
+display_bank_offset = [1]
+
+[key0]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][4]
+
+[key1]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][5]
+
+[key2]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][6]
+
+
+[key3]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][7]
+
+
+[key4]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xffffff][0xffffff][0xffffff]
+short_dw1 = [1][PC][inc1][-]
+
+
+[key5]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][0]
+
+
+[key6]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][1]
+
+
+
+[key7]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][2]
+
+
+[key8]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ff00][0x00ff00][0x00ff00]
+short_dw1 = [1][CC][43][3]
+
+
+
+[key9]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xffffff][0xffffff][0xffffff]
+short_dw1 = [1][PC][dec1][-]

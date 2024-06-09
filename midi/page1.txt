@@ -1,0 +1,190 @@
+[globalsetup]
+# globalsetup items are applied to all pages
+# Lines starting with # are treated as comments
+
+# 0-100
+ledbright = [100]
+
+# 0-100
+screenbright = [80]
+
+# on / off --Selecting black or white fonts according to the wallpaper background
+dark_fonts = [off]
+
+# wp1 --Only one wallpaper coming along with the FW package now, you can add later
+wallpaper = [wp1]
+
+# 1 / 1.5 / 2 / 2.5 --long press time in second
+long_press_timing = [1]
+
+# wireless setup only valid on MIDI Captain Blue/Gold version
+WIRELESS_2.4G = [off]
+
+# ID range 1-99 --Set to be the same with the MIDI MATE
+WIRELESS_ID   = [8]
+
+# 0:12dBm 1:10dBm 2:9dBm 3:8dBm 4:6dBm 5:3dBm 6:0dBm 7:-2dBm 8:-5dBm 9:-10dBm 10:-15dBm 11:-20dBm 12:-25dBm 13:-30dBm 14:-25dBm
+WIRELESS_dB   = [6]
+
+
+[PAGE]
+# Change the "NAME" below in uppercase letters <= 4 characters
+page_name = [LOOP]
+
+# This section sets the global items within a page
+
+exp1_CH = [2]
+exp1_CC = [11]
+
+exp2_CH = [2]
+exp2_CC = [12]
+
+encoder_CC = [13]
+encoder_NAME = [Wheel]
+
+# on / off
+midithrough = [off]
+
+# 123 / abc3 / abc4 / abc5 / abc8 --Only this 5 options
+# Setting 123 is to display the PC as a numerical value
+# abc3 means PC display as 1A,1B,1C,2A... abc5 means 1A,1B,1C,1D,1E,2A...
+display_number_ABC = [abc3]
+
+# 3 / 4 / 5 / 8 define how many patches in one group or bank
+# This is used when display_number_ABC is selected as '123'
+group_number = [3]
+
+# 0 / 1 
+# set to 1 so that the displayed PC number starting from 1 (Actual PC still 0 )
+# set to 0 so that the displayed PC number starting from 0
+display_pc_offset = [1]
+
+# 0 / 1 
+# set to 0 so that when abcX display selected above, bank is start from 0A,0B,0C...
+# set to 1 so that when abcX display selected above, bank is start from 1A,1B,1C...
+display_bank_offset = [1]
+
+### SWITCH 1 ###
+[key0]
+keytimes = [2]
+ledmode = [normal]
+ledcolor1 = [0xaa0000][0xaa0000][0xaa0000]
+short_up1 = [2][CC][1][127]
+
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_up2 = [1][CC][1][0]
+
+### SWITCH 2 ###
+[key1]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xaaaa00][0xaaaa00][0xaaaa00]
+short_dw1 = [1][CC][69][1]
+
+### SWITCH 3 ###
+[key2]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xaa00aa][0xaa00aa][0xaa00aa]
+short_dw1 = [1][CC][69][2]
+
+
+### SWITCH 4 ###
+[key3]
+keytimes = [2]
+ledmode = [normal]
+ledcolor1 = [0x0000ff][0x0000ff][0x0000ff]
+short_dw1 = [1][CC][68][127]
+
+ledcolor2 = [0x000066][0x000066][0x000066]
+short_dw2 = [1][CC][68][0]
+
+
+### SWITCH ^ ###
+[key4]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xffffff][0xffffff][0xffffff]
+short_dw1 = [1][PC][auto][bank_inc]
+
+
+### SWITCH A ###
+### RECORD   ###
+[key5]
+keytimes = [2]
+ledmode = [normal]
+
+ledcolor1 = [0x00ffff][0x00ffff][0x00ffff]
+short_up1 = [2][CC][6][127]
+
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_up2 = [2][CC][6][0]
+
+
+### SWITCH B ###
+### PLAY (STOP) ###
+[key6]
+keytimes = [2]
+ledmode = [normal]
+ledcolor1 = [0x00000][0x00000][0x00000]
+short_up1 = [2][CC][7][0]
+
+ledcolor2 = [0x00ffff][0x00ffff][0x00ffff]
+short_up2 = [2][CC][7][127]
+
+
+### SWITCH C ###
+### ONCE ###
+### not sure how to implement this quite yet
+[key7]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0x00ffff][0x00ffff][0x00ffff]
+short_dw1 = [2][CC][8][127]
+
+
+### SWITCH D ###
+### STACK (SPEED) ###
+### Stack is a momentary-style record switch,
+###   that also acts as a toggle for a different feature - 1/2 SPEED -
+###   that only activates when the unit is *not* playing.
+### The MIDICaptain doesn't have a way to understand the STATE of the unit.
+### So i will have to separate these triggers until a new way appears to get closer to full emulation.
+### This switch is the STACK control.
+### The momentary-style record concept translates into:
+### short_down = record start
+### short_up   = record stop
+### long_up    = record stop
+### 
+### the cc's have to send on the same ID as RECORD,
+###  because the DAW will only recognize one CC ID attachment (I believe).
+### I suppose i could intercept them with a MIDI filter, but that's a lot of work.
+### ^^^^ THIS IS NOT TRUE ^^^^
+### the midi doesn't need to know what the physical switch is doing behind the scenes. 
+### The plugin has inputs for each switch.
+### So all the midi needs to do is send the correct CC to the correct input.
+### The plugin should take care of the rest.
+### In code-speak this also serves to decouple the midi config from the plugin code.
+[key8]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xffffff][0xffffff][0xffffff]
+short_dw1 = [2][CC][9][127]
+short_up1 = [2][CC][9][0]
+long_up1  = [2][CC][9][0]
+
+### SWITCH V ###
+### DIRECTION ###
+### 
+### The manual advises against using long presses on the two right-most switches,
+###   because they're used for the pedal's BANK up/down commands.
+### I don't think Super Mode lets you change that assignment,
+### So for the immediate future, I'm swapping the positions of the two right-most switches (Direction and Stack)
+[key9]
+keytimes = [2]
+ledmode = [normal]
+ledcolor1 = [0x000000][0x000000][0x000000]
+short_dw1 = [2][CC][10][0]
+
+ledcolor2 = [0xff0000][0xff0000][0xff0000]
+short_dw2 = [2][CC][10][127]

@@ -1,25 +1,8 @@
 # Boomerang+ Emulator
 
 VST/AU plugin based on the Boomerang+ Phrase Sampler.
+
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
-
-## Building
-
-The script is auto-reloadable in the UI.
-
-Exporting is also done in the UI, so there's no build process to manage that I'm aware of.
-
-### Prerequisites
-
-- [Blue Cat Audio Plugin SDK](https://www.bluecataudio.com/Doc/Product_PlugNScript/)
-
-### Source Code Attribution
-
-As a starting point, I am using the `looper.cxx` script that comes with the PNS software download. So the architecture of the code is not mine. 
-
-I have modified the code to add and remove features and behavior that are not needed for the emulation of the original device.
-
-As time allows i plan to refactor the code to make it more readable and reuseable.
 
 ## Background
 
@@ -42,6 +25,24 @@ It's done with love and reverence for the creators and keepers of the original d
 My intention is to use the manual very much as a requirements document; to code this plugin to behave as close to the physical original as I can, with my limited time and knowledge of the programming domain of this code.
 
 In the future it could be considered to add features or modify the behavior in ways that may show themselves to be useful. For now, i am not thinking too much about improvements.
+
+## Building
+
+The script is auto-reloadable in the UI.
+v
+Exporting is also done in the UI, so there's no build process to manage that I'm aware of.
+
+### Prerequisites
+
+- [Blue Cat Audio Plugin SDK](https://www.bluecataudio.com/Doc/Product_PlugNScript/)
+
+### Source Code Attribution
+
+As a starting point, I am using the `looper.cxx` script that comes with the PNS software download. So the architecture of the code is not mine.
+
+I have modified the code to add and remove features and behavior that are not needed for the emulation of the original device.
+
+As time allows i plan to refactor the code to make it more readable and reuseable.
 
 # The Controls
 

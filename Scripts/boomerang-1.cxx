@@ -188,35 +188,30 @@ int getTailSize()
 
 void startRecording()
 {
-    // clear recording if required
-    // should be hardcoded to boomerang mode
-    if(recordingMode==kRecClear)
+    // Don't reset loop if in once mode
+    if(stackMode)
+    {
+        // stack mode
+        // add the incoming audio to the buffer
+        // reduce existing audio by 2.5Db
+        ;
+    }
+    else
     {
         loopDuration=0;
         currentPlayingIndex=0;
     }
-    // else if(recordingMode==kRecOverWrite)
-    // {
-    //     // truncate loop duration to current position (+ crossfade time)
-    //     int newLoopDuration=currentPlayingIndex+int(fadeTime+1);
-    //     if(newLoopDuration<loopDuration)
-    //     {
-    //         loopDuration=newLoopDuration;
-    //     }
-    // }
-    // else if(recordingMode==kRecPunch)
-    // {
-    //     // decrease playback gain to start fade out
-    //     playbackGainInc=-xfadeInc;
-    // }
-    // TODO: implement append mode
     
     // actually start recording
     recording=true;
     currentRecordingIndex=currentPlayingIndex;
+
     // pre fade to avoid clicks
     recordGain=0;
     recordGainInc=xfadeInc;
+
+    // reduce existing audio by 2.5Db
+    
 }
 
 void stopRecording()
@@ -226,18 +221,34 @@ void stopRecording()
     // post fade to avoid clicks
     recordGainInc=-xfadeInc;
     
-    // recorded beyond previous loop -> update duration, start playback at 0
-    if(recordedCount>loopDuration)
-    {
+    // // recorded beyond previous loop -> update duration, start playback at 0
+    // if(recordedCount>loopDuration)
+    // {
+    //     loopDuration=recordedCount;
+    //     currentPlayingIndex=0;
+    // }
+
+    // normal mode:
+    // set loop length to recorded length
+    // start playback at 0
+    if(!stackMode) {
         loopDuration=recordedCount;
         currentPlayingIndex=0;
     }
-    
-    if(recordingMode==kRecPunch)
-    {
-        // increase playback gain to start fade in
-        playbackGainInc=xfadeInc;
+    // stack mode
+    // add the incoming audio to the buffer
+    // reduce existing audio by 2.5Db
+    else {
+        
+        ;
     }
+
+
+    // if(recordingMode==kRecPunch)
+    // {
+    //     // increase playback gain to start fade in
+    //     playbackGainInc=xfadeInc;
+    // }
 }
 
 void startPlayback()
@@ -257,8 +268,8 @@ void stopPlayback()
 
 bool isPlaying()
 {
-    // while recording and overwriting content without blending, do not play
-    return (playing || (playbackGainInc!=0)) && !(recording && ((recordingMode==kRecOverWrite || recordingMode==kRecAppend) && currentRecordingIndex>loopDuration));
+    // true if playing or if playback gain is not 0
+    return (playing || (playbackGainInc !=0 ));
 }
 
 void startReverse()
@@ -290,8 +301,8 @@ void processBlock(BlockData& data) {
     int startReverseSample=-1; // sample number in buffer when Reverse should be started
     int stopReverseSample=-1; // sample number in buffer when Reverse should be stopped
 
-    // if not recording, no loop recorded, recording is pressed -> start recording
-    if(!recording && loopDuration == 0 && recordingArmed == true)
+    // if not recording, recording is pressed -> start recording
+    if(!recording && recordingArmed == true)
     {
         // for each channel, while the there is no startRecordingSample, find the first sample that is not 0
         for(uint channel=0; channel<audioInputsCount && startRecordingSample == -1; channel++)
@@ -310,70 +321,10 @@ void processBlock(BlockData& data) {
             startRecordingSample=data.samplesToProcess;
     }
 
-    // if in snap mode and the host is actually playing: check our position
-    // if(snap!=kSnapNone && @data.transport!=null && data.transport.isPlaying)
-    // {
-    //     // start position is either buffer start, or startRecordingSample if we are detecting automatically
-    //     double currentPos=data.transport.positionInQuarterNotes;
-    //     if(startRecordingSample>=0)
-    //         currentPos+=samplesToQuarterNotes(startRecordingSample,data.transport.bpm);
-        
-    //     double expectedPos=0;
-        
-    //     // snap to next quarter note
-    //     if(snap==kSnapQuarter)
-    //     {
-    //         expectedPos=floor(currentPos);
-    //         if(expectedPos!=currentPos)
-    //             expectedPos++;
-    //     }
-    //     // expected position is next down beat (except if buffer is exactly on beat
-    //     else if(snap==kSnapMeasure)
-    //     {
-    //         expectedPos=data.transport.currentMeasureDownBeat;
-    //         if(expectedPos!=0)
-    //             expectedPos+=(data.transport.timeSigTop)/(data.transport.timeSigBottom)*4.0;
-    //         while(expectedPos<currentPos)
-    //             expectedPos+=(data.transport.timeSigTop)/(data.transport.timeSigBottom)*4.0;
-    //     }
-    //     double expectedSamplePosition=quarterNotesToSamples(expectedPos,data.transport.bpm);
-    //     int nextSample=int(floor(expectedSamplePosition+.5))-data.transport.positionInSamples;
-        
-    //     // manage recording
-    //     if(!recording && (loopDuration==0 || recordingMode==kRecClear) && recordingArmed==true)
-    //     {
-    //         startRecordingSample=nextSample;
-    //     }
-    //     else if (recording && recordingArmed==false)
-    //     {
-    //         stopRecordingSample=nextSample;
-    //     }
-        
-    //     // manage playing
-    //     if(!playing && playArmed==true)
-    //     {
-    //         startPlayingSample=nextSample;
-    //     }
-    //     else if (playing && playArmed==false)
-    //     {
-    //         stopPlayingSample=nextSample;
-    //     }
-        
-    //     // manage reversing
-    //     if(!Reverse && ReverseArmed==true)
-    //     {
-    //         startReverseSample=nextSample;
-    //     }
-    //     else if (playing && ReverseArmed==false)
-    //     {
-    //         stopReverseSample=nextSample;
-    //     }
-    // }
-    
     // smooth OutputLevel update: use begin and end values
     // since the actual gain is exponential, we can use the ratio between begin and end values
     // as an incremental multiplier for the actual gain
-    double OutputLevelInc=(data.endParamValues[kOutputLevelParam]-data.beginParamValues[kOutputLevelParam])/data.samplesToProcess;
+    double OutputLevelInc=(data.endParamValues[kOutputLevelParam] - data.beginParamValues[kOutputLevelParam])/data.samplesToProcess;
     
     // actual audio processing happens here
     // i don't think we need all this stop/start stuff since we're not using any snap/sync

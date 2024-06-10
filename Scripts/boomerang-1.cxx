@@ -137,7 +137,8 @@ double playbackGainInc=0;     // playback gain increment
 double recordGain=0;          // record gain
 double recordGainInc=0;       // record gain increment
 
-// gain reduction of 2.5 Db
+// playback gain reduction of 2.5 Db when stacking
+// TODO: CHECK THIS MATH
 const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
 
 int currentPlayingIndex=0;    // current playback index
@@ -165,10 +166,11 @@ bool onceArmed=false;     // once button is clicked (momentary)
 bool stackMode=false;     // stack mode
 bool stackArmed=false;    // stack button is clicked (momentary)
 
-bool halfSpeedMode=false; // half speed mode
-bool halfSpeedArmed=false;// half speed button is pressed (toggle)
+bool halfSpeedMode=false;  // half speed mode
+bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
-bool bufferFilled=false;
+bool bufferFilled=false;   // OOM
+bool loopCycled=false;     // loop has looped around
 
 /* Initialization
  *
@@ -191,29 +193,17 @@ int getTailSize()
 
 void startRecording()
 {
-    if(stackMode)
-    {
-        // stack mode
-        // add the incoming audio to the buffer
-        // reduce existing audio by 2.5Db
-        ;
-    }
-    else
-    {
-        loopDuration=0;
-        currentPlayingIndex=0;
-    }
-    
+    // reset
+    loopDuration=0;
+    currentPlayingIndex=0;
+    currentRecordingIndex=0;
+
     // actually start recording
     recording=true;
-    currentRecordingIndex=currentPlayingIndex;
 
     // pre fade to avoid clicks
     recordGain=0;
     recordGainInc=xfadeInc;
-
-    // reduce existing audio by 2.5Db
-    
 }
 
 void stopRecording()
@@ -225,47 +215,23 @@ void stopRecording()
     
     // // recorded beyond previous loop -> update duration, start playback at 0
     // if(recordedCount>loopDuration)
-    // {
-    //     loopDuration=recordedCount;
-    //     currentPlayingIndex=0;
-    // }
-
-    // normal mode:
-    // set loop length to recorded length
-    // start playback at 0
-    if(!stackMode) {
-        loopDuration=recordedCount;
-        currentPlayingIndex=0;
-    }
-    // stack mode
-    // add the incoming audio to the buffer
-    // reduce existing audio by 2.5Db
-    else {
-        
-        ;
-    }
-
-
-    // if(recordingMode==kRecPunch)
-    // {
-    //     // increase playback gain to start fade in
-    //     playbackGainInc=xfadeInc;
-    // }
+    // Updated: just always do this
+    loopDuration          = recordedCount;
+    currentPlayingIndex   = 0;
 }
 
 void startPlayback()
 {
-    // start playback
     playing=true;
-    currentPlayingIndex=0;
+    // currentPlayingIndex=0;  // assume any restarting is done before this is called
     playbackGain=0;
-    playbackGainInc=xfadeInc;
+    playbackGainInc=xfadeInc; // ???
 }
 
 void stopPlayback()
 {
     playing=false;
-    playbackGainInc=-xfadeInc;
+    playbackGainInc=-xfadeInc; // ???
 }
 
 bool isPlaying()
@@ -296,6 +262,7 @@ void disableReverse()
 void processBlock(BlockData& data) {
 
     // // indexes used by auto record trigger or snapped play/stop
+    // i don't think we need any of this but it's coupled to a lot of important stuff below
     int startRecordingSample=-1; // sample number in buffer when recording should be started
     int stopRecordingSample=-1; // sample number in buffer when recording should be stopped
     int startPlayingSample=-1; // sample number in buffer when playback should be started	
@@ -303,8 +270,8 @@ void processBlock(BlockData& data) {
     int enableReverseSample=-1; // sample number in buffer when Reverse should be started
     int disableReverseSample=-1; // sample number in buffer when Reverse should be stopped
 
-    // if not recording, recording is pressed -> start recording
-    if(!recording && recordingArmed == true)
+    // if not recording and recording is pressed -> start recording
+    if(!recording && recordingArmed)
     {
         // for each channel, while the there is no startRecordingSample, find the first sample that is not 0
         for(uint channel=0; channel<audioInputsCount && startRecordingSample == -1; channel++)
@@ -324,6 +291,8 @@ void processBlock(BlockData& data) {
     }
 
     // smooth OutputLevel update: use begin and end values
+    // this smoothes the transition between the begin and end values of the OutputLevel parameter,
+    //  between the beginning and end of the block
     // since the actual gain is exponential, we can use the ratio between begin and end values
     // as an incremental multiplier for the actual gain
     double OutputLevelInc=(data.endParamValues[kOutputLevelParam] - data.beginParamValues[kOutputLevelParam])/data.samplesToProcess;
@@ -377,6 +346,7 @@ void processBlock(BlockData& data) {
         const bool currentlyPlaying=isPlaying();
         
         // process audio for each channel--------------------------------------------------
+        // in STACK mode here is where we would reduce the existing audio by 2.5Db?
         for(uint channel=0; channel < audioInputsCount; channel++)
         {
             array<double>@ channelBuffer=@buffers[channel];
@@ -413,6 +383,9 @@ void processBlock(BlockData& data) {
             currentPlayingIndex++;
             if(currentPlayingIndex>=loopDuration)
                 currentPlayingIndex=0;
+                // is this where we blink the record LED at the beginning of the loop
+                // i think we set a flag here and check it in the computeOutputData function
+
             
             // playback xfade
             if(loopDuration>0)
@@ -483,7 +456,9 @@ void processBlock(BlockData& data) {
 }
 
 
-// This is called when an input param is changed - ie, a button was not clicked but just changed
+// This is called when an input param is changed - ie, a button/toggle was not clicked but changed
+// BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it different from the state, we we do something.
+// This invalidates my concept of a momentary switch, but we can still use it as a toggle
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
     // Reverse--------------------------------------------------------------------------

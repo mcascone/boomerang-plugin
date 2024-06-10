@@ -34,11 +34,13 @@ The software runs the "a parameter has changed, go check it out" script on any c
 
 We work with the assumption of a physical device, that only one button will be pressed at a time.
 
-The other factor to consider is how the MIDI messages are sent and recieved. I use a Paint Audio MIDI Captain, which is highly programmable, but has no way of knowing the state of the software device. As far as I know there is no way for this pedal to _recieve_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware.
+The other factor to consider is how the MIDI messages are sent and recieved. I use a [Paint Audio MIDI Captain, which is highly programmable](https://paintaudio.com/products/midi-captain-std-vesion-black), but has no way of knowing the state of the software device. As far as I know there is no way for this pedal to _recieve_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware.
 
 To that end, I have tried to make the plugin buttons and LEDs behave as they would on the phyical device, without considering the MIDI aspect. On the other hand, you have to understand how the device will behave when configuring your MIDI controller.
 
 Another way of looking at it is that the physical switches all appear to be momentary switches, but some features act as if they are latching on/off, like the record and play buttons; others like the once and stack buttons act as momentary switches.
+
+Regarding the LEDs in the plugin, they're a bit extraneous, since the controls have their own visual feedback. But I have included them for completeness to make the plugin look more like the original device.
 
 ## Current Status
 
@@ -49,7 +51,7 @@ Here is what the GUI looks like now:
 ## Building
 
 The script is auto-reloadable in the UI.
-v
+
 Exporting is also done in the UI, so there's no build process to manage that I'm aware of.
 
 ### Prerequisites

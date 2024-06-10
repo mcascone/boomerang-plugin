@@ -576,9 +576,12 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             recording=false;
         }
     }
-    
+
     // OutputLevel
-    OutputLevel=inputParameters[kOutputLevelParam];
+    bool outputChanged = inputParameters[kOutputLevelParam] != OutputLevel;
+    if(outputChanged) {
+        OutputLevel = inputParameters[kOutputLevelParam];
+    }
 }
 
 void computeOutputData()

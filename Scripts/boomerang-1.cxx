@@ -9,10 +9,11 @@
 // TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
 // DONE: link leds to switches
 // TODO: add stack mode
-// TODO: add ONCE mode
+// TODO: add ONCE mode (wip)
 // TODO: Flash record LED when loop cycles around
 // TODO: add 1/2 speed mode
 // TODO: figure out how to flip Play switch when record stops
+// TODO: create function to determine toggle state, for consistency and DRY
 
 
 // NOTES:
@@ -459,6 +460,7 @@ void processBlock(BlockData& data) {
 // This is called when an input param is changed - ie, a button/toggle was not clicked but changed
 // BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it different from the state, we we do something.
 // This invalidates my concept of a momentary switch, but we can still use it as a toggle
+// Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
     // Reverse--------------------------------------------------------------------------
@@ -495,21 +497,21 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // After pressing this button, the ONCE LED will be turned on letting you know this is the last time through your loop.
     // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. Repeated presses produces a stutter effect sort of like record scratching.
     // TODO: new option: if playing in once mode, find a way to disable it so the loop repeats
-    bool wasInOnceMode=onceMode;                   // if we were in once mode when we entered this block
-    // bool wasOnceArmed=onceArmed;                // if we were once armed when we entered this block // dont need this
-    onceArmed = inputParameters[kOnceParam] >= 0;    // on ANY change, toggle - emulate a momentary switch
+    bool wasInOnceMode=onceMode;                    // if we were in once mode when we entered this block
+    bool wasOnceArmed=onceArmed;                    // if we were once armed when we entered this block
+    onceArmed = inputParameters[kOnceParam] >= .5;  // toggle on/off
 
     // pressing once...
     if(onceArmed) {
-        // Pressing ONCE during playback tells the Boomerang Phrase Sampler to finish playing the loop and then stop. 
+        // Pressing ONCE during playback (when not in Once Mode) tells the Boomerang Phrase Sampler to finish playing the loop and then stop. 
         if(playing && !onceMode) {
             onceMode=true;
         }
-        // Pressing it while the ONCE LED is on will always immediately restart playback. 
+        // Pressing it while the ONCE LED is on (playing in once mode) will always immediately restart playback. 
         // theoretically, this should be used the next time a block is processed?
         // do we have to go to the sample level for instant response?
         // do have to / should we instead call startPlayback()?
-        else if ((playing && onceMode) {
+        else if (playing && onceMode) {
             currentPlayingIndex=0;
         }
         // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded,

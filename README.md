@@ -66,9 +66,13 @@ I have modified the code to add and remove features and behavior that are not ne
 
 As time allows i plan to refactor the code to make it more readable and reuseable.
 
+### Source Code
+
+You can view and download the source code at <https://github.com/mcascone/boomerang-plugin.git>
+
 # The Controls
 
-The original manual has the best description of each control, so i am copying here verbatim. The following text is 100% copied from the manual, and only formatted by me.
+The original manual has the best description of each control, so I am copying here verbatim. The following text is 100% copied from the manual, and only formatted by me.
 
 ## How the Buttons Work
 

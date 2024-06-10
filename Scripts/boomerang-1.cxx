@@ -137,33 +137,36 @@ double playbackGainInc=0;     // playback gain increment
 double recordGain=0;          // record gain
 double recordGainInc=0;       // record gain increment
 
+// gain reduction of 2.5 Db
+const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
+
 int currentPlayingIndex=0;    // current playback index
 int currentRecordingIndex=0;  // current recording index
 
-int loopDuration=0;           // loop duration
+int loopDuration=0;           // loop duration in ?? it doesn't seem to matter
 
 bool eraseValueMem=false;     // erase value memory  ???
 
 const int fadeTime=int(.001 * sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);  // fade increment
 
-RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode. Clear loop when record is pressed.
+RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode. Clear loop when record is pressed. May end up not being necessary.
 
 ///// These are checked in the processBlock function - called for each block of samples
 bool Reverse=false;       // reverse mode
-bool ReverseArmed=false;  // reverse (direction) button is pressed
+bool ReverseArmed=false;  // reverse (direction) button is clicked (toggle)
 
 bool playing=false;       // currently playing state
-bool playArmed=false;     // play button is pressed
+bool playArmed=false;     // play button is clicked (toggle)
 
 bool onceMode=false;      // once mode
-bool onceArmed=false;     // once button is pressed
+bool onceArmed=false;     // once button is clicked (momentary)
 
 bool stackMode=false;     // stack mode
-bool stackArmed=false;    // stack button is pressed
+bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false; // half speed mode
-bool halfSpeedArmed=false;// half speed button is pressed
+bool halfSpeedArmed=false;// half speed button is pressed (toggle)
 
 bool bufferFilled=false;
 
@@ -188,7 +191,6 @@ int getTailSize()
 
 void startRecording()
 {
-    // Don't reset loop if in once mode
     if(stackMode)
     {
         // stack mode
@@ -272,7 +274,7 @@ bool isPlaying()
     return (playing || (playbackGainInc !=0 ));
 }
 
-void startReverse()
+void enableReverse()
 {
     if(Reverse==false && loopDuration>0)
     {
@@ -281,7 +283,7 @@ void startReverse()
     Reverse=true;
 }
 
-void stopReverse()
+void disableReverse()
 {
     if(Reverse==true && loopDuration>0)
     {
@@ -298,8 +300,8 @@ void processBlock(BlockData& data) {
     int stopRecordingSample=-1; // sample number in buffer when recording should be stopped
     int startPlayingSample=-1; // sample number in buffer when playback should be started	
     int stopPlayingSample=-1;  // sample number in buffer when playback should be stopped
-    int startReverseSample=-1; // sample number in buffer when Reverse should be started
-    int stopReverseSample=-1; // sample number in buffer when Reverse should be stopped
+    int enableReverseSample=-1; // sample number in buffer when Reverse should be started
+    int disableReverseSample=-1; // sample number in buffer when Reverse should be stopped
 
     // if not recording, recording is pressed -> start recording
     if(!recording && recordingArmed == true)
@@ -362,14 +364,14 @@ void processBlock(BlockData& data) {
         }
 
         // manage Reverse state
-        bool startReversal=(int(i)==startReverseSample);
-        bool stopReversal=(int(i)==stopReverseSample);
+        bool startReversal=(int(i)==enableReverseSample);
+        bool stopReversal=(int(i)==disableReverseSample);
         
         if(startReversal) {
-            startReverse();
+            enableReverse();
         }
         else if(stopReversal) {
-            stopReverse();
+            disableReverse();
         }
         
         const bool currentlyPlaying=isPlaying();
@@ -385,20 +387,21 @@ void processBlock(BlockData& data) {
             if(currentlyPlaying)
             {
                 // read loop content
-                int index=currentPlayingIndex;
-                if(Reverse && loopDuration>0)
-                    index=loopDuration-1-index;
-                playback=channelBuffer[index]*playbackGain;
+                int index = currentPlayingIndex;
+                if(Reverse && loopDuration > 0) {
+                    index = loopDuration - 1 - index;
+                }
+                playback  = channelBuffer[index] * playbackGain;
             }
             
             // update buffer when recording
-            if(recording || (recordGainInc!=0))
+            if(recording || (recordGainInc != 0))
             {
-                channelBuffer[currentRecordingIndex]=playback+recordGain*input;
+                channelBuffer[currentRecordingIndex] = playback + recordGain * input;
             }
             
             // copy to output with OutputLevel
-            samplesBuffer[i]=input+OutputLevel*playback;
+            samplesBuffer[i] = input + OutputLevel * playback;
         }
         // end process audio for each channel--------------------------------------------------
         
@@ -414,12 +417,12 @@ void processBlock(BlockData& data) {
             // playback xfade
             if(loopDuration>0)
             {
-                if(!(recording && recordingMode==kRecPunch)) // when recording in punch mode, playback gain is controlled by record status
+                if(!recording) // ie playing
                 {
-                    if(currentPlayingIndex==(loopDuration-fadeTime))
-                        playbackGainInc=-xfadeInc;
+                    if(currentPlayingIndex == (loopDuration - fadeTime))
+                        playbackGainInc =- xfadeInc;
                     else if(currentPlayingIndex<fadeTime)
-                        playbackGainInc=xfadeInc;
+                        playbackGainInc = xfadeInc;
                 }
             }
             else
@@ -431,24 +434,23 @@ void processBlock(BlockData& data) {
         {
             currentRecordingIndex++;
             // looping over existing => check boundaries
-            if((recordingMode==kRecLoopOver||recordingMode==kRecPunch) && loopDuration>0 && currentRecordingIndex>=loopDuration)
+            if(loopDuration > 0 && currentRecordingIndex >= loopDuration)
             {
-                currentRecordingIndex=0;
+                currentRecordingIndex=0; // return to beginning of loop
             }
-            if(currentRecordingIndex>=allocatedLength) // stop recording if reached the end of the buffer
+            if(currentRecordingIndex >= allocatedLength) // stop recording if reached the end of the buffer
             {
                 stopRecording();
-                recordGainInc=0; // avoid post buffer recording
-                // TODO: turn on all LEDs if this happens
-                // wait for Record or Play to be pressed
-                bufferFilled=true;
+                recordGainInc=0;    // avoid post buffer recording
+                allLedsOn();        // turn on all LEDs if this happens
+                bufferFilled=true;  // down the line this flag will be checked to wait for Record or Play to be pressed
             }
         }
         
         // update playback gain
         if(playbackGainInc!=0)
         {
-            playbackGain+=playbackGainInc;
+            playbackGain += playbackGainInc;
             if(playbackGain>1)
             {
                 playbackGain=1;
@@ -481,17 +483,16 @@ void processBlock(BlockData& data) {
 }
 
 
-// This is called when an input param is changed
+// This is called when an input param is changed - ie, a button was not clicked but just changed
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
-    
     // Reverse--------------------------------------------------------------------------
-    ReverseArmed=inputParameters[kReverseParamParam]>.5;
+    ReverseArmed = inputParameters[kReverseParamParam]>.5;
     if(ReverseArmed) {
-        startReverse();
+        enableReverse();
     }
     else {
-        stopReverse();
+        disableReverse();
     }
 
     // playing--------------------------------------------------------------------------
@@ -501,71 +502,79 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     
     // start playing right now
     if(!wasPlaying && playArmed) { 
-        startPlayback(); 
+        startPlayback();
+        // TODO: find way to flip UI toggle to ON
     }
 
     // stop playing right now
+    // i don't think playWasArmed is necessary
     if(wasPlaying && playWasArmed && !playArmed) { 
-        stopPlayback(); 
+        stopPlayback();
+        // TODO: find way to flip UI toggle to OFF
     }
 
     // ONCE
-    // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded, but the loop will playback only once. 
-    // Pressing ONCE during playback tells the Boomerang Phrase Sampler to finish playing the loop and then stop. 
-    // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time. 
+    // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded, but the loop will playback only once.
+    // Pressing ONCE during playback tells the Boomerang Phrase Sampler to finish playing the loop and then stop.
+    // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time.
     // After pressing this button, the ONCE LED will be turned on letting you know this is the last time through your loop.
     // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. Repeated presses produces a stutter effect sort of like record scratching.
-    bool wasInOnceMode=onceMode;             // if we were in once mode when we entered this block
-    bool wasOnceArmed=onceArmed;             // if we were once armed when we entered this block
-    onceArmed = inputParameters[kOnceParam]>.5;   // if we are once armed now
+    // TODO: new option: if playing in once mode, find a way to disable it so the loop repeats
+    bool wasInOnceMode=onceMode;                   // if we were in once mode when we entered this block
+    // bool wasOnceArmed=onceArmed;                // if we were once armed when we entered this block // dont need this
+    onceArmed = inputParameters[kOnceParam] >= 0;    // on ANY change, toggle - emulate a momentary switch
+
+    // pressing once...
     if(onceArmed) {
-        onceMode=true;
-        if(playing) {
-            // keep playing but stop after this loop
-            // implemented in processBlock
+        // Pressing ONCE during playback tells the Boomerang Phrase Sampler to finish playing the loop and then stop. 
+        if(playing && !onceMode) {
+            onceMode=true;
         }
-        else if(recording) {
+        // Pressing it while the ONCE LED is on will always immediately restart playback. 
+        // theoretically, this should be used the next time a block is processed?
+        // do we have to go to the sample level for instant response?
+        // do have to / should we instead call startPlayback()?
+        else if ((playing && onceMode) {
+            currentPlayingIndex=0;
+        }
+        // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded,
+        // but the loop will playback only once. 
+        else if (recording) {
             stopRecording();
-            startPlayback(); // will only playback once due to onceArmed
+            onceMode=true;
+            startPlayback();
         }
-        else {
-            startPlayback(); // will only playback once due to onceArmed
+        else if (!playing && !recording) {
+            // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time. 
+            onceMode=true;
+            startPlayback();    
         }
-    }
-    else {
-        onceMode=false;
-    }
+    } // there is no 'else' since this is a momentary switch and runs on any touch (ie any midi change)
     
     // recording------------------------------------------------------------------------
-    bool wasRecording=recording;                      // if we were recording when we entered this block
-    bool wasArmed=recordingArmed;                     // if we were record armed when we entered this block
-    recordingArmed=inputParameters[kRecordParam]>.5;  // if we are armed now
+    // When it is pressed, recording begins and the RECORD LED lights up brightly. 
+    // A second press ends the recording and the Boomerang Phrase Sampler begins playing back; the PLAY LED lights up brightly to indicate the change.
+    // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
+    // During playback the RECORD LED will blink briefly at the beginning of the loop each time it comes around.
+    // bool wasRecording=recording;                      // if we were recording when we entered this block
+    // bool wasArmed=recordingArmed;                     // if we were record armed when we entered this block
+    recordingArmed=inputParameters[kRecordParam] >= 0;  // on any change, toggle - emulate a momentary switch
     
-    // continue recording if already recording
-    if(recordingArmed && loopDuration !=0) {
-        recording=true;
-    }
-
-    // stop recording
-    if(wasRecording) {
-        stopRecording();
-        startPlayback();
-    }
-    
-    // start recording at current playback index
-    if(!wasRecording && recording)
-    {
-        startRecording();
-    }
-    
-    // erase content and restart recording to 0
-    // TODO: This should happen when record is pressed while playing
-    if(playing && recordingArmed) {
-        loopDuration=0;
-        currentRecordingIndex=0;
-        currentPlayingIndex=0;
-        recording=true;
-        startRecording();
+    if(recordingArmed) {
+        // if idle, or playing, start a new recording
+        if((!recording && !playing) || playing) {
+            loopDuration=0;
+            currentRecordingIndex=0;
+            currentPlayingIndex=0;
+            recording=true;
+            startRecording();
+        }
+        // if recording, stop recording and play back
+        else if(recording) {
+            stopRecording();
+            startPlayback();
+            recording=false;
+        }
     }
     
     // OutputLevel
@@ -598,4 +607,15 @@ void computeOutputData()
         outputParameters[kOnceLed]=1;
     else
         outputParameters[kOnceLed]=0;
+}
+
+void allLedsOn()
+{
+    outputParameters[kThruMuteLed]=1;
+    outputParameters[kRecordLed]=1;
+    outputParameters[kPlayLed]=1;
+    outputParameters[kOnceLed]=1;
+    outputParameters[kReverseLed]=1;
+    outputParameters[kStackLed]=1;
+    outputParameters[kSpeedLed]=1;
 }

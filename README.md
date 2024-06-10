@@ -26,6 +26,26 @@ My intention is to use the manual very much as a requirements document; to code 
 
 In the future it could be considered to add features or modify the behavior in ways that may show themselves to be useful. For now, i am not thinking too much about improvements.
 
+### MIDI Concerns, Switch Types, and the UI
+
+The original device uses momentary switches, and has no MIDI capability. Due to the way the software identifies switch presses, the plugin will use latching switches, and will have MIDI capability.
+
+The software runs the "a parameter has changed, go check it out" script on any change of the switch state. But then it checks the state and status of _every_ switch. So we have to keep a state of every switch and only act if the state has changed.
+
+We work with the assumption of a physical device, that only one button will be pressed at a time.
+
+The other factor to consider is how the MIDI messages are sent and recieved. I use a Paint Audio MIDI Captain, which is highly programmable, but has no way of knowing the state of the software device. As far as I know there is no way for this pedal to _recieve_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware.
+
+To that end, I have tried to make the plugin buttons and LEDs behave as they would on the phyical device, without considering the MIDI aspect. On the other hand, you have to understand how the device will behave when configuring your MIDI controller.
+
+Another way of looking at it is that the physical switches all appear to be momentary switches, but some features act as if they are latching on/off, like the record and play buttons; others like the once and stack buttons act as momentary switches.
+
+## Current Status
+
+Here is what the GUI looks like now:
+
+![plugin-ui](img/Screenshot_2024-06-10.png)
+
 ## Building
 
 The script is auto-reloadable in the UI.

@@ -162,7 +162,7 @@ bool playing=false;       // currently playing state
 bool playArmed=false;     // play button is clicked (toggle)
 
 bool onceMode=false;      // once mode
-bool onceArmed=false;     // once button is clicked (momentary)
+bool onceArmed=false;     // once button is clicked (momentary) toggle?
 
 bool stackMode=false;     // stack mode
 bool stackArmed=false;    // stack button is clicked (momentary)
@@ -172,6 +172,9 @@ bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
 bool loopCycled=false;     // loop has looped around
+
+// The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
+bool thruMute=false;       // Thru Mute (toggle)
 
 /* Initialization
  *
@@ -195,50 +198,52 @@ int getTailSize()
 void startRecording()
 {
     // reset
-    loopDuration=0;
-    currentPlayingIndex=0;
-    currentRecordingIndex=0;
-
-    // actually start recording
-    recording=true;
+    loopDuration           = 0;
+    currentPlayingIndex    = 0;
+    currentRecordingIndex  = 0;
 
     // pre fade to avoid clicks
     recordGain=0;
     recordGainInc=xfadeInc;
+
+    // actually start recording
+    recording=true;
 }
 
 void stopRecording()
 {
-    recording=false;
-    const int recordedCount=currentRecordingIndex;
+    recording               = false;
+    const int recordedCount = currentRecordingIndex;
+    loopDuration            = recordedCount;
+    currentPlayingIndex     = 0;
+
     // post fade to avoid clicks
-    recordGainInc=-xfadeInc;
-    
-    // // recorded beyond previous loop -> update duration, start playback at 0
-    // if(recordedCount>loopDuration)
-    // Updated: just always do this
-    loopDuration          = recordedCount;
-    currentPlayingIndex   = 0;
+    recordGainInc = -xfadeInc;
 }
 
 void startPlayback()
 {
-    playing=true;
-    // currentPlayingIndex=0;  // assume any restarting is done before this is called
-    playbackGain=0;
-    playbackGainInc=xfadeInc; // ???
+    playing               = true;
+    // currentPlayingIndex = 0;  // assume any restarting is done before this is called
+    playbackGain          = 0;
+    playbackGainInc       = xfadeInc; // very short playback gain ramp to avoid clicks?
 }
 
 void stopPlayback()
 {
-    playing=false;
-    playbackGainInc=-xfadeInc; // ???
+    playing         = false;
+    playbackGainInc = -xfadeInc; // see above
 }
 
 bool isPlaying()
 {
     // true if playing or if playback gain is not 0
-    return (playing || (playbackGainInc !=0 ));
+    return (playing || (playbackGainInc !=0);
+}
+
+bool isRecording()
+{
+    return (recording || recordGainInc !=0);
 }
 
 void enableReverse()
@@ -296,6 +301,7 @@ void processBlock(BlockData& data) {
     //  between the beginning and end of the block
     // since the actual gain is exponential, we can use the ratio between begin and end values
     // as an incremental multiplier for the actual gain
+    // The OUTPUT LEVEL roller on the front panel of the Boomerang Phrase Sampler controls the playback volume but has no effect on the through signal.
     double OutputLevelInc=(data.endParamValues[kOutputLevelParam] - data.beginParamValues[kOutputLevelParam])/data.samplesToProcess;
     
     // actual audio processing happens here
@@ -382,11 +388,12 @@ void processBlock(BlockData& data) {
         {
             // update index
             currentPlayingIndex++;
-            if(currentPlayingIndex>=loopDuration)
-                currentPlayingIndex=0;
+            if(currentPlayingIndex>=loopDuration) {
+                currentPlayingIndex=0; // loop around to the beginning
                 // is this where we blink the record LED at the beginning of the loop
                 // i think we set a flag here and check it in the computeOutputData function
-
+                loopCycled=true;
+            }
             
             // playback xfade
             if(loopDuration>0)
@@ -452,20 +459,23 @@ void processBlock(BlockData& data) {
                 recordGainInc=0;
             }
         }
+
         OutputLevel+=OutputLevelInc;
     }
 }
 
 
-// This is called when an input param is changed - ie, a button/toggle was not clicked but changed
-// BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it different from the state, we we do something.
+// This is called when an input param is changed - ie, a button/toggle was not previously clicked but changed
+// BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it is different from the state, we we do something.
 // This invalidates my concept of a momentary switch, but we can still use it as a toggle
 // Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
     // Reverse--------------------------------------------------------------------------
-    ReverseArmed = inputParameters[kReverseParamParam]>.5;
-    if(ReverseArmed) {
+    bool wasReverse = Reverse;                              // if we were in reverse when we entered this block
+    ReverseArmed    = inputParameters[kReverseParamParam]>.5;
+
+    if(ReverseArmed && !wasReverse) {
         enableReverse();
     }
     else {

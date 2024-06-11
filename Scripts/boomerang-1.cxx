@@ -394,10 +394,11 @@ void processBlock(BlockData& data) {
             // update index
             currentPlayingIndex++;
             if(currentPlayingIndex>=loopDuration) {
-                currentPlayingIndex=0; // loop around to the beginning
                 // is this where we blink the record LED at the beginning of the loop
                 // i think we set a flag here and check it in the computeOutputData function
                 loopCycled=true;
+                print("loop cycled around");
+                currentPlayingIndex=0; // loop around to the beginning
             }
             
             // playback xfade

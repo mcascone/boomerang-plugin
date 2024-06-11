@@ -23,7 +23,7 @@
 /*  Effect Description
  *
  */
-string name="Boomerang Phrase Sampler";
+string name="Boomerang+ Phrase Sampler";
 string description="An attempt to emulate the Boomerang+ Looper pedal";
 
 /* Parameters Description.
@@ -128,7 +128,7 @@ array<string> outputParametersEnums={";",";",";",";",";",";",";"};
  */
 array<array<double>> buffers(audioInputsCount);
 
-const int MAX_LOOP_DURATION_SECONDS=60; // 60 seconds max recording
+const int MAX_LOOP_DURATION_SECONDS=1; // 60 seconds max recording
 
 int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds max recording
 
@@ -290,7 +290,7 @@ void processBlock(BlockData& data) {
             // create sample buffer
             array<double>@ samplesBuffer=@data.samples[channel];
 
-            // for each sample in the buffer, if the sample is not 0, set the startRecordingSample to the index of the sample
+            // for each sample in the buffer, if the sample is not null, set the startRecordingSample to the index of the sample
             for(uint i=0;i<data.samplesToProcess && startRecordingSample==-1;i++)
             {
                 startRecordingSample=i;
@@ -394,11 +394,17 @@ void processBlock(BlockData& data) {
             // update index
             currentPlayingIndex++;
             if(currentPlayingIndex>=loopDuration) {
-                // is this where we blink the record LED at the beginning of the loop
-                // i think we set a flag here and check it in the computeOutputData function
-                loopCycled=true;
-                print("loop cycled around");
-                currentPlayingIndex=0; // loop around to the beginning
+                // in once mode, stop playback after one cycle
+                if(onceMode) {
+                    print("stopping playback in once mode")
+                    onceMode=false;
+                    stopPlayback();
+                    currentPlayingIndex=0; // reset playback index
+                }
+                else {
+                    loopCycled=true;         // set flag to blink record LED
+                    currentPlayingIndex=0;   // loop around to the beginning
+                }
             }
             
             // playback xfade
@@ -471,7 +477,7 @@ void processBlock(BlockData& data) {
 
 
 // This is called when an input param is changed - ie, a button/toggle was not previously clicked but changed
-// BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it is different from the state, we we do something.
+// BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it is different from the state, we do something.
 // This invalidates my concept of a momentary switch, but we can still use it as a toggle
 // Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
 void updateInputParametersForBlock(const TransportInfo@ info)
@@ -480,8 +486,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     print("Loop Duration:" + loopDuration);
     
     // Reverse--------------------------------------------------------------------------
-    bool wasReverse = Reverse;                              // if we were in reverse when we entered this block
-    ReverseArmed    = isArmed(inputParameters[kReverseParam]);    // if the reverse toggle is now on
+    bool wasReverse = Reverse;                                  // if we were in reverse when we entered this block
+    ReverseArmed    = isArmed(inputParameters[kReverseParam]);  // if the reverse toggle is now on
     
     print("wasReverse: " + wasReverse);
     print("ReverseArmed: " + ReverseArmed);
@@ -530,24 +536,27 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // After pressing this button, the ONCE LED will be turned on letting you know this is the last time through your loop.
     // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. Repeated presses produces a stutter effect sort of like record scratching.
     // TODO: new option: if playing in once mode, find a way to disable it so the loop repeats
-    bool wasOnceArmed = onceArmed;                             // get once toggle state before we entered this block
-    onceArmed         = isArmed(inputParameters[kOnceParam]);  // set onceArmed to current toggle state
-    bool onceFlip     = wasOnceArmed != onceArmed;             // if the once toggle has changed
+    // bool wasOnceMode  = onceMode;                               // if we were in once mode when we entered this block
+    bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
+    onceArmed         = isArmed(inputParameters[kOnceParam]);   // set onceArmed to current toggle state
 
+    bool onceFlip = wasOnceArmed == onceArmed;                  // we just need to know if the state changed
+
+    print("onceMode: " + onceMode);
     print("wasOnceArmed: " + wasOnceArmed);
     print("onceArmed: " + onceArmed);
     print("onceFlip: " + onceFlip);
 
     if(onceFlip) {
-        // Pressing ONCE during playback (when not in Once Mode) tells the Boomerang to finish playing the loop and then stop. 
         if(playing && !onceMode) {
+            // Pressing ONCE during playback, when not in Once Mode, tells the Boomerang to finish playing the loop and then stop.
             print("--> setting once mode true");
             onceMode=true;
         }
         // Pressing it while the ONCE LED is on (playing in once mode) will always immediately restart playback. 
         // theoretically, this should be used the next time a block is processed?
         // do we have to go to the sample level for instant response?
-        // do have to / should we instead call startPlayback()?
+        // do have to / should we instead call stop/startPlayback()?
         else if (playing && onceMode) {
             print("--> setting playback index to 0");
             currentPlayingIndex=0;   // restart playback at the beginning of the loop
@@ -573,7 +582,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             print("--> starting playback");
             startPlayback();
         }
-    } // there is no 'else' since this is a momentary switch and runs on any touch (ie any midi change)
+    }
     
     // recording------------------------------------------------------------------------
     // When it is pressed, recording begins and the RECORD LED lights up brightly. 
@@ -582,22 +591,30 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // During playback the RECORD LED will blink briefly at the beginning of the loop each time it comes around.
     bool wasRecordingArmed = recordingArmed;                           // get recording toggle state before we entered this block
     recordingArmed         = isArmed(inputParameters[kRecordParam]);   // set recordingArmed to current toggle state
-    bool recordingFlip     = wasRecordingArmed != recordingArmed;      // if the record button has changed state
 
     print("wasRecordingArmed: " + wasRecordingArmed);
     print("recordingArmed: " + recordingArmed);
-    print("recordingFlip: " + recordingFlip);
     print("recording: " + recording);
     
-    if(recordingFlip) {
-        print("if idle, or playing, start a new recording");
+    // if recording was not pressed and now it is pressed
+    if(!wasRecordingArmed && recordingArmed) {
+        print("Recording was triggered");
         if((!recording && !playing) || playing) {
+            print("--> if playing or idle, start new recording");
             print("--> setting loop duration to 0");
             loopDuration=0;
+
             print("--> setting recording index to 0");
             currentRecordingIndex=0;
+            
             print("--> Setting playback index to 0");
             currentPlayingIndex=0;
+            
+            if(bufferFilled) {
+                print("--> clearing buffer filled state");
+                bufferFilled=false;
+            }
+            
             print("--> starting recording");
             startRecording();
         }
@@ -605,10 +622,13 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             print("if recording, stop recording and play back");
             print("--> stopping recording");
             stopRecording();
+            
             print("setting loopduration to current recording index");
             loopDuration = currentRecordingIndex; // set loop duration to the length of the recording
+            
             print("--> setting playback index to 0");
             currentPlayingIndex = 0;              // start playback at the beginning of the loop
+            
             print("--> starting playback");
             startPlayback();
         }
@@ -658,6 +678,7 @@ void computeOutputData()
     if(bufferFilled) {
         allLedsOn();
     }
+
 }
 
 void allLedsOn()
@@ -669,6 +690,17 @@ void allLedsOn()
     outputParameters[kReverseLed]=kLedOn;
     outputParameters[kStackLed]=kLedOn;
     outputParameters[kSpeedLed]=kLedOn;
+}
+
+void allLedsOff()
+{
+    outputParameters[kThruMuteLed]=kLedOff;
+    outputParameters[kRecordLed]=kLedOff;
+    outputParameters[kPlayLed]=kLedOff;
+    outputParameters[kOnceLed]=kLedOff;
+    outputParameters[kReverseLed]=kLedOff;
+    outputParameters[kStackLed]=kLedOff;
+    outputParameters[kSpeedLed]=kLedOff;
 }
 
 bool isArmed(double param) {

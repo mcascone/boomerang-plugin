@@ -161,8 +161,7 @@ keytimes = [1]
 ledmode = [normal]
 ledcolor1 = [0xffffff][0xffffff][0xffffff]
 short_dw1 = [2][CC][9][127]
-short_up1 = [2][CC][9][0]  
-# long1     = [2][CC][9][127]
+short_up1 = [2][CC][9][0]
 long_up1  = [2][CC][9][0]  
 
 ### SWITCH V ###

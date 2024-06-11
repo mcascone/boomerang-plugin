@@ -10,10 +10,10 @@
 // DONE: link leds to switches
 // TODO: add stack mode
 // TODO: add ONCE mode (wip)
-// TODO: Flash record LED when loop cycles around
+// TODO: Flash record LED when loop cycles around (wip)
 // TODO: add 1/2 speed mode
-// TODO: figure out how to flip Play switch when record stops
-// TODO: create function to determine toggle state, for consistency and DRY
+// TODO: figure out how to flip UI Play switch when record stops
+// DONE: create function to determine toggle state, for consistency and DRY
 
 
 // NOTES:
@@ -38,7 +38,6 @@ enum InputParamsIndexes
     kReverseParam,
     kStackParam,
     kHalfSpeedParam
-
 };
 
 enum RecordMode
@@ -168,7 +167,7 @@ bool playing=false;       // currently playing state
 bool playArmed=false;     // play button is clicked (toggle)
 
 bool onceMode=false;      // once mode
-bool onceArmed=false;     // once button is clicked (momentary) toggle?
+bool onceArmed=false;     // once button is clicked (toggle+)
 
 bool stackMode=false;     // stack mode
 bool stackArmed=false;    // stack button is clicked (momentary)

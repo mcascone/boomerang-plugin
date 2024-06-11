@@ -478,10 +478,12 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 {
     print("--------------\nnew block\n--------------");
     print("Loop Duration:" + loopDuration);
+    
     // Reverse--------------------------------------------------------------------------
     bool wasReverse = Reverse;                              // if we were in reverse when we entered this block
-    print("wasReverse: " + wasReverse);
     ReverseArmed    = isArmed(inputParameters[kReverseParam]);    // if the reverse toggle is now on
+    
+    print("wasReverse: " + wasReverse);
     print("ReverseArmed: " + ReverseArmed);
 
     // if we were not in reverse and the toggle is now on, enable reverse
@@ -505,15 +507,15 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     print("playArmed: " + playArmed);
 
 
-    // start playing right now
+    // if not playing and play toggled on, start playing from 0 right now
     if(!wasPlaying && playArmed) { 
-        currentPlayingIndex = 0;
         print("--> starting playback at 0");
+        currentPlayingIndex = 0;
         startPlayback(); // sets `playing` true
         // TODO: find way to flip UI play toggle to ON (separate from LED)
     }
 
-    // stop playing right now
+    // if playing, play was toggled on, and now it is toggled off, stop playing right now
     // i don't think playWasArmed is necessary
     if(wasPlaying && playWasArmed && !playArmed) { 
         print("--> stopping playback");
@@ -537,7 +539,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     print("onceFlip: " + onceFlip);
 
     if(onceFlip) {
-        // Pressing ONCE during playback (when not in Once Mode) tells the Boomerang Phrase Sampler to finish playing the loop and then stop. 
+        // Pressing ONCE during playback (when not in Once Mode) tells the Boomerang to finish playing the loop and then stop. 
         if(playing && !onceMode) {
             print("--> setting once mode true");
             onceMode=true;
@@ -547,8 +549,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         // do we have to go to the sample level for instant response?
         // do have to / should we instead call startPlayback()?
         else if (playing && onceMode) {
-            currentPlayingIndex=0;   // restart playback at the beginning of the loop
             print("--> setting playback index to 0");
+            currentPlayingIndex=0;   // restart playback at the beginning of the loop
         }
         // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded,
         // but the loop will playback only once. 

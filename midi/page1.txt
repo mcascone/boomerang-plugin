@@ -40,7 +40,7 @@ display_bank_offset = [1]
 
 ### SWITCH 1 ###
 ### THRU MUTE ###
-### This is a toggle switch. It's really no different than the other toggles.
+### This is a toggle switch.
 [key0]
 keytimes = [2]
 ledmode = [normal]
@@ -48,7 +48,7 @@ ledcolor1 = [0xaa0000][0xaa0000][0xaa0000]
 short_up1 = [2][CC][1][127]
 
 ledcolor2 = [0x000000][0x000000][0x000000]
-short_up2 = [1][CC][1][0]
+short_up2 = [2][CC][1][0]
 
 ### SWITCH 2 ###
 ### 1/2 SPEED ###
@@ -59,17 +59,17 @@ short_up2 = [1][CC][1][0]
 keytimes = [2]
 ledmode = [normal]
 ledcolor1 = [0xaaaa00][0xaaaa00][0xaaaa00]
-short_dw1 = [1][CC][69][127]
+short_dw1 = [2][CC][69][127]
 
 ledcolor2 = [0x000000][0x000000][0x000000]
-short_dw2 = [1][CC][69][0]
+short_dw2 = [2][CC][69][0]
 
 ### SWITCH 3 ###
 [key2]
 keytimes = [1]
 ledmode = [normal]
 ledcolor1 = [0x000000][0x000000][0x000000]
-short_dw1 = [1][CC][69][2]
+short_dw1 = [2][CC][69][2]
 
 
 ### SWITCH 4 ###
@@ -77,10 +77,10 @@ short_dw1 = [1][CC][69][2]
 keytimes = [2]
 ledmode = [normal]
 ledcolor1 = [0x0000ff][0x0000ff][0x0000ff]
-short_dw1 = [1][CC][68][127]
+short_dw1 = [2][CC][68][127]
 
 ledcolor2 = [0x000066][0x000066][0x000066]
-short_dw2 = [1][CC][68][0]
+short_dw2 = [2][CC][68][0]
 
 
 ### SWITCH ^ ###
@@ -88,7 +88,7 @@ short_dw2 = [1][CC][68][0]
 keytimes = [1]
 ledmode = [normal]
 ledcolor1 = [0xffffff][0xffffff][0xffffff]
-short_dw1 = [1][PC][auto][bank_inc]
+short_dw1 = [2][PC][auto][bank_inc]
 
 
 ### SWITCH A ###

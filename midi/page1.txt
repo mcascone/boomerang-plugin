@@ -1,35 +1,9 @@
-[globalsetup]
-# globalsetup items are applied to all pages
-# Lines starting with # are treated as comments
-
-# 0-100
-ledbright = [100]
-
-# 0-100
-screenbright = [80]
-
-# on / off --Selecting black or white fonts according to the wallpaper background
-dark_fonts = [off]
-
-# wp1 --Only one wallpaper coming along with the FW package now, you can add later
-wallpaper = [wp1]
-
-# 1 / 1.5 / 2 / 2.5 --long press time in second
-long_press_timing = [1]
-
-# wireless setup only valid on MIDI Captain Blue/Gold version
-WIRELESS_2.4G = [off]
-
-# ID range 1-99 --Set to be the same with the MIDI MATE
-WIRELESS_ID   = [8]
-
-# 0:12dBm 1:10dBm 2:9dBm 3:8dBm 4:6dBm 5:3dBm 6:0dBm 7:-2dBm 8:-5dBm 9:-10dBm 10:-15dBm 11:-20dBm 12:-25dBm 13:-30dBm 14:-25dBm
-WIRELESS_dB   = [6]
-
-
+### Page 1
 [PAGE]
 # Change the "NAME" below in uppercase letters <= 4 characters
-page_name = [LOOP]
+# This is configured specifically to emulate the behavior of the 
+#   Boomerang+ Phrase Sampler. The old-school one, not the III.
+page_name = [BOOM]
 
 # This section sets the global items within a page
 
@@ -65,6 +39,8 @@ display_pc_offset = [1]
 display_bank_offset = [1]
 
 ### SWITCH 1 ###
+### THRU MUTE ###
+### This is a toggle switch. It's really no different than the other toggles.
 [key0]
 keytimes = [2]
 ledmode = [normal]
@@ -75,17 +51,24 @@ ledcolor2 = [0x000000][0x000000][0x000000]
 short_up2 = [1][CC][1][0]
 
 ### SWITCH 2 ###
+### 1/2 SPEED ###
+### Another toggle. On the physical unit it is also the STACK switch.
+### Going with a separate switch for that functionality, for now.
+### 
 [key1]
-keytimes = [1]
+keytimes = [2]
 ledmode = [normal]
 ledcolor1 = [0xaaaa00][0xaaaa00][0xaaaa00]
-short_dw1 = [1][CC][69][1]
+short_dw1 = [1][CC][69][127]
+
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_dw2 = [1][CC][69][0]
 
 ### SWITCH 3 ###
 [key2]
 keytimes = [1]
 ledmode = [normal]
-ledcolor1 = [0xaa00aa][0xaa00aa][0xaa00aa]
+ledcolor1 = [0x000000][0x000000][0x000000]
 short_dw1 = [1][CC][69][2]
 
 
@@ -126,21 +109,25 @@ short_up2 = [2][CC][6][0]
 [key6]
 keytimes = [2]
 ledmode = [normal]
-ledcolor1 = [0x00000][0x00000][0x00000]
-short_up1 = [2][CC][7][0]
+ledcolor1 = [0x00ffff][0x00ffff][0x00ffff]
+short_up1 = [2][CC][7][127]
 
-ledcolor2 = [0x00ffff][0x00ffff][0x00ffff]
-short_up2 = [2][CC][7][127]
+ledcolor2 = [0x00000][0x00000][0x00000]
+short_up2 = [2][CC][7][0]
 
 
 ### SWITCH C ###
 ### ONCE ###
-### not sure how to implement this quite yet
+### ONCE behaves differently depending on the state of the unit.
+### So i am leaving it as a simple toggle and let the plugin sw manage state.
 [key7]
-keytimes = [1]
+keytimes = [2]
 ledmode = [normal]
 ledcolor1 = [0x00ffff][0x00ffff][0x00ffff]
-short_dw1 = [2][CC][8][127]
+short_up1 = [2][CC][8][127]
+
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_up2 = [2][CC][8][0]
 
 
 ### SWITCH D ###
@@ -154,6 +141,7 @@ short_dw1 = [2][CC][8][127]
 ### The momentary-style record concept translates into:
 ### short_down = record start
 ### short_up   = record stop
+### long_down  = record start
 ### long_up    = record stop
 ### 
 ### the cc's have to send on the same ID as RECORD,
@@ -165,13 +153,17 @@ short_dw1 = [2][CC][8][127]
 ### So all the midi needs to do is send the correct CC to the correct input.
 ### The plugin should take care of the rest.
 ### In code-speak this also serves to decouple the midi config from the plugin code.
+### So again, i am only sending a toggle here. But in this button's case, it's implemented for
+###   both long and short presses.
+### And in the plugin, it's still really just a toggle. Don't overcomplicate it.
 [key8]
 keytimes = [1]
 ledmode = [normal]
 ledcolor1 = [0xffffff][0xffffff][0xffffff]
 short_dw1 = [2][CC][9][127]
-short_up1 = [2][CC][9][0]
-long_up1  = [2][CC][9][0]
+short_up1 = [2][CC][9][0]  
+# long1     = [2][CC][9][127]
+long_up1  = [2][CC][9][0]  
 
 ### SWITCH V ###
 ### DIRECTION ###
@@ -183,8 +175,8 @@ long_up1  = [2][CC][9][0]
 [key9]
 keytimes = [2]
 ledmode = [normal]
-ledcolor1 = [0x000000][0x000000][0x000000]
-short_dw1 = [2][CC][10][0]
+ledcolor1 = [0xff0000][0xff0000][0xff0000]
+short_dw1 = [2][CC][10][127]
 
-ledcolor2 = [0xff0000][0xff0000][0xff0000]
-short_dw2 = [2][CC][10][127]
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_dw2 = [2][CC][10][0]

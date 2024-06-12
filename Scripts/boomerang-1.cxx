@@ -14,6 +14,8 @@
 // TODO: add 1/2 speed mode
 // TODO: figure out how to flip UI Play switch when record stops
 // DONE: create function to determine toggle state, for consistency and DRY
+// TODO: fix: record light goes on when playing
+// todo: fix: doesn't record
 
 
 // NOTES:
@@ -128,7 +130,7 @@ array<string> outputParametersEnums={";",";",";",";",";",";",";"};
  */
 array<array<double>> buffers(audioInputsCount);
 
-const int MAX_LOOP_DURATION_SECONDS=1; // 60 seconds max recording
+const int MAX_LOOP_DURATION_SECONDS=60; // 60 seconds max recording
 
 int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds max recording
 
@@ -396,7 +398,7 @@ void processBlock(BlockData& data) {
             if(currentPlayingIndex>=loopDuration) {
                 // in once mode, stop playback after one cycle
                 if(onceMode) {
-                    print("stopping playback in once mode")
+                    print("stopping playback in once mode");
                     onceMode=false;
                     stopPlayback();
                     currentPlayingIndex=0; // reset playback index
@@ -504,29 +506,39 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     }
 
     // playing--------------------------------------------------------------------------
+    // If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
+    // If the Rang is playing back, pressing PLAY/STOP halts playback and the unit becomes idle.
+    // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner. 
+    // During playback the PLAY LED will be on and the RECORD LED will blink at the beginning of each pass through the loop.
     bool wasPlaying = playing;                         // if we were playing when we entered this block
     bool playWasArmed = playArmed;                     // if we were play armed when we entered this block
     playArmed = isArmed(inputParameters[kPlayParam]);  // if we are play armed now
     
+    bool playFlip = playWasArmed != playArmed;         // we just need to know if the state changed
+
     print("wasPlaying: " + wasPlaying);
     print("playWasArmed: " + playWasArmed);
     print("playArmed: " + playArmed);
+    print("playFlip: " + playFlip);
 
+    // if play button state changed
+    if(playFlip) {
+        // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
+        if(!wasPlaying && playArmed) {
+            onceMode = false;                       // if we were in once mode, disable it
+            print("--> starting playback at 0");
+            currentPlayingIndex = 0;
+            startPlayback();                        // sets `playing` true
+            // TODO: find way to flip UI play toggle to ON (separate from LED)
+        }
 
-    // if not playing and play toggled on, start playing from 0 right now
-    if(!wasPlaying && playArmed) { 
-        print("--> starting playback at 0");
-        currentPlayingIndex = 0;
-        startPlayback(); // sets `playing` true
-        // TODO: find way to flip UI play toggle to ON (separate from LED)
-    }
-
-    // if playing, play was toggled on, and now it is toggled off, stop playing right now
-    // i don't think playWasArmed is necessary
-    if(wasPlaying && playWasArmed && !playArmed) { 
-        print("--> stopping playback");
-        stopPlayback();   // sets `playing` false
-        // TODO: find way to flip UI play toggle to OFF (separate from LED)
+        // if playing, play was toggled on, and now it is toggled off, stop playing right now
+        // i don't think playWasArmed is necessary
+        if(wasPlaying && playWasArmed && !playArmed) { 
+            print("--> stopping playback");
+            stopPlayback();   // sets `playing` false
+            // TODO: find way to flip UI play toggle to OFF (separate from LED)
+        }
     }
 
     // ONCE
@@ -540,7 +552,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
     onceArmed         = isArmed(inputParameters[kOnceParam]);   // set onceArmed to current toggle state
 
-    bool onceFlip = wasOnceArmed == onceArmed;                  // we just need to know if the state changed
+    bool onceFlip = wasOnceArmed != onceArmed;                  // we just need to know if the state changed
 
     print("onceMode: " + onceMode);
     print("wasOnceArmed: " + wasOnceArmed);

@@ -389,18 +389,18 @@ void processBlock(BlockData& data) {
             
             // update buffer when recording
             if(currentlyRecording)
-            {
-                // check for thruMute
-                // clear input value if thruMute is on
-                // TODO: this isn't right.
-                input = thruMute ? 0 : input;
-                
+            {           
                 // record input
                 channelBuffer[currentRecordingIndex] = playback + (recordGain * input);
             }
             
             // copy to output with OutputLevel
-            samplesBuffer[i] = input + (OutputLevel * playback);
+            // if thru mute is on, don't include the input
+            // if not muted, add the input to the output buffer (with OutputLevel applied)
+            if(thruMute)
+                samplesBuffer[i] = OutputLevel * playback;
+            else
+                samplesBuffer[i] = input + (OutputLevel * playback);
         }
         // end process audio for each channel--------------------------------------------------
         

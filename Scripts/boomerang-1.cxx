@@ -222,7 +222,7 @@ void stopRecording()
     recording               = false;
     const int recordedCount = currentRecordingIndex;
     loopDuration            = recordedCount;
-    currentPlayingIndex     = 0;
+    // currentPlayingIndex     = 0; // assume any restarting is done before this is called
 
     // post fade to avoid clicks
     recordGainInc = -xfadeInc;
@@ -284,7 +284,8 @@ void processBlock(BlockData& data) {
     int disableReverseSample=-1; // sample number in buffer when Reverse should be stopped
 
     // if not recording and recording is pressed -> start recording
-    if(!recording && recordingArmed)
+    // if recording and recording is pressed -> stop recording, start playback
+    if(!recording && recordingArmed)  // only called when recording starts; if recording, this isn't called
     {
         // for each channel, while the there is no startRecordingSample, find the first sample that is not 0
         for(uint channel=0; channel<audioInputsCount && startRecordingSample == -1; channel++)
@@ -358,6 +359,7 @@ void processBlock(BlockData& data) {
         }
         
         const bool currentlyPlaying=isPlaying();
+        const bool currentlyRecording=isRecording();
         
         // process audio for each channel--------------------------------------------------
         // in STACK mode here is where we would reduce the existing audio by 2.5Db?
@@ -371,21 +373,32 @@ void processBlock(BlockData& data) {
             if(currentlyPlaying)
             {
                 // read loop content
-                int index = currentPlayingIndex;
+                int playIndex = currentPlayingIndex;
+
+                // literally where reverse is applied
                 if(Reverse && loopDuration > 0) {
-                    index = loopDuration - 1 - index;
+                    playIndex = loopDuration - 1 - playIndex;
                 }
-                playback  = channelBuffer[index] * playbackGain;
+
+                // playback is the current incoming sample from the record buffer, multiplied by the playback gain
+                // playback gain is their internal way of fading in/out to avoid clicks
+                // so this is the recorded data being played into the output buffer
+                // check for thruMute here
+                if(thruMute)
+                    playbackGain=0;
+
+                playback  = channelBuffer[playIndex] * playbackGain;
             }
             
             // update buffer when recording
-            if(recording || (recordGainInc != 0))
+            if(currentlyRecording)
             {
-                channelBuffer[currentRecordingIndex] = playback + recordGain * input;
+                // record input
+                channelBuffer[currentRecordingIndex] = playback + (recordGain * input);
             }
             
             // copy to output with OutputLevel
-            samplesBuffer[i] = input + OutputLevel * playback;
+            samplesBuffer[i] = input + (OutputLevel * playback);
         }
         // end process audio for each channel--------------------------------------------------
         
@@ -486,23 +499,35 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 {
     print("--------------\nnew block\n--------------");
     print("Loop Duration:" + loopDuration);
-    
+    print("Current Playing Index:" + currentPlayingIndex);
+    print("Current Recording Index:" + currentRecordingIndex);
+
+    print("THRU MUTE: " + inputParameters[kThruMuteParam]);
+
     // Reverse--------------------------------------------------------------------------
+    // If the unit is playing back, pressing this button will immediately reverse the direction through your loop, resulting in reversed audio output. 
+    // DIRECTION can be pressed any number of times during playback with a resulting instantaneous reversal of playback direction with each press.
     bool wasReverse = Reverse;                                  // if we were in reverse when we entered this block
     ReverseArmed    = isArmed(inputParameters[kReverseParam]);  // if the reverse toggle is now on
     
+    print("Reverse Mode: " + Reverse);
     print("wasReverse: " + wasReverse);
     print("ReverseArmed: " + ReverseArmed);
+    
+    bool reverseFlip = wasReverse != ReverseArmed;              // we just need to know if the state changed
 
-    // if we were not in reverse and the toggle is now on, enable reverse
-    if(!wasReverse && ReverseArmed) {
-        enableReverse();    // sets `Reverse` true
-        print("--> enabling reverse");
-    }
-    // if we were in reverse and the toggle is now off, disable reverse
-    else if (wasReverse && !ReverseArmed){
-        disableReverse();   // sets `Reverse` false
-        print("--> disabling reverse");
+    if(reverseFlip) {
+        print("Reverse button was pressed");
+        // if we were in reverse and the toggle is now off, disable reverse
+        if(wasReverse && !ReverseArmed) {
+            disableReverse();   // sets `Reverse` false
+            print("--> disabling reverse");
+        }
+        // if we were not in reverse and the toggle is now on, enable reverse
+        else if(!wasReverse && ReverseArmed) {
+            enableReverse();    // sets `Reverse` true
+            print("--> enabling reverse");
+        }
     }
 
     // playing--------------------------------------------------------------------------
@@ -523,6 +548,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 
     // if play button state changed
     if(playFlip) {
+        print("Play button was pressed");
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
             onceMode = false;                       // if we were in once mode, disable it
@@ -543,10 +569,11 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 
     // ONCE
     // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded, but the loop will playback only once.
-    // Pressing ONCE during playback tells the Boomerang Phrase Sampler to finish playing the loop and then stop.
-    // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time.
+    // Pressing ONCE during playback tells the BPS to finish playing the loop and then stop.
+    // If the BPS is idle, pressing ONCE will playback your recorded loop one time.
     // After pressing this button, the ONCE LED will be turned on letting you know this is the last time through your loop.
-    // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. Repeated presses produces a stutter effect sort of like record scratching.
+    // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. 
+    //   Repeated presses produces a stutter effect sort of like record scratching.
     // TODO: new option: if playing in once mode, find a way to disable it so the loop repeats
     // bool wasOnceMode  = onceMode;                               // if we were in once mode when we entered this block
     bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
@@ -560,6 +587,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     print("onceFlip: " + onceFlip);
 
     if(onceFlip) {
+        print("Once button was pressed");
         if(playing && !onceMode) {
             // Pressing ONCE during playback, when not in Once Mode, tells the Boomerang to finish playing the loop and then stop.
             print("--> setting once mode true");
@@ -571,7 +599,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         // do have to / should we instead call stop/startPlayback()?
         else if (playing && onceMode) {
             print("--> setting playback index to 0");
-            currentPlayingIndex=0;   // restart playback at the beginning of the loop
+            currentPlayingIndex=0;   // immediately restart playback at the beginning of the loop
         }
         // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded,
         // but the loop will playback only once. 
@@ -598,7 +626,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     
     // recording------------------------------------------------------------------------
     // When it is pressed, recording begins and the RECORD LED lights up brightly. 
-    // A second press ends the recording and the Boomerang Phrase Sampler begins playing back; the PLAY LED lights up brightly to indicate the change.
+    // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
     // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
     // During playback the RECORD LED will blink briefly at the beginning of the loop each time it comes around.
     bool wasRecordingArmed = recordingArmed;                           // get recording toggle state before we entered this block
@@ -609,6 +637,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     print("recording: " + recording);
     
     // if recording was not pressed and now it is pressed
+    // should be same as defining "recordFlip"
     if(!wasRecordingArmed && recordingArmed) {
         print("Recording was triggered");
         if((!recording && !playing) || playing) {
@@ -625,21 +654,25 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             if(bufferFilled) {
                 print("--> clearing buffer filled state");
                 bufferFilled=false;
+                // TODO: do we need to do allLedsOff() here?
             }
             
             print("--> starting recording");
             startRecording();
         }
         else if(recording) {
+            // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
             print("if recording, stop recording and play back");
             print("--> stopping recording");
             stopRecording();
             
+            // set loop duration to the length of the recording
             print("setting loopduration to current recording index");
-            loopDuration = currentRecordingIndex; // set loop duration to the length of the recording
+            loopDuration = currentRecordingIndex; 
             
+            // set playback to the beginning of the loop
             print("--> setting playback index to 0");
-            currentPlayingIndex = 0;              // start playback at the beginning of the loop
+            currentPlayingIndex = 0;              
             
             print("--> starting playback");
             startPlayback();
@@ -647,11 +680,29 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     }
 
     // OutputLevel
+    // The OUTPUT LEVEL roller on the front panel of the BPS controls the playback volume but has no effect on the through signal.
     double newOutputLevel = inputParameters[kOutputLevelParam];
     bool outputChanged = newOutputLevel != OutputLevel;
     if(outputChanged) {
         print("--> OutputLevel changed to " + newOutputLevel);
         OutputLevel = newOutputLevel;
+    }
+
+    // Thru Mute
+    // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
+    bool wasThruMute = thruMute;
+    thruMute = isArmed(inputParameters[kThruMuteParam]);
+    bool thruMuteFlip = wasThruMute != thruMute;
+
+    if(thruMuteFlip) {
+        thruMute = !thruMute;
+        print("Thru Mute button was pressed");
+        if(thruMute) {
+            print("--> Thru Mute is now on");
+        }
+        else {
+            print("--> Thru Mute is now off");
+        }
     }
 }
 
@@ -687,10 +738,27 @@ void computeOutputData()
     else
         outputParameters[kOnceLed]=kLedOff;
 
+    // TODO: check this first
     if(bufferFilled) {
         allLedsOn();
     }
+    // Thru Mute status
+    if(thruMute)
+        outputParameters[kThruMuteLed]=kLedOn;
+    else
+        outputParameters[kThruMuteLed]=kLedOff;
 
+    // Stack status
+    if(stackMode)
+        outputParameters[kStackLed]=kLedOn;
+    else
+        outputParameters[kStackLed]=kLedOff;
+
+    // 1/2 Speed status
+    if(halfSpeedMode)
+        outputParameters[kSpeedLed]=kLedOn;
+    else
+        outputParameters[kSpeedLed]=kLedOff;
 }
 
 void allLedsOn()

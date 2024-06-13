@@ -40,7 +40,7 @@ enum InputParamsIndexes
     kOnceParam,
     kReverseParam,
     kStackParam,
-    kHalfSpeedParam
+    kSpeedParam
 };
 
 enum RecordMode
@@ -53,28 +53,34 @@ enum RecordMode
     kRecClear,       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
 };
 
+enum ParamsStatus
+{
+    kParamOff=0,
+    kParamOn
+};
 
-array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack (Speed)"};
+
+array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack", "Speed"};
 array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
     5, // OutputLevel
-    0, // Thru Mute
-    0, // Record
-    0, // Play/Stop
-    0, // Once
-    0, // Reverse
-    0, // Stack
-    0  // 1/2 Speed
+    kParamOff, // Thru Mute
+    kParamOff, // Record
+    kParamOff, // Play/Stop
+    kParamOff, // Once
+    kParamOff, // Direction
+    kParamOff, // Stack
+    kParamOff  // Speed
 };
 array<double> inputParametersMax={
     10,  // Output Level, if not entered, defaults to percentage
-    1,   // Thru Mute
-    1,   // Record
-    1,   // Play/Stop
-    1,   // Once
-    1,   // Reverse
-    1,   // Stack
-    1    // 1/2 Speed
+    kParamOn,   // Thru Mute
+    kParamOn,   // Record
+    kParamOn,   // Play/Stop
+    kParamOn,   // Once
+    kParamOn,   // Direction
+    kParamOn,   // Stack
+    kParamOn    // Speed
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
@@ -84,9 +90,9 @@ array<int> inputParametersSteps={
     2,  // Record
     2,  // Play
     2,  // Once
-    2,  // Reverse
+    2,  // Direction
     2,  // Stack
-    2   // 1/2 Speed
+    2   // Speed
 };
 
 // these are the labels under each input control
@@ -96,9 +102,9 @@ array<string> inputParametersEnums={
     ";Recording",  // Record
     ";Playing",    // Play
     ";Once",       // Once
-    "Fwd;Rev",     // Reverse
-    ";STACK"       // Stack
-    ";1/2 Speed"   // 1/2 Speed
+    "Fwd;Rev",     // Direction
+    ";STACK",       // Stack
+    ";1/2 Speed"   // Speed
 };
 
 enum OutputParamsIndexes
@@ -110,12 +116,6 @@ enum OutputParamsIndexes
     kReverseLed, // 4
     kStackLed,   // 5
     kSpeedLed    // 6
-};
-
-enum OutputParamsStatusLeds
-{
-    kLedOff=0,
-    kLedOn
 };
 
 array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack", "1/2 Speed"};
@@ -131,7 +131,7 @@ array<string> outputParametersEnums={";",";",";",";",";",";",";"};
  */
 array<array<double>> buffers(audioInputsCount);
 
-const int MAX_LOOP_DURATION_SECONDS=2; // 60 seconds max recording
+const int MAX_LOOP_DURATION_SECONDS=60; // 60 seconds max recording
 
 int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds max recording
 
@@ -581,6 +581,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // After pressing this button, the ONCE LED will be turned on letting you know this is the last time through your loop.
     // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. 
     //   Repeated presses produces a stutter effect sort of like record scratching.
+    // Currently this switch is a toggle, but acts as a momentary switch: any change triggers the ONCE logic.
     // TODO: new option: if playing in once mode, find a way to disable it so the loop repeats
     // bool wasOnceMode  = onceMode;                               // if we were in once mode when we entered this block
     bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
@@ -686,17 +687,15 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 
     // Thru Mute
     // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
+    // this currently functions as a TOGGLE
     bool wasThruMute  = thruMute;
     thruMute          = isArmed(inputParameters[kThruMuteParam]);
 
     if(switchChanged(wasThruMute, thruMute)) {
         print("Thru Mute button was pressed");
-        if(thruMute) {
-            print("--> Thru Mute is now on");
-        }
-        else {
-            print("--> Thru Mute is now off");
-        }
+
+        string thruMuteState = thruMute ? "on" : "off";
+        print("Thru Mute is now " + thruMuteState);
     }
 }
 
@@ -709,74 +708,74 @@ void computeOutputData()
     else {
         // play LED status
         if(isPlaying() && loopDuration != 0)
-            outputParameters[kPlayLed] = kLedOn;
+            outputParameters[kPlayLed] = kParamOn;
         else
-            outputParameters[kPlayLed] = kLedOff;
+            outputParameters[kPlayLed] = kParamOff;
 
         // record LED status
         if(recording)
-            outputParameters[kRecordLed]=kLedOn;
+            outputParameters[kRecordLed]=kParamOn;
         else
-            outputParameters[kRecordLed]=kLedOff;
+            outputParameters[kRecordLed]=kParamOff;
         
         // if playing and loop has cycled, flash the record LED
         if(playing && loopCycled) {
-            outputParameters[kRecordLed]=kLedOn;
+            outputParameters[kRecordLed]=kParamOn;
             loopCycled=false;
         }
 
         // Reverse status
         if(Reverse)
-            outputParameters[kReverseLed]=kLedOn;
+            outputParameters[kReverseLed]=kParamOn;
         else
-            outputParameters[kReverseLed]=kLedOff;
+            outputParameters[kReverseLed]=kParamOff;
 
         // Once status
         if(onceMode)
-            outputParameters[kOnceLed]=kLedOn;
+            outputParameters[kOnceLed]=kParamOn;
         else
-            outputParameters[kOnceLed]=kLedOff;
+            outputParameters[kOnceLed]=kParamOff;
 
         // Thru Mute status
         if(thruMute)
-            outputParameters[kThruMuteLed]=kLedOn;
+            outputParameters[kThruMuteLed]=kParamOn;
         else
-            outputParameters[kThruMuteLed]=kLedOff;
+            outputParameters[kThruMuteLed]=kParamOff;
 
         // Stack status
         if(stackMode)
-            outputParameters[kStackLed]=kLedOn;
+            outputParameters[kStackLed]=kParamOn;
         else
-            outputParameters[kStackLed]=kLedOff;
+            outputParameters[kStackLed]=kParamOff;
 
         // 1/2 Speed status
         if(halfSpeedMode)
-            outputParameters[kSpeedLed]=kLedOn;
+            outputParameters[kSpeedLed]=kParamOn;
         else
-            outputParameters[kSpeedLed]=kLedOff;
+            outputParameters[kSpeedLed]=kParamOff;
     }
 }
 
 void allLedsOn()
 {
-    outputParameters[kThruMuteLed]=kLedOn;
-    outputParameters[kRecordLed]=kLedOn;
-    outputParameters[kPlayLed]=kLedOn;
-    outputParameters[kOnceLed]=kLedOn;
-    outputParameters[kReverseLed]=kLedOn;
-    outputParameters[kStackLed]=kLedOn;
-    outputParameters[kSpeedLed]=kLedOn;
+    outputParameters[kThruMuteLed]=kParamOn;
+    outputParameters[kRecordLed]=kParamOn;
+    outputParameters[kPlayLed]=kParamOn;
+    outputParameters[kOnceLed]=kParamOn;
+    outputParameters[kReverseLed]=kParamOn;
+    outputParameters[kStackLed]=kParamOn;
+    outputParameters[kSpeedLed]=kParamOn;
 }
 
 void allLedsOff()
 {
-    outputParameters[kThruMuteLed]=kLedOff;
-    outputParameters[kRecordLed]=kLedOff;
-    outputParameters[kPlayLed]=kLedOff;
-    outputParameters[kOnceLed]=kLedOff;
-    outputParameters[kReverseLed]=kLedOff;
-    outputParameters[kStackLed]=kLedOff;
-    outputParameters[kSpeedLed]=kLedOff;
+    outputParameters[kThruMuteLed]=kParamOff;
+    outputParameters[kRecordLed]=kParamOff;
+    outputParameters[kPlayLed]=kParamOff;
+    outputParameters[kOnceLed]=kParamOff;
+    outputParameters[kReverseLed]=kParamOff;
+    outputParameters[kStackLed]=kParamOff;
+    outputParameters[kSpeedLed]=kParamOff;
 }
 
 bool isArmed(double param) {

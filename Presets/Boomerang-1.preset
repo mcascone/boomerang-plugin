@@ -17,7 +17,7 @@
                     <p6 name="gui_controls_lock" value="0"/>
                     <p7 name="gui_gen.background_color" value="4"/>
                     <p8 name="gui_gen.background_style" value="1"/>
-                    <p9 name="gui_gen.controls_display_count" value="7"/>
+                    <p9 name="gui_gen.controls_display_count" value="8"/>
                     <p10 name="gui_gen.controls_style" value="0"/>
                     <p11 name="gui_gen.enable_custom_gui" value="0"/>
                     <p12 name="gui_gen.grouping_style" value="0"/>

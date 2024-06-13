@@ -9,14 +9,14 @@
 // TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
 // DONE: link leds to switches
 // TODO: add stack mode
-// TODO: add ONCE mode (wip)
-// TODO: Flash record LED when loop cycles around (wip)
+// DONE: add ONCE mode
+// TODO: Flash record LED when loop cycles around (wip - intermittent)
 // TODO: add 1/2 speed mode
 // TODO: figure out how to flip UI Play switch when record stops
 // DONE: create function to determine toggle state, for consistency and DRY
-// TODO: fix: record light goes on when playing
-// todo: fix: doesn't record
-// TODO: thrumute (wip)
+// DONE: fix: record light goes on when playing
+// DONE: fix: doesn't record
+// DONE: thrumute (wip)
 
 
 // NOTES:

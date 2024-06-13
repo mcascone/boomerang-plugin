@@ -131,7 +131,7 @@ array<string> outputParametersEnums={";",";",";",";",";",";",";"};
  */
 array<array<double>> buffers(audioInputsCount);
 
-const int MAX_LOOP_DURATION_SECONDS=60; // 60 seconds max recording
+const int MAX_LOOP_DURATION_SECONDS=2; // 60 seconds max recording
 
 int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds max recording
 
@@ -500,12 +500,10 @@ void processBlock(BlockData& data) {
 // If bufferFilled, the BPS will stop recording and wait for Record or Play to be pressed.
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
-    print("--------------\nnew block\n--------------");
+    print("--------------\nParam Changed\n--------------");
     print("Loop Duration:" + loopDuration);
     print("Current Playing Index:" + currentPlayingIndex);
     print("Current Recording Index:" + currentRecordingIndex);
-
-    print("THRU MUTE: " + inputParameters[kThruMuteParam]);
 
     // Reverse--------------------------------------------------------------------------
     // If the unit is playing back, pressing this button will immediately reverse the direction through your loop, resulting in reversed audio output. 
@@ -515,10 +513,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     
     print("Reverse Mode: " + Reverse);
     print("ReverseArmed: " + ReverseArmed);
-    
-    bool reverseFlip = wasReverse != ReverseArmed;              // we just need to know if the state changed
 
-    if(reverseFlip) {
+    if(switchChanged(wasReverse, ReverseArmed)) {
         print("Reverse button was pressed");
         // if we were in reverse and the toggle is now off, disable reverse
         if(wasReverse && !ReverseArmed) {
@@ -532,7 +528,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         }
     }
 
-    // playing--------------------------------------------------------------------------
+    // PLAY/STOP --------------------------------------------------------------------------
     // If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
     // If the Rang is playing back, pressing PLAY/STOP halts playback and the unit becomes idle.
     // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
@@ -542,15 +538,12 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     bool playWasArmed = playArmed;                     // if we were play armed when we entered this block
     playArmed = isArmed(inputParameters[kPlayParam]);  // if we are play armed now
     
-    bool playFlip = playWasArmed != playArmed;         // we just need to know if the state changed
-
     print("wasPlaying: " + wasPlaying);
     print("playWasArmed: " + playWasArmed);
     print("playArmed: " + playArmed);
-    print("playFlip: " + playFlip);
 
     // if play button state changed
-    if(playFlip) {
+    if(switchChanged(playWasArmed, playArmed)) {
         print("Play button was pressed");
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
@@ -572,7 +565,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             // TODO: find way to flip UI play toggle to ON (separate from LED)
         }
 
-        // if playing, play was toggled on, and now it is toggled off, stop playing right now
+        // if playing, play was on, and now it is toggled off, stop playing right now
         // i don't think playWasArmed is necessary
         if(wasPlaying && playWasArmed && !playArmed) { 
             print("--> stopping playback");
@@ -593,15 +586,12 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
     onceArmed         = isArmed(inputParameters[kOnceParam]);   // set onceArmed to current toggle state
 
-    bool onceFlip = wasOnceArmed != onceArmed;                  // we just need to know if the state changed
-
     print("onceMode: " + onceMode);
     print("wasOnceArmed: " + wasOnceArmed);
     print("onceArmed: " + onceArmed);
-    print("onceFlip: " + onceFlip);
 
-    if(onceFlip) {
-        print("Once button was pressed");
+    if(switchChanged(wasOnceArmed, onceArmed)) {
+        print("--- Once pressed ---");
         if(playing && !onceMode) {
             // Pressing ONCE during playback, when not in Once Mode, tells the Boomerang to finish playing the loop and then stop.
             print("--> setting once mode true");
@@ -638,7 +628,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         }
     }
     
-    // recording------------------------------------------------------------------------
+    // RECORD ------------------------------------------------------------------------
     // When it is pressed, recording begins and the RECORD LED lights up brightly. 
     // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
     // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
@@ -650,20 +640,11 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     print("recordingArmed: " + recordingArmed);
     print("recording: " + recording);
     
-    // if recording was not pressed and now it is pressed
-    // should be same as defining "recordFlip"
-    if(!wasRecordingArmed && recordingArmed) {
-        print("Recording was triggered");
+    if(switchChanged(wasRecordingArmed, recordingArmed)) {
         if((!recording && !playing) || playing) {
-            print("--> if playing or idle, start new recording");
-            print("--> setting loop duration to 0");
-            loopDuration=0;
-
-            print("--> setting recording index to 0");
-            currentRecordingIndex=0;
-            
-            print("--> Setting playback index to 0");
-            currentPlayingIndex=0;
+            print("--> if playing or idle, stop playing, start new recording");
+            if(playing) 
+                stopPlayback();
             
             if(bufferFilled) {
                 print("--> clearing buffer filled state");
@@ -707,10 +688,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
     bool wasThruMute  = thruMute;
     thruMute          = isArmed(inputParameters[kThruMuteParam]);
-    bool thruMuteFlip = wasThruMute != thruMute;
 
-    if(thruMuteFlip) {
-        thruMute = !thruMute;
+    if(switchChanged(wasThruMute, thruMute)) {
         print("Thru Mute button was pressed");
         if(thruMute) {
             print("--> Thru Mute is now on");
@@ -737,14 +716,14 @@ void computeOutputData()
         // record LED status
         if(recording)
             outputParameters[kRecordLed]=kLedOn;
+        else
+            outputParameters[kRecordLed]=kLedOff;
         
         // if playing and loop has cycled, flash the record LED
         if(playing && loopCycled) {
             outputParameters[kRecordLed]=kLedOn;
             loopCycled=false;
         }
-        else
-            outputParameters[kRecordLed]=kLedOff;
 
         // Reverse status
         if(Reverse)
@@ -802,4 +781,8 @@ void allLedsOff()
 
 bool isArmed(double param) {
     return param >= .5;
+}
+
+bool switchChanged(bool oldState, bool newState) {
+    return oldState != newState;
 }

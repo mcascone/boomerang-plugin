@@ -497,6 +497,7 @@ void processBlock(BlockData& data) {
 // BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it is different from the state, we do something.
 // This invalidates my concept of a momentary switch, but we can still use it as a toggle
 // Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
+// If bufferFilled, the BPS will stop recording and wait for Record or Play to be pressed.
 void updateInputParametersForBlock(const TransportInfo@ info)
 {
     print("--------------\nnew block\n--------------");
@@ -513,7 +514,6 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     ReverseArmed    = isArmed(inputParameters[kReverseParam]);  // if the reverse toggle is now on
     
     print("Reverse Mode: " + Reverse);
-    print("wasReverse: " + wasReverse);
     print("ReverseArmed: " + ReverseArmed);
     
     bool reverseFlip = wasReverse != ReverseArmed;              // we just need to know if the state changed
@@ -535,7 +535,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // playing--------------------------------------------------------------------------
     // If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
     // If the Rang is playing back, pressing PLAY/STOP halts playback and the unit becomes idle.
-    // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner. 
+    // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
+    // If bufferFilled, clear that state and start playback.
     // During playback the PLAY LED will be on and the RECORD LED will blink at the beginning of each pass through the loop.
     bool wasPlaying = playing;                         // if we were playing when we entered this block
     bool playWasArmed = playArmed;                     // if we were play armed when we entered this block
@@ -553,7 +554,18 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         print("Play button was pressed");
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
-            onceMode = false;                       // if we were in once mode, disable it
+            // onceMode = false;                       // if we were in once mode, disable it. TODO: is this right? maybe future feature
+
+            if(bufferFilled) {
+                print("--> clearing buffer filled state");
+                bufferFilled=false;
+            }
+
+            if(recording) {
+                print("--> stopping recording");
+                stopRecording();     // sets `recording` false
+            }
+
             print("--> starting playback at 0");
             currentPlayingIndex = 0;
             startPlayback();                        // sets `playing` true
@@ -656,7 +668,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             if(bufferFilled) {
                 print("--> clearing buffer filled state");
                 bufferFilled=false;
-                // TODO: do we need to do allLedsOff() here?
+                // do we need to do allLedsOff() here?
+                // no, they'll get reset 1-by-1 in computeOutputData()
             }
             
             print("--> starting recording");
@@ -710,57 +723,59 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 
 void computeOutputData()
 {
-    // play LED status
-    if(isPlaying() && loopDuration != 0)
-        outputParameters[kPlayLed] = kLedOn;
-    else
-        outputParameters[kPlayLed] = kLedOff;
-
-    // record LED status
-    if(recording)
-        outputParameters[kRecordLed]=kLedOn;
-    
-    // if playing and loop has cycled, flash the record LED
-    if(playing && loopCycled) {
-        outputParameters[kRecordLed]=kLedOn;
-        loopCycled=false;
-    }
-    else
-        outputParameters[kRecordLed]=kLedOff;
-
-    // Reverse status
-    if(Reverse)
-        outputParameters[kReverseLed]=kLedOn;
-    else
-        outputParameters[kReverseLed]=kLedOff;
-
-    // Once status
-    if(onceMode)
-        outputParameters[kOnceLed]=kLedOn;
-    else
-        outputParameters[kOnceLed]=kLedOff;
-
     // TODO: check this first
     if(bufferFilled) {
         allLedsOn();
     }
-    // Thru Mute status
-    if(thruMute)
-        outputParameters[kThruMuteLed]=kLedOn;
-    else
-        outputParameters[kThruMuteLed]=kLedOff;
+    else {
+        // play LED status
+        if(isPlaying() && loopDuration != 0)
+            outputParameters[kPlayLed] = kLedOn;
+        else
+            outputParameters[kPlayLed] = kLedOff;
 
-    // Stack status
-    if(stackMode)
-        outputParameters[kStackLed]=kLedOn;
-    else
-        outputParameters[kStackLed]=kLedOff;
+        // record LED status
+        if(recording)
+            outputParameters[kRecordLed]=kLedOn;
+        
+        // if playing and loop has cycled, flash the record LED
+        if(playing && loopCycled) {
+            outputParameters[kRecordLed]=kLedOn;
+            loopCycled=false;
+        }
+        else
+            outputParameters[kRecordLed]=kLedOff;
 
-    // 1/2 Speed status
-    if(halfSpeedMode)
-        outputParameters[kSpeedLed]=kLedOn;
-    else
-        outputParameters[kSpeedLed]=kLedOff;
+        // Reverse status
+        if(Reverse)
+            outputParameters[kReverseLed]=kLedOn;
+        else
+            outputParameters[kReverseLed]=kLedOff;
+
+        // Once status
+        if(onceMode)
+            outputParameters[kOnceLed]=kLedOn;
+        else
+            outputParameters[kOnceLed]=kLedOff;
+
+        // Thru Mute status
+        if(thruMute)
+            outputParameters[kThruMuteLed]=kLedOn;
+        else
+            outputParameters[kThruMuteLed]=kLedOff;
+
+        // Stack status
+        if(stackMode)
+            outputParameters[kStackLed]=kLedOn;
+        else
+            outputParameters[kStackLed]=kLedOff;
+
+        // 1/2 Speed status
+        if(halfSpeedMode)
+            outputParameters[kSpeedLed]=kLedOn;
+        else
+            outputParameters[kSpeedLed]=kLedOff;
+    }
 }
 
 void allLedsOn()

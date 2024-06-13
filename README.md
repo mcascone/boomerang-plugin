@@ -92,7 +92,6 @@ This button has different functions depending on what the Boomerang Phrase Sampl
 
 If the Boomerang Phrase Sampler is idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner. During playback the PLAY LED will be on and the RECORD LED will blink at the beginning of each pass through the loop.
 
-
 ### ONCE
 
 ***this is not implemented yet***
@@ -124,3 +123,13 @@ Since the stacked signals are being added together, there is a practical upper l
 Since the system is slightly attenuating the loop signal while the STACK button is pressed, if the STACK button is held down but no new signal is input, the result will be a very smooth fade-out of the recorded loop. This can be cool.
 
 If the loop is very short and the STACK button is held down while you continue to play, the effect is essentially the same as that of a conventional delay with a very slow decay setting. The OUTPUT LEVEL roller then becomes the effect/clean mix control. The cool thing is that the delay time is precisely controlled by two presses of the RECORD button, so it will be just what you need at the moment.
+
+### THRU MUTE
+
+The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time as it is purely an analog connection. Typically the through path will be enabled, but for special situations the through path can be turned off allowing only the sampled audio to be heard. This is useful when the user wants to play along with the loop but not have the original signal present.
+
+The THRU MUTE switch is also useful when the user wants to play a reverse solo live. The through signal can be turned off and the REVERSE LED will be on, indicating that only the reversed signal is present. This is a very cool effect and is a lot of fun to play with. The user can also play along with the reversed signal and the through signal at the same time, creating a very unique sound.
+
+### OUTPUT LEVEL
+
+The OUTPUT LEVEL roller on the front panel of the Boomerang Phrase Sampler controls the playback volume but has no effect on the through signal. The output level can be adjusted at any time and is not stored in memory. The OUTPUT LEVEL roller is a high quality, sealed potentiometer and is very smooth in operation. The output level can be adjusted from zero to full output and is very useful for balancing the loop with the through signal. The OUTPUT LEVEL roller is also useful for setting the level of the loop signal when the THRU MUTE switch is turned off and only the loop signal is present.

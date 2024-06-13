@@ -16,6 +16,7 @@
 // DONE: create function to determine toggle state, for consistency and DRY
 // TODO: fix: record light goes on when playing
 // todo: fix: doesn't record
+// TODO: thrumute (wip)
 
 
 // NOTES:
@@ -365,8 +366,8 @@ void processBlock(BlockData& data) {
         // in STACK mode here is where we would reduce the existing audio by 2.5Db?
         for(uint channel=0; channel < audioInputsCount; channel++)
         {
-            array<double>@ channelBuffer=@buffers[channel];
-            array<double>@ samplesBuffer=@data.samples[channel];
+            array<double>@ channelBuffer=@buffers[channel];       //  output buffer
+            array<double>@ samplesBuffer=@data.samples[channel];  //  input buffer
             double input=samplesBuffer[i];
     
             double playback=0;
@@ -383,16 +384,17 @@ void processBlock(BlockData& data) {
                 // playback is the current incoming sample from the record buffer, multiplied by the playback gain
                 // playback gain is their internal way of fading in/out to avoid clicks
                 // so this is the recorded data being played into the output buffer
-                // check for thruMute here
-                if(thruMute)
-                    playbackGain=0;
-
                 playback  = channelBuffer[playIndex] * playbackGain;
             }
             
             // update buffer when recording
             if(currentlyRecording)
             {
+                // check for thruMute
+                // clear input value if thruMute is on
+                // TODO: this isn't right.
+                input = thruMute ? 0 : input;
+                
                 // record input
                 channelBuffer[currentRecordingIndex] = playback + (recordGain * input);
             }
@@ -690,8 +692,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
 
     // Thru Mute
     // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
-    bool wasThruMute = thruMute;
-    thruMute = isArmed(inputParameters[kThruMuteParam]);
+    bool wasThruMute  = thruMute;
+    thruMute          = isArmed(inputParameters[kThruMuteParam]);
     bool thruMuteFlip = wasThruMute != thruMute;
 
     if(thruMuteFlip) {

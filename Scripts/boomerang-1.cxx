@@ -180,6 +180,7 @@ bool stackMode=false;     // stack mode
 bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
+bool halfToggle=false;     // half speed toggle
 // bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
@@ -229,7 +230,7 @@ void stopRecording()
     recording               = false;
     const int recordedCount = currentRecordingIndex;
     loopDuration            = recordedCount;
-    // currentPlayingIndex     = 0; // assume any restarting is done before this is called
+    // currentPlayingIndex     = 0; // assume any restarting is done elsewhere
 
     // post fade to avoid clicks
     recordGainInc = -xfadeInc;
@@ -421,8 +422,16 @@ void processBlock(BlockData& data) {
         // update playback index while playing
         if(currentlyPlaying)
         {
-            // update index
-            currentPlayingIndex++;
+            if(halfSpeedMode && halfToggle) {
+                halfToggle = !halfToggle; // flip halftoggle, don't update index
+            }
+            else {
+                halfToggle = !halfToggle; // flip halftoggle
+
+                // update index to next sample
+                currentPlayingIndex++;
+            }
+            
             if(currentPlayingIndex>=loopDuration) {
                 // in once mode, stop playback after one cycle
                 if(onceMode) {
@@ -554,7 +563,6 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
 
     // if play button state changed
     if(switchChanged(playWasArmed, playArmed)) {
-        print("Play button was pressed");
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
             // onceMode = false;                       // if we were in once mode, disable it. TODO: is this right? maybe future feature
@@ -577,7 +585,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         // i don't think playWasArmed is necessary
         if(wasPlaying && playWasArmed && !playArmed) {
             stopPlayback();   // sets `playing` false
+            
             stackMode = stackMode ? false : stackMode; // if stack mode is on, turn it off
+            
             // TODO: find way to flip UI play toggle to OFF (separate from LED)
         }
     }
@@ -600,7 +610,6 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("onceArmed: " + onceArmed);
 
     if(switchChanged(wasOnceArmed, onceArmed)) {
-        print("--- Once pressed ---");
         if(playing && !onceMode) {
             // Pressing ONCE during playback, when not in Once Mode, tells the Boomerang to finish playing the loop and then stop.
             print("--> setting once mode true");
@@ -611,16 +620,12 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         // do we have to go to the sample level for instant response? MAYBE
         // do have to / should we instead call stop/startPlayback()? NO
         else if (playing && onceMode) {
-            print("--> setting playback index to 0");
             currentPlayingIndex=0;   // immediately restart playback at the beginning of the loop
         }
         // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded,
         // but the loop will playback only once. 
         else if (recording) {
-            print("--> stopping recording");
             stopRecording(); // sets recording false
-            print("--> setting playback index to 0");
-            currentPlayingIndex=0;
             print("--> setting once mode true");
             onceMode=true;
             print("--> starting playback");
@@ -628,8 +633,6 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         }
         else if (!playing && !recording) {
             // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time.
-            print("--> setting playback index to 0");
-            currentPlayingIndex=0;
             print("--> setting once mode true");
             onceMode=true;
             print("--> starting playback");
@@ -713,10 +716,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             }
         }
         else {
-            print("--> Speed toggle");
-            // if we were in half speed mode and the toggle is now off, disable half speed mode 
+            // if the unit is idle, it toggles the speed setting: full or half speed. 
             halfSpeedMode = !halfSpeedMode;
-            print("--> halfSpeedMode: " + halfSpeedMode);       
+            print("--> halfSpeedMode: " + halfSpeedMode);
         }
     }
 

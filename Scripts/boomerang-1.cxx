@@ -17,7 +17,11 @@
 // DONE: fix: record light goes on when playing
 // DONE: fix: doesn't record
 // DONE: thrumute (wip)
-
+//
+// FUTURE FEATURE IDEAS
+// - record/play stop options
+// - write loop to file
+// - load loop from file
 
 // NOTES:
 // - "armed" means "the button is pressed or in Enable state"
@@ -101,7 +105,7 @@ array<string> inputParametersEnums={
     ";THRU MUTE",  // Thru Mute
     ";Recording",  // Record
     ";Playing",    // Play
-    ";Once",       // Once
+    ";",       // Once
     "Fwd;Rev",     // Direction
     ";STACK",       // Stack
     ";1/2 Speed"   // Speed
@@ -396,9 +400,14 @@ void processBlock(BlockData& data) {
             
             // copy to output with OutputLevel
             // if thru mute is on, don't include the input
-            // if not muted, add the input to the output buffer (with OutputLevel applied)
+            // in stack mode, reduce the playback by 2.5Db
+            //  already defined at top of file, copied here for reference
+            //  const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
+            // else, add the input to the output buffer (with OutputLevel applied)
             if(thruMute)
                 samplesBuffer[i] = OutputLevel * playback;
+            else if(stackMode)
+                samplesBuffer[i] = input + (OutputLevel * playback * STACK_GAIN_REDUCTION);
             else
                 samplesBuffer[i] = input + (OutputLevel * playback);
         }
@@ -499,7 +508,7 @@ void processBlock(BlockData& data) {
 // Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
 // If bufferFilled, the BPS will stop recording and wait for Record or Play to be pressed.
 void updateInputParametersForBlock(const TransportInfo@ info)
-{
+
     print("--------------\nParam Changed\n--------------");
     print("Loop Duration:" + loopDuration);
     print("Current Playing Index:" + currentPlayingIndex);
@@ -675,6 +684,57 @@ void updateInputParametersForBlock(const TransportInfo@ info)
             startPlayback();
         }
     }
+
+    // Stack Mode
+    // The STACK foot switch, on the upper-right front panel, turns the stack mode on or off and can be changed at any time.
+    // When the stack mode is on, the playback volume is reduced by 2.5 dB.
+    // Stack is definitely momentary - it's only on while the button is pressed
+    // bool wasStackMode = stackMode;                                // if we were in stack mode when we entered this block
+    bool stackWasArmed = stackArmed;                               // get stack toggle state before we entered this block
+    stackArmed         = isArmed(inputParameters[kStackParam]);    // if the stack toggle is now on
+
+    print("wasStackMode: " + wasStackMode);
+    print("stackArmed: " + stackArmed);
+
+    if(switchChanged(stackWasArmed, stackArmed)) {
+        print("--- Stack ---");
+        // if we were in stack mode and the toggle is now off, disable stack mode
+        if(stackMode && !stackArmed) {
+            stackMode=false;
+            print("--> disabling stack mode");
+        }
+        // if we were not in stack mode and the toggle is now on, enable stack mode
+        else if(!wasStackMode && stackArmed) {
+            stackMode=true;
+            print("--> enabling stack mode");
+        }
+    }
+
+    // half speed
+    // The 1/2 SPEED foot switch, on the lower-right front panel, turns the half-speed mode on or off and can be changed at any time.
+    // When the half-speed mode is on, the playback speed is halved.
+    // my thinking is, since we can't actually change the sample rate, we'll have to use another technique to slow down the playback
+    // roughly, copy every sample and play it back right after the original (play it twice)
+    // or instead of copying every sample - which would double the memory allocation - we could just play the same sample twice
+    // using a toggle to represent state
+    // ie check toggle, (if toggle on, play sample and toggle off; if not, toggle on), play sample
+    // if(speedToggle) {
+    //     playSample(); // all this will be taken out of here and will be actually played in the playback section
+    //                   // so really all this part has to do is flippo the togglo
+                         // so     speedToggle = !speedToggle;
+    //     speedToggle = false;
+    // }
+    // else {
+    //     speedToggle = true;
+    // }
+    //     playSample();
+    // this is now for the actual switching - just a standard toggle
+    // but it only changes the speed when idle
+    // and it's actually the same physical button as the stack mode
+    // so if playing, it will only change the stack mode
+    // if idle, it will toggle the speed mode
+    wasHalfSpeedMode = halfSpeedMode;                                // if we were in half speed mode when we entered this block
+    bool halfSpeedWasArmed = halfSpeedArmed;                         // get half speed toggle state before we entered this block
 
     // OutputLevel
     // The OUTPUT LEVEL roller on the front panel of the BPS controls the playback volume but has no effect on the through signal.

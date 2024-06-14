@@ -44,7 +44,7 @@ enum InputParamsIndexes
     kOnceParam,
     kReverseParam,
     kStackParam,
-    kSpeedParam
+    // kSpeedParam
 };
 
 enum RecordMode
@@ -64,7 +64,7 @@ enum ParamsStatus
 };
 
 
-array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack", "Speed"};
+array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack" };
 array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
     5, // OutputLevel
@@ -74,7 +74,7 @@ array<double> inputParametersDefault={
     kParamOff, // Once
     kParamOff, // Direction
     kParamOff, // Stack
-    kParamOff  // Speed
+    // kParamOff  // Speed
 };
 array<double> inputParametersMax={
     10,  // Output Level, if not entered, defaults to percentage
@@ -84,7 +84,7 @@ array<double> inputParametersMax={
     kParamOn,   // Once
     kParamOn,   // Direction
     kParamOn,   // Stack
-    kParamOn    // Speed
+    // kParamOn    // Speed
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
@@ -96,7 +96,7 @@ array<int> inputParametersSteps={
     2,  // Once
     2,  // Direction
     2,  // Stack
-    2   // Speed
+    // 2   // Speed
 };
 
 // these are the labels under each input control
@@ -107,8 +107,8 @@ array<string> inputParametersEnums={
     ";Playing",    // Play
     ";",       // Once
     "Fwd;Rev",     // Direction
-    ";STACK",       // Stack
-    ";1/2 Speed"   // Speed
+    ";",       // Stack
+    // ";1/2 Speed"   // Speed
 };
 
 enum OutputParamsIndexes
@@ -122,7 +122,7 @@ enum OutputParamsIndexes
     kSpeedLed    // 6
 };
 
-array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack", "1/2 Speed"};
+array<string> outputParametersNames={"Thru Mute","Record","Play","Once","Reverse","Stack", "Slow"};
 array<double> outputParameters(outputParametersNames.length);
 array<double> outputParametersMin={0,0,0,0,0,0,0};
 array<double> outputParametersMax={1,1,1,1,1,1,1};
@@ -180,7 +180,7 @@ bool stackMode=false;     // stack mode
 bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
-bool halfSpeedArmed=false; // half speed button is pressed (toggle)
+// bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
 bool loopCycled=false;     // loop has looped around
@@ -507,9 +507,9 @@ void processBlock(BlockData& data) {
 // This invalidates my concept of a momentary switch, but we can still use it as a toggle
 // Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
 // If bufferFilled, the BPS will stop recording and wait for Record or Play to be pressed.
-void updateInputParametersForBlock(const TransportInfo@ info)
+void updateInputParametersForBlock(const TransportInfo@ info) {
 
-    print("--------------\nParam Changed\n--------------");
+    print("-------------- \nParam Changed\n --------------");
     print("Loop Duration:" + loopDuration);
     print("Current Playing Index:" + currentPlayingIndex);
     print("Current Recording Index:" + currentRecordingIndex);
@@ -609,8 +609,8 @@ void updateInputParametersForBlock(const TransportInfo@ info)
         }
         // Pressing it while the ONCE LED is on (playing in once mode) will always immediately restart playback. 
         // theoretically, this should be used the next time a block is processed?
-        // do we have to go to the sample level for instant response?
-        // do have to / should we instead call stop/startPlayback()?
+        // do we have to go to the sample level for instant response? MAYBE
+        // do have to / should we instead call stop/startPlayback()? NO
         else if (playing && onceMode) {
             print("--> setting playback index to 0");
             currentPlayingIndex=0;   // immediately restart playback at the beginning of the loop
@@ -686,37 +686,67 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     }
 
     // Stack Mode
-    // The STACK foot switch, on the upper-right front panel, turns the stack mode on or off and can be changed at any time.
+    // The STACK foot switch turns the stack mode on or off and can be changed at any time.
     // When the stack mode is on, the playback volume is reduced by 2.5 dB.
     // Stack is definitely momentary - it's only on while the button is pressed
-    // bool wasStackMode = stackMode;                                // if we were in stack mode when we entered this block
+    // This button has two main functions. 
+    // 1: If the unit is idle, it toggles the speed setting: full or half speed. Full speed offers twice the bandwidth but reduces the recording time available. Half speed offers double recording time at the expense of bandwidth.
+    // Sounds recorded at full speed may be played at half speed by stopping the system and changing the speed before the next playback.
+    // Signals recorded at half speed may also be played back at full speed with a resulting chipmunk effect. 
+    // Stacking on a bass line is also possible by recording at half speed and adding the bass line at full speed. When the result is played back at half speed the bass line will be dropped an octave.
+
+    // 2: If STACK is pressed during playback, the system will accept additional input and add it to the existing loop so that on the next pass through the loop, both parts will playback together.  Stack Mode ~= overdub
+    // This stacking of parts will continue for as long as the STACK button is held down. 
+    // This is different than the other buttons, which are operated with a single tap. 
+    // There is no hard limit to the number of parts that can be added in this manner.
+    // Also note that the stacking feature works during reversed playback so any part can be recorded forward or reversed.
+    //
+    // Since the stacked signals are being added together, there is a practical upper limit to how large they can grow after repeated stacking. 
+    // The system will internally attenuate the original loop by about 2.5dB to help insure no overloading will occur. 
+    // Since the system is slightly attenuating the loop signal while the STACK button is pressed, if the STACK button is held down but no new signal is input, the result will be a very smooth fade-out of the recorded loop. This can be cool.
+    //
+    // If the loop is very short and the STACK button is held down while you continue to play, the effect is essentially the same as that of a conventional delay with a very slow decay setting. The OUTPUT LEVEL roller then becomes the effect/clean mix control. The cool thing is that the delay time is precisely controlled by two presses of the RECORD button, so it will be just what you need at the moment.
+    bool wasStackMode = stackMode;                                // if we were in stack mode when we entered this block
     bool stackWasArmed = stackArmed;                               // get stack toggle state before we entered this block
     stackArmed         = isArmed(inputParameters[kStackParam]);    // if the stack toggle is now on
 
+    bool wasHalfSpeedMode = halfSpeedMode;                           // if we were in half speed mode when we entered this block
+
     print("wasStackMode: " + wasStackMode);
+    print("halfSpeedMode: " + halfSpeedMode);
     print("stackArmed: " + stackArmed);
 
     if(switchChanged(stackWasArmed, stackArmed)) {
-        print("--- Stack ---");
-        // if we were in stack mode and the toggle is now off, disable stack mode
-        if(stackMode && !stackArmed) {
-            stackMode=false;
-            print("--> disabling stack mode");
+        if(isPlaying()) {
+            print("--- Stack ---");
+            // if we were in stack mode and the toggle is now off, disable stack mode
+            if(stackMode && !stackArmed) {
+                stackMode=false;
+                print("--> disabling stack mode");
+            }
+            // if we were not in stack mode and the toggle is now on, enable stack mode
+            else if(!wasStackMode && stackArmed) {
+                stackMode=true;
+                print("--> enabling stack mode");
+            }
         }
-        // if we were not in stack mode and the toggle is now on, enable stack mode
-        else if(!wasStackMode && stackArmed) {
-            stackMode=true;
-            print("--> enabling stack mode");
+        else {
+            print("--> Speed toggle");
+            // if we were in half speed mode and the toggle is now off, disable half speed mode 
+            halfSpeedMode = !halfSpeedMode;
+            print("--> halfSpeedMode: " + halfSpeedMode);       
         }
     }
 
     // half speed
-    // The 1/2 SPEED foot switch, on the lower-right front panel, turns the half-speed mode on or off and can be changed at any time.
+    // There is no half-speed switch. This feature's functionality is coupled to the state of STACK MODE.
+    //  turns the half-speed mode on or off and can be changed at any time.
     // When the half-speed mode is on, the playback speed is halved.
     // my thinking is, since we can't actually change the sample rate, we'll have to use another technique to slow down the playback
     // roughly, copy every sample and play it back right after the original (play it twice)
     // or instead of copying every sample - which would double the memory allocation - we could just play the same sample twice
     // using a toggle to represent state
+    // might still need to copy the buffer since it'll start to back up as the play is halved, but we'll see
     // ie check toggle, (if toggle on, play sample and toggle off; if not, toggle on), play sample
     // if(speedToggle) {
     //     playSample(); // all this will be taken out of here and will be actually played in the playback section
@@ -733,8 +763,7 @@ void updateInputParametersForBlock(const TransportInfo@ info)
     // and it's actually the same physical button as the stack mode
     // so if playing, it will only change the stack mode
     // if idle, it will toggle the speed mode
-    wasHalfSpeedMode = halfSpeedMode;                                // if we were in half speed mode when we entered this block
-    bool halfSpeedWasArmed = halfSpeedArmed;                         // get half speed toggle state before we entered this block
+
 
     // OutputLevel
     // The OUTPUT LEVEL roller on the front panel of the BPS controls the playback volume but has no effect on the through signal.

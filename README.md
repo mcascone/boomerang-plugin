@@ -18,7 +18,7 @@ Every other looper plugin on the market is too complicated.
 
 So to that end i set about to figure out how make a plugin that perfectly emulates the unique layout and behavior of this singular piece of gear.
 
-It's done with love and reverence for the creators and keepers of the original device, and i do intend to reach to them for approval/partnership.
+It's done with love and reverence for the creators and keepers of the original device, and I have reached out to them for approval/partnership.
 
 ### Design Approach
 

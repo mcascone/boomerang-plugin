@@ -209,6 +209,7 @@ int getTailSize()
 
 void startRecording()
 {
+    print("--> Start Recording");
     // reset
     loopDuration           = 0;
     currentPlayingIndex    = 0;
@@ -224,6 +225,7 @@ void startRecording()
 
 void stopRecording()
 {
+    print("--> Stop Recording");
     recording               = false;
     const int recordedCount = currentRecordingIndex;
     loopDuration            = recordedCount;
@@ -235,14 +237,16 @@ void stopRecording()
 
 void startPlayback()
 {
+    print("--> Start Playing");
     playing               = true;
-    // currentPlayingIndex = 0;  // assume any restarting is done before this is called
+    currentPlayingIndex   = 0;
     playbackGain          = 0;
     playbackGainInc       = xfadeInc; // very short playback gain ramp to avoid clicks?
 }
 
 void stopPlayback()
 {
+    print("--> Stop Playing");
     playing         = false;
     playbackGainInc = -xfadeInc; // see above
 }
@@ -387,7 +391,7 @@ void processBlock(BlockData& data) {
 
                 // playback is the current incoming sample from the record buffer, multiplied by the playback gain
                 // playback gain is their internal way of fading in/out to avoid clicks
-                // so this is the recorded data being played into the output buffer
+                // so this is the loop data being played into the output buffer
                 playback  = channelBuffer[playIndex] * playbackGain;
             }
             
@@ -400,16 +404,16 @@ void processBlock(BlockData& data) {
             
             // copy to output with OutputLevel
             // if thru mute is on, don't include the input
-            // in stack mode, reduce the playback by 2.5Db
+            // in stack mode, reduce the original loop (playback) by 2.5Db
             //  already defined at top of file, copied here for reference
             //  const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
             // else, add the input to the output buffer (with OutputLevel applied)
             if(thruMute)
                 samplesBuffer[i] = OutputLevel * playback;
             else if(stackMode)
-                samplesBuffer[i] = input + (OutputLevel * playback * STACK_GAIN_REDUCTION);
+                samplesBuffer[i] = input + (playback * STACK_GAIN_REDUCTION * OutputLevel);
             else
-                samplesBuffer[i] = input + (OutputLevel * playback);
+                samplesBuffer[i] = input + (playback * OutputLevel);
         }
         // end process audio for each channel--------------------------------------------------
         
@@ -422,21 +426,19 @@ void processBlock(BlockData& data) {
             if(currentPlayingIndex>=loopDuration) {
                 // in once mode, stop playback after one cycle
                 if(onceMode) {
-                    print("stopping playback in once mode");
-                    onceMode=false;
                     stopPlayback();
-                    currentPlayingIndex=0; // reset playback index
+                    onceMode=false;
                 }
-                else {
-                    loopCycled=true;         // set flag to blink record LED
-                    currentPlayingIndex=0;   // loop around to the beginning
-                }
+                else
+                    loopCycled=true;     // set flag to blink record LED
+
+                currentPlayingIndex=0;   // loop around to the beginning
             }
             
             // playback xfade
             if(loopDuration>0)
             {
-                if(!recording) // ie playing
+                if(!recording) // playing or idle
                 {
                     if(currentPlayingIndex == (loopDuration - fadeTime))
                         playbackGainInc =- xfadeInc;
@@ -449,14 +451,13 @@ void processBlock(BlockData& data) {
         }
         
         // update recording index, if recording
-        if(recording || (recordGainInc!=0))
-        {
+        if(isRecording()) {
             currentRecordingIndex++;
-            // looping over existing => check boundaries
-            if(loopDuration > 0 && currentRecordingIndex >= loopDuration)
-            {
-                currentRecordingIndex=0; // return to beginning of loop
-            }
+            // // looping over existing => check boundaries
+            // if(loopDuration > 0 && currentRecordingIndex >= loopDuration)
+            // {
+            //     currentRecordingIndex=0; // return to beginning of loop
+            // }
             if(currentRecordingIndex >= allocatedLength) // stop recording if reached the end of the buffer
             {
                 stopRecording();
@@ -509,10 +510,10 @@ void processBlock(BlockData& data) {
 // If bufferFilled, the BPS will stop recording and wait for Record or Play to be pressed.
 void updateInputParametersForBlock(const TransportInfo@ info) {
 
-    print("-------------- \nParam Changed\n --------------");
-    print("Loop Duration:" + loopDuration);
-    print("Current Playing Index:" + currentPlayingIndex);
-    print("Current Recording Index:" + currentRecordingIndex);
+    print("-------------- \nParam Changed\n--------------");
+    print("Loop Duration: " + loopDuration);
+    print("Current Playing Index: " + currentPlayingIndex);
+    print("Current Recording Index: " + currentRecordingIndex);
 
     // Reverse--------------------------------------------------------------------------
     // If the unit is playing back, pressing this button will immediately reverse the direction through your loop, resulting in reversed audio output. 
@@ -564,21 +565,19 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             }
 
             if(recording) {
-                print("--> stopping recording");
                 stopRecording();     // sets `recording` false
             }
 
-            print("--> starting playback at 0");
-            currentPlayingIndex = 0;
+            print("--> starting playback");
             startPlayback();                        // sets `playing` true
             // TODO: find way to flip UI play toggle to ON (separate from LED)
         }
 
         // if playing, play was on, and now it is toggled off, stop playing right now
         // i don't think playWasArmed is necessary
-        if(wasPlaying && playWasArmed && !playArmed) { 
-            print("--> stopping playback");
+        if(wasPlaying && playWasArmed && !playArmed) {
             stopPlayback();   // sets `playing` false
+            stackMode = stackMode ? false : stackMode; // if stack mode is on, turn it off
             // TODO: find way to flip UI play toggle to OFF (separate from LED)
         }
     }
@@ -652,7 +651,6 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     
     if(switchChanged(wasRecordingArmed, recordingArmed)) {
         if((!recording && !playing) || playing) {
-            print("--> if playing or idle, stop playing, start new recording");
             if(playing) 
                 stopPlayback();
             
@@ -663,24 +661,11 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
                 // no, they'll get reset 1-by-1 in computeOutputData()
             }
             
-            print("--> starting recording");
             startRecording();
         }
         else if(recording) {
             // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
-            print("if recording, stop recording and play back");
-            print("--> stopping recording");
             stopRecording();
-            
-            // set loop duration to the length of the recording
-            print("setting loopduration to current recording index");
-            loopDuration = currentRecordingIndex; 
-            
-            // set playback to the beginning of the loop
-            print("--> setting playback index to 0");
-            currentPlayingIndex = 0;              
-            
-            print("--> starting playback");
             startPlayback();
         }
     }
@@ -706,26 +691,23 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // Since the system is slightly attenuating the loop signal while the STACK button is pressed, if the STACK button is held down but no new signal is input, the result will be a very smooth fade-out of the recorded loop. This can be cool.
     //
     // If the loop is very short and the STACK button is held down while you continue to play, the effect is essentially the same as that of a conventional delay with a very slow decay setting. The OUTPUT LEVEL roller then becomes the effect/clean mix control. The cool thing is that the delay time is precisely controlled by two presses of the RECORD button, so it will be just what you need at the moment.
-    bool wasStackMode = stackMode;                                // if we were in stack mode when we entered this block
+    // bool wasStackMode  = stackMode;                                // if we were in stack mode when we entered this block
     bool stackWasArmed = stackArmed;                               // get stack toggle state before we entered this block
     stackArmed         = isArmed(inputParameters[kStackParam]);    // if the stack toggle is now on
 
-    bool wasHalfSpeedMode = halfSpeedMode;                           // if we were in half speed mode when we entered this block
-
-    print("wasStackMode: " + wasStackMode);
+    print("stackMode: " + stackMode);
     print("halfSpeedMode: " + halfSpeedMode);
     print("stackArmed: " + stackArmed);
 
     if(switchChanged(stackWasArmed, stackArmed)) {
         if(isPlaying()) {
-            print("--- Stack ---");
             // if we were in stack mode and the toggle is now off, disable stack mode
             if(stackMode && !stackArmed) {
                 stackMode=false;
                 print("--> disabling stack mode");
             }
             // if we were not in stack mode and the toggle is now on, enable stack mode
-            else if(!wasStackMode && stackArmed) {
+            else if(!stackMode && stackArmed) {
                 stackMode=true;
                 print("--> enabling stack mode");
             }
@@ -768,9 +750,8 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // OutputLevel
     // The OUTPUT LEVEL roller on the front panel of the BPS controls the playback volume but has no effect on the through signal.
     double newOutputLevel = inputParameters[kOutputLevelParam];
-    bool outputChanged = newOutputLevel != OutputLevel;
-    if(outputChanged) {
-        print("--> OutputLevel changed to " + newOutputLevel);
+    if(newOutputLevel != OutputLevel) {
+        print("--> OutputLevel changed to: " + newOutputLevel);
         OutputLevel = newOutputLevel;
     }
 
@@ -781,16 +762,13 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     thruMute          = isArmed(inputParameters[kThruMuteParam]);
 
     if(switchChanged(wasThruMute, thruMute)) {
-        print("Thru Mute button was pressed");
-
-        string thruMuteState = thruMute ? "on" : "off";
-        print("Thru Mute is now " + thruMuteState);
+        print("--> Thru Mute: " + thruMute);
     }
 }
 
 void computeOutputData()
 {
-    // TODO: check this first
+    // check this first
     if(bufferFilled) {
         allLedsOn();
     }
@@ -802,15 +780,15 @@ void computeOutputData()
             outputParameters[kPlayLed] = kParamOff;
 
         // record LED status
-        if(recording)
-            outputParameters[kRecordLed]=kParamOn;
+        if(isRecording())
+            outputParameters[kRecordLed] = kParamOn;
         else
-            outputParameters[kRecordLed]=kParamOff;
+            outputParameters[kRecordLed] = kParamOff;
         
         // if playing and loop has cycled, flash the record LED
-        if(playing && loopCycled) {
-            outputParameters[kRecordLed]=kParamOn;
-            loopCycled=false;
+        if(isPlaying() && loopCycled) {
+            outputParameters[kRecordLed] = kParamOn;
+            loopCycled = false;
         }
 
         // Reverse status

@@ -17,6 +17,8 @@
 // DONE: fix: record light goes on when playing
 // DONE: fix: doesn't record
 // DONE: thrumute (wip)
+// TODO: implement MIDI control
+// TODO: tests
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -368,20 +370,29 @@ void processBlock(BlockData& data) {
             disableReverse();
         }
         
-        const bool currentlyPlaying=isPlaying();
-        const bool currentlyRecording=isRecording();
+        const bool currentlyPlaying   = isPlaying();
+        const bool currentlyRecording = isRecording();
         
         // process audio for each channel--------------------------------------------------
         // in STACK mode here is where we would reduce the existing audio by 2.5Db?
         for(uint channel=0; channel < audioInputsCount; channel++)
         {
-            array<double>@ channelBuffer=@buffers[channel];       //  output buffer
+            array<double>@ channelBuffer=@buffers[channel];       //  looper's buffer
+            // If i understand correctly, this is the looper's buffer.
+            // It contains the recorded audio data.
+
+
             array<double>@ samplesBuffer=@data.samples[channel];  //  input buffer
-            double input=samplesBuffer[i];
+            // samplesBuffer is the incoming samples from the DAW.
+            // They will be handed to the plugin's buffer, which will do whatever processing is necessary, if any,
+            // and then be replaced back into the samplesBuffer, which will be sent back to the DAW.
+            // DATA FLOW: DAW -> samplesBuffer -> channelBuffer -> Plugin Processing -> samplesBuffer -> DAW
+            double input = samplesBuffer[i];
     
-            double playback=0;
-            if(currentlyPlaying)
-            {
+            double playback=0;  // what will eventually be put into the sampleBuffer to be sent back to the DAW,
+                                // after all processing is done, whether playing or recording.
+
+            if(currentlyPlaying) {
                 // read loop content
                 int playIndex = currentPlayingIndex;
 
@@ -390,20 +401,28 @@ void processBlock(BlockData& data) {
                     playIndex = loopDuration - 1 - playIndex;
                 }
 
-                // playback is the current incoming sample from the record buffer, multiplied by the playback gain
+                // playback is the current incoming sample from the recorded buffer, multiplied by the playback gain
                 // playback gain is their internal way of fading in/out to avoid clicks
-                // so this is the loop data being played into the output buffer
+                // so this is the existing loop data being set as 'playback'
                 playback  = channelBuffer[playIndex] * playbackGain;
+
+                // if in stack mode, reduce the original loop by 2.5Db, then add the input
+                // TODO: this doesn't feel (or work) right
+                if(stackMode) {
+                    playback *= STACK_GAIN_REDUCTION;
+                    playback += (recordGain * input);
+                }
             }
             
             // update buffer when recording
-            if(currentlyRecording)
-            {           
+            if(currentlyRecording) {           
                 // record input
                 channelBuffer[currentRecordingIndex] = playback + (recordGain * input);
             }
             
             // copy to output with OutputLevel
+            // This is the step where the samplesBuffer is replaced with new data
+            //   where it is then picked back up by the DAW
             // if thru mute is on, don't include the input
             // in stack mode, reduce the original loop (playback) by 2.5Db
             //  already defined at top of file, copied here for reference
@@ -411,8 +430,6 @@ void processBlock(BlockData& data) {
             // else, add the input to the output buffer (with OutputLevel applied)
             if(thruMute)
                 samplesBuffer[i] = OutputLevel * playback;
-            else if(stackMode)
-                samplesBuffer[i] = input + (playback * STACK_GAIN_REDUCTION * OutputLevel);
             else
                 samplesBuffer[i] = input + (playback * OutputLevel);
         }
@@ -422,11 +439,11 @@ void processBlock(BlockData& data) {
         // update playback index while playing
         if(currentlyPlaying)
         {
-            if(halfSpeedMode && halfToggle) {
+            if(halfSpeedMode) {
                 halfToggle = !halfToggle; // flip halftoggle, don't update index
+                // so this the workaround for not being able to change the sample rate
+                // we're just playing the same sample twice
             }
-            else {
-                halfToggle = !halfToggle; // flip halftoggle
 
                 // update index to next sample
                 currentPlayingIndex++;
@@ -507,7 +524,7 @@ void processBlock(BlockData& data) {
             }
         }
 
-        OutputLevel+=OutputLevelInc;
+        OutputLevel += OutputLevelInc;
     }
 }
 

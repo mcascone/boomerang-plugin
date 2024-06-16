@@ -406,11 +406,13 @@ void processBlock(BlockData& data) {
                 // so this is the existing loop data being set as 'playback'
                 playback  = channelBuffer[playIndex] * playbackGain;
 
-                // if in stack mode, reduce the original loop by 2.5Db, then add the input
+                // if in stack mode, reduce the original loop by 2.5Db, add the input to the record buffer
+                // and add the input to the playback buffer
                 // TODO: this doesn't feel (or work) right
                 if(stackMode) {
                     playback *= STACK_GAIN_REDUCTION;
-                    playback += (recordGain * input);
+                    channelBuffer[currentRecordingIndex] += (recordGain * input);
+                    // playback += (recordGain * input);
                 }
             }
             

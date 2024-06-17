@@ -69,7 +69,7 @@ enum ParamsStatus
 array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack" };
 array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
-    1, // OutputLevel
+    .5, // OutputLevel
     kParamOff, // Thru Mute
     kParamOff, // Record
     kParamOff, // Play/Stop
@@ -79,7 +79,7 @@ array<double> inputParametersDefault={
     // kParamOff  // Speed
 };
 array<double> inputParametersMax={
-    ,  // Output Level, if not entered, defaults to percentage
+    1,  // Output Level, if not entered, defaults to percentage
     kParamOn,   // Thru Mute
     kParamOn,   // Record
     kParamOn,   // Play/Stop

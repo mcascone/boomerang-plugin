@@ -261,6 +261,7 @@ bool isRecording()
 
 void enableReverse()
 {
+    print("--> enabling reverse");
     if(Reverse==false && loopDuration>0)
     {
         currentPlayingIndex=(loopDuration-1-currentPlayingIndex);
@@ -270,6 +271,7 @@ void enableReverse()
 
 void disableReverse()
 {
+    print("--> disabling reverse");
     if(Reverse==true && loopDuration>0)
     {
         currentPlayingIndex=(loopDuration-1-currentPlayingIndex);
@@ -440,7 +442,7 @@ void processBlock(BlockData& data) {
                 // we're just playing the same sample twice
             }
             else {
-                // update index to next sample
+                // always update index to next sample
                 currentPlayingIndex++;
                 halfToggle = !halfToggle;
             }
@@ -549,23 +551,11 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("ReverseArmed: " + ReverseArmed);
 
     if(switchChanged(wasReverse, ReverseArmed)) {
-        // if we were in reverse and the toggle is now off, disable reverse
-        // if(wasReverse && !ReverseArmed) {
-        //     disableReverse();   // sets `Reverse` false
-        //     print("--> disabling reverse");
-        // }
-        // // if we were not in reverse and the toggle is now on, enable reverse
-        // else if(!wasReverse && ReverseArmed) {
-        //     enableReverse();    // sets `Reverse` true
-        //     print("--> enabling reverse");
-        // }
         if(ReverseArmed) {
             enableReverse();
-            print("--> enabling reverse");
         }
         else {
             disableReverse();
-            print("--> disabling reverse");
         }
     }
 
@@ -597,10 +587,10 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             if(recording) {
                 stopRecording();     // sets `recording` false
             }
-
-            print("--> starting playback");
-            startPlayback();                        // sets `playing` true
-            // TODO: find way to flip UI play toggle to ON (separate from LED)
+            else {
+                startPlayback();         // sets `playing` true
+                // TODO: find way to flip UI play toggle to ON (separate from LED)
+            }
         }
 
         // if playing, play was on, and now it is toggled off, stop playing right now
@@ -608,7 +598,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         if(wasPlaying && playWasArmed && !playArmed) {
             stopPlayback();   // sets `playing` false
             
-            stackMode = stackMode ? false : stackMode; // if stack mode is on, turn it off
+            // stackMode = stackMode ? false : stackMode; // if stack mode is on, turn it off
             
             // TODO: find way to flip UI play toggle to OFF (separate from LED)
         }
@@ -622,7 +612,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // There is an interesting twist in the way the ONCE button works. Pressing it while the ONCE LED is on will always immediately restart playback. 
     //   Repeated presses produces a stutter effect sort of like record scratching.
     // Currently this switch is a toggle, but acts as a momentary switch: any change triggers the ONCE logic.
-    // TODO: new option: if playing in once mode, find a way to disable it so the loop repeats
+    // TODO: new feature: if playing in once mode, find a way to disable it so the loop repeats
     // bool wasOnceMode  = onceMode;                               // if we were in once mode when we entered this block
     bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
     onceArmed         = isArmed(inputParameters[kOnceParam]);   // set onceArmed to current toggle state
@@ -650,14 +640,12 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             stopRecording(); // sets recording false
             print("--> setting once mode true");
             onceMode=true;
-            print("--> starting playback");
             startPlayback();  // sets playing true
         }
         else if (!playing && !recording) {
             // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time.
             print("--> setting once mode true");
             onceMode=true;
-            print("--> starting playback");
             startPlayback();
         }
     }

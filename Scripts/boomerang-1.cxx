@@ -446,7 +446,7 @@ void processBlock(BlockData& data) {
         // update playback index while playing
         if(currentlyPlaying)
         {
-            if(halfSpeedMode) {
+            if(halfSpeedMode && halfToggle) {
                 halfToggle = !halfToggle; // flip halftoggle, don't update index
                 // This the workaround for not being able to change the sample rate
                 // we're just playing the same sample twice

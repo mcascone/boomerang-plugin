@@ -417,11 +417,11 @@ void processBlock(BlockData& data) {
                 // and add the input to the playback buffer.
                 // already defined at top of file, copied here for reference:
                 //  const double STACK_GAIN_REDUCTION = 0.749894209; // 2.5 Db gain reduction
-                // TODO: this doesn't feel (or work) right
+                // TODO: this doesn't work: orig loop is reduced, but no new input is added to the loop
                 if(stackMode) {
-                    playback *= STACK_GAIN_REDUCTION;
-                    channelBuffer[playIndex] = playback + (recordGain * input);
-                    playback = channelBuffer[playIndex];
+                    playback *= STACK_GAIN_REDUCTION;   // reduce original loop by 2.5Db
+                    playback += (recordGain * input);   // add the input to the loop
+                    channelBuffer[playIndex] = playback; // put the new audio into the channelBuffer 
                 }
             }
             
@@ -456,6 +456,7 @@ void processBlock(BlockData& data) {
             else {
                 // update index to next sample
                 currentPlayingIndex++;
+                halfToggle = !halfToggle;
             }
             
             if(currentPlayingIndex>=loopDuration) {

@@ -188,6 +188,7 @@ bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
 bool halfToggle=false;     // half speed toggle
+bool speedModeState=false; // speed mode state
 // bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
@@ -742,9 +743,19 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             }
         }
         else {
-            // if the unit is idle, it toggles the speed setting: full or half speed. 
-            halfSpeedMode = !halfSpeedMode;
-            print("--> halfSpeedMode: " + halfSpeedMode);
+            // if the unit is idle, it toggles the speed setting: full or half speed.
+            // but the stack/speed button is momentary, and always ends in OFF
+            // we'll always get an an on + off
+            // so it's more of a counter + toggle
+            if(speedModeState) {
+                halfSpeedMode = !halfSpeedMode;
+                print("--> halfSpeedMode: " + halfSpeedMode);
+            }
+
+            // this just flips every time the stack/speed is pressed on+off
+            // resulting in the speed mode being toggled every other time.
+            speedModeState = !speedModeState;
+            print("--> speedModeState: " + speedModeState);
         }
     }
 

@@ -8,18 +8,21 @@
 // DONE: remove snap
 // TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
 // DONE: link leds to switches
-// TODO: add stack mode (WIP)
+// DONE: add stack mode
 // DONE: add ONCE mode
-// TODO: Flash record LED when loop cycles around (wip - intermittent)
+// DONE: Flash record LED when loop cycles around
 // DONE: add 1/2 speed mode
 // TODO: figure out how to flip UI Play switch when record stops
 // DONE: create function to determine toggle state, for consistency and DRY
 // DONE: fix: record light goes on when playing
 // DONE: fix: doesn't record
-// DONE: thrumute (wip)
+// DONE: thrumute
 // DONE: implement MIDI control
 // TODO: tests
 // TODO: bug: thru mute intermittently unmutes/remutes
+// TODO: bug: pressing PLAY while recording doesn't stop recording
+// TODO: bug: Stack doesn't work
+// TODO: Record LED flash doesn't always
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -80,9 +83,7 @@ array<double> inputParametersMax={
     kParamOn,   // Stack
     // kParamOn    // Speed
 };
-array<double> inputParametersMin={
-    0, // Output Level
-};
+
 
 // these are the number of available steps/modes for each parameter - 1-based
 array<int> inputParametersSteps={

@@ -29,6 +29,7 @@
 // - write loop to file
 // - load loop from file
 // - change speed during playback (currently only works when idle)
+// loop length + marker display
 
 // NOTES:
 // - "armed" means "the button is pressed or in Enable state"
@@ -126,6 +127,21 @@ array<double> outputParametersMin={0,0,0,0,0,0,0};
 array<double> outputParametersMax={1,1,1,1,1,1,1};
 array<string> outputParametersEnums={";",";",";",";",";",";",";"};
 
+
+// /// An array of strings to be used as input for the script.
+// /// Will be displayed in the user interface of the plug-in 
+// array<string> inputStrings(3);
+// /// Names to be displayed in the plug-in for the input strings. 
+// array<string> inputStringsNames={"11","22","33"};
+
+// /// An array of strings to be used as output for the script.
+// /// Will be displayed in the user interface of the plug-in
+// array<string> outputStrings(2);
+// /// Names to be displayed in the plug-in for the input strings. 
+// array<string> outputStringsNames={"S1","S2"};
+// /// Maximum length for the ouput strings (output strings must be pre-allocated 
+// /// to avoid audio dropouts).
+// array<int> outputStringsMaxLengths={1024,1024};
 
 
 /* Internal Variables.
@@ -844,6 +860,10 @@ void computeOutputData()
         else
             outputParameters[kSpeedLed]=kParamOff;
     }
+
+
+    // outputStrings[0] = "Loop Duration: " + (loopDuration / sampleRate) + "s";
+    // outputStrings[1] = inputStrings[0];
 }
 
 void allLedsOn()

@@ -443,10 +443,10 @@ void processBlock(BlockData& data) {
         {
             if(halfSpeedMode) {
                 halfToggle = !halfToggle; // flip halftoggle, don't update index
-                // so this the workaround for not being able to change the sample rate
+                // This the workaround for not being able to change the sample rate
                 // we're just playing the same sample twice
             }
-
+            else {
                 // update index to next sample
                 currentPlayingIndex++;
             }
@@ -455,12 +455,12 @@ void processBlock(BlockData& data) {
                 // in once mode, stop playback after one cycle
                 if(onceMode) {
                     stopPlayback();
-                    onceMode=false;
+                    onceMode = false;
                 }
-                else
-                    loopCycled=true;     // set flag to blink record LED
-
-                currentPlayingIndex=0;   // loop around to the beginning
+                else {
+                    loopCycled = true;      // set flag to blink record LED
+                    currentPlayingIndex=0;  // loop around to the beginning
+                }
             }
             
             // playback xfade
@@ -481,12 +481,14 @@ void processBlock(BlockData& data) {
         // update recording index, if recording
         if(isRecording()) {
             currentRecordingIndex++;
-            // // looping over existing => check boundaries
-            // if(loopDuration > 0 && currentRecordingIndex >= loopDuration)
-            // {
-            //     currentRecordingIndex=0; // return to beginning of loop
-            // }
+            // looping over existing => check boundaries
+            if(loopDuration > 0 && currentRecordingIndex >= loopDuration)
+            {
+                currentRecordingIndex=0; // return to beginning of loop
+            }
+
             if(currentRecordingIndex >= allocatedLength) // stop recording if reached the end of the buffer
+                                                         // future feature: Just start playing when buffer is full
             {
                 stopRecording();
                 recordGainInc=0;    // avoid post buffer recording
@@ -846,24 +848,14 @@ void computeOutputData()
 
 void allLedsOn()
 {
-    outputParameters[kThruMuteLed]=kParamOn;
-    outputParameters[kRecordLed]=kParamOn;
-    outputParameters[kPlayLed]=kParamOn;
-    outputParameters[kOnceLed]=kParamOn;
-    outputParameters[kReverseLed]=kParamOn;
-    outputParameters[kStackLed]=kParamOn;
-    outputParameters[kSpeedLed]=kParamOn;
+    for (uint i=0; i<outputParameters.length; i++)
+        outputParameters[i]=kParamOn;
 }
 
 void allLedsOff()
 {
-    outputParameters[kThruMuteLed]=kParamOff;
-    outputParameters[kRecordLed]=kParamOff;
-    outputParameters[kPlayLed]=kParamOff;
-    outputParameters[kOnceLed]=kParamOff;
-    outputParameters[kReverseLed]=kParamOff;
-    outputParameters[kStackLed]=kParamOff;
-    outputParameters[kSpeedLed]=kParamOff;
+    for (uint i=0; i<outputParameters.length; i++)
+        outputParameters[i]=kParamOff;
 }
 
 bool isArmed(double param) {

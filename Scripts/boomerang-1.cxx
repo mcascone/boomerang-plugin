@@ -8,22 +8,24 @@
 // DONE: remove snap
 // TODO: figure out how to put the leds on top of the buttons (maybe need the custom gui)
 // DONE: link leds to switches
-// TODO: add stack mode
+// TODO: add stack mode (WIP)
 // DONE: add ONCE mode
 // TODO: Flash record LED when loop cycles around (wip - intermittent)
-// TODO: add 1/2 speed mode
+// DONE: add 1/2 speed mode
 // TODO: figure out how to flip UI Play switch when record stops
 // DONE: create function to determine toggle state, for consistency and DRY
 // DONE: fix: record light goes on when playing
 // DONE: fix: doesn't record
 // DONE: thrumute (wip)
-// TODO: implement MIDI control
+// DONE: implement MIDI control
 // TODO: tests
+// TODO: bug: thru mute intermittently unmutes/remutes
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
 // - write loop to file
 // - load loop from file
+// - change speed during playback (currently only works when idle)
 
 // NOTES:
 // - "armed" means "the button is pressed or in Enable state"
@@ -48,16 +50,6 @@ enum InputParamsIndexes
     kStackParam,
     // kSpeedParam
 };
-
-// enum RecordMode
-// {
-//     kRecLoopOver=0, ///< standard looper: records over existing material and keep original loop length
-//     kRecExtend,     ///< records over existing material and extends original loop length when reaching end of loop
-//     kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached) <-- stack mode?
-//     kRecOverWrite,  ///< overwrite loop content with new material, and extend original loop until recording ends
-//     kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
-//     kRecClear,       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
-// };
 
 enum ParamsStatus
 {
@@ -168,8 +160,6 @@ int loopDuration=0;           // loop duration in ?? it doesn't seem to matter
 
 const int fadeTime=int(.001 * sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);  // fade increment
-
-// RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode. Clear loop when record is pressed. May end up not being necessary.
 
 // These are checked in the processBlock function - called for each block of samples
 bool Reverse=false;       // reverse mode

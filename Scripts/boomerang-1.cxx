@@ -159,7 +159,8 @@ double recordGainInc=0;       // record gain increment
 // TODO: CHECK THIS MATH
 // using reverse dB formula: gain=10^(gaindB/20)*/
 // gain=pow(10,inputParameters[0]/20);
-const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
+// const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction <- math is wrong
+const double STACK_GAIN_REDUCTION = 0.749894209; // 2.5 Db gain reduction
 
 int currentPlayingIndex=0;    // current playback index
 int currentRecordingIndex=0;  // current recording index
@@ -389,10 +390,10 @@ void processBlock(BlockData& data) {
 
 
             array<double>@ samplesBuffer=@data.samples[channel];  //  input buffer
-            // samplesBuffer is the incoming samples from the DAW.
+            // samplesBuffer is the incoming samples from the DAW/system.
             // They will be handed to the plugin's buffer, which will do whatever processing is necessary, if any,
             // and then be replaced back into the samplesBuffer, which will be sent back to the DAW.
-            // DATA FLOW: DAW -> samplesBuffer -> channelBuffer -> Plugin Processing -> samplesBuffer -> DAW
+            // DATA FLOW: DAW -> samplesBuffer -> channelBuffer -> Plugin Processing -> channelBuffer -> samplesBuffer -> DAW
             double input = samplesBuffer[i];
     
             double playback=0;  // what will eventually be put into the sampleBuffer to be sent back to the DAW,
@@ -415,12 +416,12 @@ void processBlock(BlockData& data) {
                 // if in stack mode, reduce the original loop by 2.5Db, add the input to the record buffer
                 // and add the input to the playback buffer.
                 // already defined at top of file, copied here for reference:
-                //  const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
+                //  const double STACK_GAIN_REDUCTION = 0.749894209; // 2.5 Db gain reduction
                 // TODO: this doesn't feel (or work) right
                 if(stackMode) {
                     playback *= STACK_GAIN_REDUCTION;
-                    channelBuffer[currentRecordingIndex] += (recordGain * input);
-                    // playback += (recordGain * input);
+                    channelBuffer[playIndex] = playback + (recordGain * input);
+                    playback = channelBuffer[playIndex];
                 }
             }
             

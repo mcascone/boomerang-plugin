@@ -49,15 +49,15 @@ enum InputParamsIndexes
     // kSpeedParam
 };
 
-enum RecordMode
-{
-    kRecLoopOver=0, ///< standard looper: records over existing material and keep original loop length
-    kRecExtend,     ///< records over existing material and extends original loop length when reaching end of loop
-    kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached) <-- stack mode?
-    kRecOverWrite,  ///< overwrite loop content with new material, and extend original loop until recording ends
-    kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
-    kRecClear,       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
-};
+// enum RecordMode
+// {
+//     kRecLoopOver=0, ///< standard looper: records over existing material and keep original loop length
+//     kRecExtend,     ///< records over existing material and extends original loop length when reaching end of loop
+//     kRecAppend,     ///< append to existing loop (without recording original loop content after loop duration has been reached) <-- stack mode?
+//     kRecOverWrite,  ///< overwrite loop content with new material, and extend original loop until recording ends
+//     kRecPunch,      ///< overwrite loop content with new material, but keeps original loop length
+//     kRecClear,       ///< clear original loop when recording starts  <-- pretty sure this is the boomerang mode when press record (5)
+// };
 
 enum ParamsStatus
 {
@@ -156,8 +156,7 @@ double recordGain=0;          // record gain
 double recordGainInc=0;       // record gain increment
 
 // playback gain reduction of 2.5 Db when stacking
-// TODO: CHECK THIS MATH
-// using reverse dB formula: gain=10^(gaindB/20)*/
+// using reverse dB formula: gain=10^(gaindB/20)
 // gain=pow(10,inputParameters[0]/20);
 // const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction <- math is wrong
 const double STACK_GAIN_REDUCTION = 0.749894209; // 2.5 Db gain reduction
@@ -167,14 +166,12 @@ int currentRecordingIndex=0;  // current recording index
 
 int loopDuration=0;           // loop duration in ?? it doesn't seem to matter
 
-bool eraseValueMem=false;     // erase value memory  ???
-
 const int fadeTime=int(.001 * sampleRate); // 1ms fade time
 const double xfadeInc=1/double(fadeTime);  // fade increment
 
-RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode. Clear loop when record is pressed. May end up not being necessary.
+// RecordMode recordingMode=kRecClear; // Hardcode to boomerang mode. Clear loop when record is pressed. May end up not being necessary.
 
-///// These are checked in the processBlock function - called for each block of samples
+// These are checked in the processBlock function - called for each block of samples
 bool Reverse=false;       // reverse mode
 bool ReverseArmed=false;  // reverse (direction) button is clicked (toggle)
 
@@ -182,18 +179,18 @@ bool playing=false;       // currently playing state
 bool playArmed=false;     // play button is clicked (toggle)
 
 bool onceMode=false;      // once mode
-bool onceArmed=false;     // once button is clicked (toggle+)
+bool onceArmed=false;     // once button is clicked (toggle/momentary)
 
 bool stackMode=false;     // stack mode
 bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
 bool halfToggle=false;     // half speed toggle
-bool speedModeState=false; // speed mode state
+bool speedModeState=false; // speed mode counter
 // bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
-bool loopCycled=false;     // loop has looped around
+bool loopCycled=false;     // loop has looped
 
 // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
 bool thruMute=false;       // Thru Mute (toggle)
@@ -381,13 +378,12 @@ void processBlock(BlockData& data) {
         const bool currentlyRecording = isRecording();
         
         // process audio for each channel--------------------------------------------------
-        // in STACK mode here is where we would reduce the existing audio by 2.5Db?
+        // in STACK mode here is where we reduce the existing audio by 2.5Db
         for(uint channel=0; channel < audioInputsCount; channel++)
         {
             array<double>@ channelBuffer=@buffers[channel];       //  looper's buffer
             // If i understand correctly, this is the looper's buffer.
             // It contains the recorded audio data.
-
 
             array<double>@ samplesBuffer=@data.samples[channel];  //  input buffer
             // samplesBuffer is the incoming samples from the DAW/system.
@@ -401,6 +397,7 @@ void processBlock(BlockData& data) {
 
             if(currentlyPlaying) {
                 // read loop content
+                // this assignment is needed cause it changes if reverse
                 int playIndex = currentPlayingIndex;
 
                 // literally where reverse is applied
@@ -413,14 +410,14 @@ void processBlock(BlockData& data) {
                 // so this is the existing loop data being set as 'playback'
                 playback  = channelBuffer[playIndex] * playbackGain;
 
-                // if in stack mode, reduce the original loop by 2.5Db, add the input to the record buffer
-                // and add the input to the playback buffer.
-                // already defined at top of file, copied here for reference:
-                //  const double STACK_GAIN_REDUCTION = 0.749894209; // 2.5 Db gain reduction
+                // if in stack mode, reduce the original loop by 2.5Db, add the input,
+                // and put it back into the buffer.
+                // 2.5dB reduction already defined at top of file, copied here for reference:
+                //  const double STACK_GAIN_REDUCTION = 0.749894209;
                 // TODO: this doesn't work: orig loop is reduced, but no new input is added to the loop
                 if(stackMode) {
                     playback *= STACK_GAIN_REDUCTION;   // reduce original loop by 2.5Db
-                    playback += (recordGain * input);   // add the input to the loop
+                    playback += (recordGain * input);   // add the input to the loop  <-- this isn't working
                     channelBuffer[playIndex] = playback; // put the new audio into the channelBuffer 
                 }
             }
@@ -435,16 +432,15 @@ void processBlock(BlockData& data) {
             // This is the step where the samplesBuffer is replaced with new data
             //   where it is then picked back up by the DAW
             // if thru mute is on, don't include the input
-            // in stack mode, reduce the original loop (playback) by 2.5Db
             // else, add the input to the output buffer (with OutputLevel applied)
+            // The input is not affected by the output level, only the loop data is.
             if(thruMute)
                 samplesBuffer[i] = OutputLevel * playback;
             else
                 samplesBuffer[i] = input + (playback * OutputLevel);
         }
         // end process audio for each channel--------------------------------------------------
-        
-        
+                
         // update playback index while playing
         if(currentlyPlaying)
         {
@@ -543,7 +539,7 @@ void processBlock(BlockData& data) {
 
 // This is called when an input param is changed - ie, a button/toggle was not previously clicked but changed
 // BUT they will ALL be checked on ANY change, so we still have to keep a state of each status before we check it. If it is different from the state, we do something.
-// This invalidates my concept of a momentary switch, but we can still use it as a toggle
+// Momentary switches are implemented as toggles with an on/off counter.
 // Another concept to internalize is that only one button can be pressed at a time, so we don't have to account for multiple button presses
 // If bufferFilled, the BPS will stop recording and wait for Record or Play to be pressed.
 void updateInputParametersForBlock(const TransportInfo@ info) {
@@ -563,7 +559,6 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("ReverseArmed: " + ReverseArmed);
 
     if(switchChanged(wasReverse, ReverseArmed)) {
-        print("Reverse button was pressed");
         // if we were in reverse and the toggle is now off, disable reverse
         if(wasReverse && !ReverseArmed) {
             disableReverse();   // sets `Reverse` false

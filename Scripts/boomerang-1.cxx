@@ -560,14 +560,22 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
 
     if(switchChanged(wasReverse, ReverseArmed)) {
         // if we were in reverse and the toggle is now off, disable reverse
-        if(wasReverse && !ReverseArmed) {
-            disableReverse();   // sets `Reverse` false
-            print("--> disabling reverse");
-        }
-        // if we were not in reverse and the toggle is now on, enable reverse
-        else if(!wasReverse && ReverseArmed) {
-            enableReverse();    // sets `Reverse` true
+        // if(wasReverse && !ReverseArmed) {
+        //     disableReverse();   // sets `Reverse` false
+        //     print("--> disabling reverse");
+        // }
+        // // if we were not in reverse and the toggle is now on, enable reverse
+        // else if(!wasReverse && ReverseArmed) {
+        //     enableReverse();    // sets `Reverse` true
+        //     print("--> enabling reverse");
+        // }
+        if(ReverseArmed) {
+            enableReverse();
             print("--> enabling reverse");
+        }
+        else {
+            disableReverse();
+            print("--> disabling reverse");
         }
     }
 

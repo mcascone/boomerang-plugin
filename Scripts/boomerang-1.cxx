@@ -69,7 +69,7 @@ enum ParamsStatus
 array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack" };
 array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
-    5, // OutputLevel
+    1, // OutputLevel
     kParamOff, // Thru Mute
     kParamOff, // Record
     kParamOff, // Play/Stop
@@ -79,7 +79,7 @@ array<double> inputParametersDefault={
     // kParamOff  // Speed
 };
 array<double> inputParametersMax={
-    10,  // Output Level, if not entered, defaults to percentage
+    ,  // Output Level, if not entered, defaults to percentage
     kParamOn,   // Thru Mute
     kParamOn,   // Record
     kParamOn,   // Play/Stop
@@ -87,6 +87,9 @@ array<double> inputParametersMax={
     kParamOn,   // Direction
     kParamOn,   // Stack
     // kParamOn    // Speed
+};
+array<double> inputParametersMin={
+    0, // Output Level
 };
 
 // these are the number of available steps/modes for each parameter - 1-based
@@ -154,6 +157,8 @@ double recordGainInc=0;       // record gain increment
 
 // playback gain reduction of 2.5 Db when stacking
 // TODO: CHECK THIS MATH
+// using reverse dB formula: gain=10^(gaindB/20)*/
+// gain=pow(10,inputParameters[0]/20);
 const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
 
 int currentPlayingIndex=0;    // current playback index
@@ -407,7 +412,9 @@ void processBlock(BlockData& data) {
                 playback  = channelBuffer[playIndex] * playbackGain;
 
                 // if in stack mode, reduce the original loop by 2.5Db, add the input to the record buffer
-                // and add the input to the playback buffer
+                // and add the input to the playback buffer.
+                // already defined at top of file, copied here for reference:
+                //  const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
                 // TODO: this doesn't feel (or work) right
                 if(stackMode) {
                     playback *= STACK_GAIN_REDUCTION;
@@ -427,8 +434,6 @@ void processBlock(BlockData& data) {
             //   where it is then picked back up by the DAW
             // if thru mute is on, don't include the input
             // in stack mode, reduce the original loop (playback) by 2.5Db
-            //  already defined at top of file, copied here for reference
-            //  const double STACK_GAIN_REDUCTION = 1.0/1.77827941003892; // 2.5 Db gain reduction
             // else, add the input to the output buffer (with OutputLevel applied)
             if(thruMute)
                 samplesBuffer[i] = OutputLevel * playback;

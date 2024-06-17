@@ -6,17 +6,17 @@ VST/AU plugin based on the Boomerang+ Phrase Sampler.
 
 ## Background
 
-Way back when, I had an original Boomerang+ Phrase Sampler. Before it was cool; inspired by Trey's use of one.
+Way back when, I had an original Boomerang+ Phrase Sampler. Before it was cool; chiefly inspired by Trey Anastasio's use of one.
 
-There really aren't any close emulations of one in plugin-land. So I had to create my own.
+There aren't any close emulations in plugin-land. So I had to create my own.
 
-The boomerang is a special device because it is, in my opinion, the perfect combination of simple and powerful.
+The Boomerang is a special device because it is, in my opinion, the perfect combination of simple and powerful.
 
 It epitomizes the way of "Perfect is not when there is nothing more to add; rather, it is when there is nothing more to take away."
 
 Every other looper plugin on the market is too complicated.
 
-So to that end i set about to figure out how make a plugin that perfectly emulates the unique layout and behavior of this singular piece of gear.
+So to that end I set about to figure out how to make a plugin that perfectly emulates the unique layout and behavior of this singular piece of gear.
 
 It's done with love and reverence for the creators and keepers of the original device, and I have reached out to them for approval/partnership.
 
@@ -24,19 +24,19 @@ It's done with love and reverence for the creators and keepers of the original d
 
 My intention is to use the manual very much as a requirements document; to code this plugin to behave as close to the physical original as I can, with my limited time and knowledge of the programming domain of this code.
 
-In the future it could be considered to add features or modify the behavior in ways that may show themselves to be useful. For now, i am not thinking too much about improvements.
+In the future it could be considered to add features or modify the behavior in ways that may show themselves to be useful. For now, I am not thinking too much about improvements.
 
 ### MIDI Concerns, Switch Types, and the UI
 
-The original device uses momentary switches, and has no MIDI capability. Due to the way the software identifies switch presses, the plugin will use latching switches, and will have MIDI capability.
+The original device uses momentary switches and has no MIDI capability. Due to the way the software identifies switch presses, the plugin will use latching switches and will have MIDI capability.
 
 The software runs the "a parameter has changed, go check it out" script on any change of the switch state. But then it checks the state and status of _every_ switch. So we have to keep a state of every switch and only act if the state has changed.
 
 We work with the assumption of a physical device, that only one button will be pressed at a time.
 
-The other factor to consider is how the MIDI messages are sent and recieved. I use a [Paint Audio MIDI Captain, which is highly programmable](https://paintaudio.com/products/midi-captain-std-vesion-black), but has no way of knowing the state of the software device. As far as I know there is no way for this pedal to _recieve_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware.
+The other factor to consider is how the MIDI messages are sent and received. I use a [Paint Audio MIDI Captain, which is highly programmable](https://paintaudio.com/products/midi-captain-std-vesion-black), but has no way of knowing the state of the software device. As far as I know, there is no way for this pedal to _receive_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware.
 
-To that end, I have tried to make the plugin buttons and LEDs behave as they would on the phyical device, without considering the MIDI aspect. On the other hand, you have to understand how the device will behave when configuring your MIDI controller.
+To that end, I have tried to make the plugin buttons and LEDs behave as they would on the physical device, without considering the MIDI aspect. On the other hand, you have to understand how the device will behave when configuring your MIDI controller.
 
 Another way of looking at it is that the physical switches all appear to be momentary switches, but some features act as if they are latching on/off, like the record and play buttons; others like the once and stack buttons act as momentary switches.
 
@@ -62,9 +62,9 @@ Exporting is also done in the UI, so there's no build process to manage that I'm
 
 As a starting point, I am using the `looper.cxx` script that comes with the PNS software download. So the architecture of the code is not mine.
 
-I have modified the code to add and remove features and behavior that are not needed for the emulation of the original device.
+I have modified the code to add and remove features and behaviors that are not needed for the emulation of the original device.
 
-As time allows i plan to refactor the code to make it more readable and reuseable.
+As time allows I plan to refactor the code to make it more readable and reuseable.
 
 ### Source Code
 
@@ -110,7 +110,7 @@ If DIRECTION is pressed during the recording process the system will be armed to
 
 ### STACK (SPEED)
 
-***this is not working yet***
+***This is not working yet***
 
 This button has two main functions. If the unit is idle, it selects the sample rate: full or half speed. Full speed offers twice the bandwidth but reduces the recording time available. Half speed offers double recording time at the expense of bandwidth. The user can decide which mode to use based on his needs at the time. Sounds recorded at full speed may be played at half speed by stopping the system and changing the speed before the next playback. This is handy when trying to learn difficult licks from a CD or tape. Signals recorded at half speed may also be played back at full speed with a resulting chipmunk effect. Stacking on a bass line is also possible by recording at half speed and adding the bass line at full speed. When the result is played back at half speed the bass line will be dropped an octave.
 
@@ -124,10 +124,12 @@ If the loop is very short and the STACK button is held down while you continue t
 
 ### THRU MUTE
 
-The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time as it is purely an analog connection. Typically the through path will be enabled, but for special situations the through path can be turned off allowing only the sampled audio to be heard. This is useful when the user wants to play along with the loop but not have the original signal present.
+The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time as it is purely an analog connection. Typically the through path will be enabled, but for special situations, the through path can be turned off allowing only the sampled audio to be heard. This is useful when the user wants to play along with the loop but not have the original signal present.
 
 The THRU MUTE switch is also useful when the user wants to play a reverse solo live. The through signal can be turned off and the REVERSE LED will be on, indicating that only the reversed signal is present. This is a very cool effect and is a lot of fun to play with. The user can also play along with the reversed signal and the through signal at the same time, creating a very unique sound.
 
 ### OUTPUT LEVEL
+
+_**Not sure I have the math correct on this one**_
 
 The OUTPUT LEVEL roller on the front panel of the Boomerang Phrase Sampler controls the playback volume but has no effect on the through signal. The output level can be adjusted at any time and is not stored in memory. The OUTPUT LEVEL roller is a high quality, sealed potentiometer and is very smooth in operation. The output level can be adjusted from zero to full output and is very useful for balancing the loop with the through signal. The OUTPUT LEVEL roller is also useful for setting the level of the loop signal when the THRU MUTE switch is turned off and only the loop signal is present.

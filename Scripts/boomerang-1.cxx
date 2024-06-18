@@ -805,8 +805,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     }
 }
 
-void computeOutputData()
-{
+void computeOutputData() {
     // check this first
     if(bufferFilled) {
         allLedsOn();
@@ -825,7 +824,7 @@ void computeOutputData()
             outputParameters[kRecordLed] = kParamOff;
         
         // if playing and loop has cycled, flash the record LED
-        if(isPlaying() && loopCycled) {
+        if(loopCycled) {
             outputParameters[kRecordLed] = kParamOn;
             loopCycled = false;
         }
@@ -866,14 +865,12 @@ void computeOutputData()
     // outputStrings[1] = inputStrings[0];
 }
 
-void allLedsOn()
-{
+void allLedsOn() {
     for (uint i=0; i<outputParameters.length; i++)
         outputParameters[i]=kParamOn;
 }
 
-void allLedsOff()
-{
+void allLedsOff() {
     for (uint i=0; i<outputParameters.length; i++)
         outputParameters[i]=kParamOff;
 }

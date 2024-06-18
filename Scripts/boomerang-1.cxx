@@ -21,8 +21,9 @@
 // TODO: tests
 // TODO: bug: thru mute intermittently unmutes/remutes
 // TODO: bug: pressing PLAY while recording doesn't stop recording
-// TODO: bug: Stack doesn't work
-// TODO: Record LED flash doesn't always
+// DONE: bug: Stack doesn't work fixes #2
+// TODO: Record LED stops flashing during playback (i think due to outputParams not being processed)
+// TODO: bug: Once when Idle doesn't set ONCE mode
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -62,7 +63,7 @@ enum ParamsStatus
 };
 
 
-array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack" };
+array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack (Speed)" };
 array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
     .5, // OutputLevel
@@ -390,19 +391,23 @@ void processBlock(BlockData& data) {
         // in STACK mode here is where we reduce the existing audio by 2.5Db
         for(uint channel=0; channel < audioInputsCount; channel++)
         {
-            array<double>@ channelBuffer=@buffers[channel];       //  looper's buffer
             // If i understand correctly, this is the looper's buffer.
-            // It contains the recorded audio data.
+            // It contains the recorded audio data... or WILL contain it?
+            array<double>@ channelBuffer = @buffers[channel];       //  looper's buffer
 
-            array<double>@ samplesBuffer=@data.samples[channel];  //  input buffer
-            // samplesBuffer is the incoming samples from the DAW/system.
-            // They will be handed to the plugin's buffer, which will do whatever processing is necessary, if any,
+            // @data is a pointer the incoming audio from the DAW/system.
+            // so samplesBuffer is an array of pointers to the incoming sample for the current channel (i).
+            // It will be handed to the plugin's buffer, which will do whatever processing is necessary, if any,
             // and then be replaced back into the samplesBuffer, which will be sent back to the DAW.
-            // DATA FLOW: DAW -> samplesBuffer -> channelBuffer -> Plugin Processing -> channelBuffer -> samplesBuffer -> DAW
+            // DATA FLOW: DAW -> @data -> samplesBuffer -> channelBuffer -> Plugin Processing -> channelBuffer -> samplesBuffer -> DAW
+            array<double>@ samplesBuffer = @data.samples[channel];  //  input buffer
+
+            // take the current sample from the input buffer
             double input = samplesBuffer[i];
-    
-            double playback=0;  // what will eventually be put into the sampleBuffer to be sent back to the DAW,
-                                // after all processing is done, whether playing or recording.
+
+            // this is what will eventually be put into the sampleBuffer to be sent back to the DAW,
+            // after all processing is done, whether playing or recording.
+            double playback=0;  
 
             if(currentlyPlaying) {
                 // read loop content
@@ -414,7 +419,7 @@ void processBlock(BlockData& data) {
                     playIndex = loopDuration - 1 - playIndex;
                 }
 
-                // playback is the current incoming sample from the recorded buffer, multiplied by the playback gain
+                // playback is the current sample in the recorded buffer, multiplied by the playback gain
                 // playback gain is their internal way of fading in/out to avoid clicks
                 // so this is the existing loop data being set as 'playback'
                 playback  = channelBuffer[playIndex] * playbackGain;
@@ -426,7 +431,7 @@ void processBlock(BlockData& data) {
                 // TODO: this doesn't work: orig loop is reduced, but no new input is added to the loop
                 if(stackMode) {
                     playback *= STACK_GAIN_REDUCTION;   // reduce original loop by 2.5Db
-                    playback += (recordGain * input);   // add the input to the loop  <-- this isn't working
+                    playback += input;   // add the input to the loop  <-- this isn't working
                     channelBuffer[playIndex] = playback; // put the new audio into the channelBuffer 
                 }
             }
@@ -440,6 +445,7 @@ void processBlock(BlockData& data) {
             // copy to output with OutputLevel
             // This is the step where the samplesBuffer is replaced with new data
             //   where it is then picked back up by the DAW
+            // It isn't a separate step... @data is a reference so it is updated in place
             // if thru mute is on, don't include the input
             // else, add the input to the output buffer (with OutputLevel applied)
             // The input is not affected by the output level, only the loop data is.

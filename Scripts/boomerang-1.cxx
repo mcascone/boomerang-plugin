@@ -430,8 +430,8 @@ void processBlock(BlockData& data) {
                 //  const double STACK_GAIN_REDUCTION = 0.749894209;
                 // TODO: this doesn't work: orig loop is reduced, but no new input is added to the loop
                 if(stackMode) {
-                    playback *= STACK_GAIN_REDUCTION;   // reduce original loop by 2.5Db
-                    playback += input;   // add the input to the loop  <-- this isn't working
+                    playback *= STACK_GAIN_REDUCTION;    // reduce original loop by 2.5Db
+                    playback += input;                   // add the input to the loop
                     channelBuffer[playIndex] = playback; // put the new audio into the channelBuffer 
                 }
             }
@@ -460,12 +460,13 @@ void processBlock(BlockData& data) {
         if(currentlyPlaying)
         {
             if(halfSpeedMode && halfToggle) {
-                halfToggle = !halfToggle; // flip halftoggle, don't update index
+                // flip halftoggle, don't update index
                 // This the workaround for not being able to change the sample rate
                 // we're just playing the same sample twice
+                halfToggle = !halfToggle; 
             }
             else {
-                // always update index to next sample
+                // update index to next sample
                 currentPlayingIndex++;
                 halfToggle = !halfToggle;
             }
@@ -501,14 +502,13 @@ void processBlock(BlockData& data) {
         if(isRecording()) {
             currentRecordingIndex++;
             // looping over existing => check boundaries
-            if(loopDuration > 0 && currentRecordingIndex >= loopDuration)
-            {
+            if(loopDuration > 0 && currentRecordingIndex >= loopDuration) {
                 currentRecordingIndex=0; // return to beginning of loop
             }
 
-            if(currentRecordingIndex >= allocatedLength) // stop recording if reached the end of the buffer
-                                                         // future feature: Just start playing when buffer is full
-            {
+            // stop recording if reached the end of the buffer
+            // future feature: Just start playing when buffer is full
+            if(currentRecordingIndex >= allocatedLength) {
                 stopRecording();
                 recordGainInc=0;    // avoid post buffer recording
                 bufferFilled=true;  // down the line this flag will be checked to wait for Record or Play to be pressed

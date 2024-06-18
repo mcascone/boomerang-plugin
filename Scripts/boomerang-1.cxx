@@ -12,18 +12,18 @@
 // DONE: add ONCE mode
 // DONE: Flash record LED when loop cycles around
 // DONE: add 1/2 speed mode
-// TODO: figure out how to flip UI Play switch when record stops
+// TODO: figure out how to flip UI switches
 // DONE: create function to determine toggle state, for consistency and DRY
 // DONE: fix: record light goes on when playing
 // DONE: fix: doesn't record
 // DONE: thrumute
 // DONE: implement MIDI control
 // TODO: tests
-// TODO: bug: thru mute intermittently unmutes/remutes
-// TODO: bug: pressing PLAY while recording doesn't stop recording
-// DONE: bug: Stack doesn't work fixes #2
-// TODO: Record LED stops flashing during playback (i think due to outputParams not being processed)
-// TODO: bug: Once when Idle doesn't set ONCE mode
+// TODO: bug: thru mute intermittently unmutes/remutes (#3)
+// TODO: bug: pressing PLAY while recording doesn't stop recording (#4)
+// DONE: bug: Stack doesn't work (issue #2)
+// TODO: Record LED stops flashing during playback (i think due to outputParams not being processed) (#6)
+// TODO: bug: Once when Idle doesn't set ONCE mode (#9)
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -111,6 +111,9 @@ array<string> inputParametersEnums={
     // ";1/2 Speed"   // Speed
 };
 
+
+/// OUTPUTS ///
+
 enum OutputParamsIndexes
 {
     kThruMuteLed=0,
@@ -128,7 +131,7 @@ array<double> outputParametersMin={0,0,0,0,0,0,0};
 array<double> outputParametersMax={1,1,1,1,1,1,1};
 array<string> outputParametersEnums={";",";",";",";",";",";",";"};
 
-
+/// STRINGS ///
 // /// An array of strings to be used as input for the script.
 // /// Will be displayed in the user interface of the plug-in 
 // array<string> inputStrings(3);
@@ -137,12 +140,12 @@ array<string> outputParametersEnums={";",";",";",";",";",";",";"};
 
 // /// An array of strings to be used as output for the script.
 // /// Will be displayed in the user interface of the plug-in
-// array<string> outputStrings(2);
+// array<string> outputStrings(1);
 // /// Names to be displayed in the plug-in for the input strings. 
-// array<string> outputStringsNames={"S1","S2"};
+// array<string> outputStringsNames={"Max Loop Len"};
 // /// Maximum length for the ouput strings (output strings must be pre-allocated 
 // /// to avoid audio dropouts).
-// array<int> outputStringsMaxLengths={1024,1024};
+// array<int> outputStringsMaxLengths={128};
 
 
 /* Internal Variables.
@@ -214,6 +217,7 @@ void initialize()
         buffers[channel].resize(allocatedLength);
     };
     loopDuration=0;
+    print("---initialized---");
 }
 
 int getTailSize()
@@ -867,7 +871,7 @@ void computeOutputData() {
     }
 
 
-    // outputStrings[0] = "Loop Duration: " + (loopDuration / sampleRate) + "s";
+    // outputStrings[0] = MAX_LOOP_DURATION_SECONDS + "s";
     // outputStrings[1] = inputStrings[0];
 }
 

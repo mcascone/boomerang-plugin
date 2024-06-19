@@ -34,7 +34,7 @@ The software runs the "a parameter has changed, go check it out" script on any c
 
 We work with the assumption of a physical device, that only one button will be pressed at a time.
 
-The other factor to consider is how the MIDI messages are sent and received. I use a [Paint Audio MIDI Captain, which is highly programmable](https://paintaudio.com/products/midi-captain-std-vesion-black), but has no way of knowing the state of the software device. As far as I know, there is no way for this pedal to _receive_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware.
+The other factor to consider is how the MIDI messages are sent and received. I use a [Paint Audio MIDI Captain, which is highly programmable](https://paintaudio.com/products/midi-captain-std-vesion-black), but has no way of knowing the state of the software device. As far as I know, there is no way for this pedal to _receive_ MIDI messages from the software. Other, more expensive pedals do have this capability. [I am including the configuration file for the pedal as a reference,](midi/page2.txt) but you may have to build your own depending on your hardware. I talk about the MIDI configuration later on this doc.
 
 To that end, I have tried to make the plugin buttons and LEDs behave as they would on the physical device, without considering the MIDI aspect. On the other hand, you have to understand how the device will behave when configuring your MIDI controller.
 
@@ -129,3 +129,153 @@ The THRU MUTE switch is also useful when the user wants to play a reverse solo l
 ### OUTPUT LEVEL
 
 The OUTPUT LEVEL roller on the front panel of the Boomerang Phrase Sampler controls the playback volume but has no effect on the through signal. The output level can be adjusted at any time and is not stored in memory. The OUTPUT LEVEL roller is a high quality, sealed potentiometer and is very smooth in operation. The output level can be adjusted from zero to full output and is very useful for balancing the loop with the through signal. The OUTPUT LEVEL roller is also useful for setting the level of the loop signal when the THRU MUTE switch is turned off and only the loop signal is present.
+
+# MIDI Configuration
+
+As mentioned earlier, the plugin has MIDI capability. I have included the configuration file for the Paint Audio MIDI Captain as a reference, but you may have to build your own depending on your hardware.
+
+I have tried to decouple the MIDI configuration from the plugin as much as possible, but the behavior is a little tricky in a few places due to the cool functionality of the Boomerang.
+
+Take a look at [page1.txt](midi/page1.txt) to see how it works. It's fairly self-explanatory, but i'll go over it here.
+
+## MIDI Captain Configuration
+
+I'm using the "Super Mode 4.0" firmware, which allows for a lot of flexibility in the pedal's behavior. It provides for up to 7(?) "keypress" settings per switch, meaning you can cycle through 7(?) completely different configurations with each press of a switch. Each keypress config can send up to 7? MIDI messages with each press. It can also send HID messages - keyboard/mouse messages. It also has individual configurations for each _kind_ of press - short down, short up (release), long down, and long up. You can also configure the LEDS for each keypress. It's a very powerful pedal.
+
+> The pedal's creators provide demos where they play a multi-chord progression on a synth with a single switch, using the multiple keypresses and multiple MIDI messages per keypress features.
+
+The Boomerang presents some challenges when programming the MIDI config, for a few reasons. Firstly, the pedals on the physical device appear to be momentary switches, but the device behaves as if some of the switches are latching. On top of that, some of the switches behave differently depending on the state of the device.
+
+### Switch Types: Toggle
+
+Let's start simple. Most switches are toggle switches: that is, they have two states, and pressing the switch toggles between them. For example, the `DIRECTION` switch toggles between forward and reverse playback. Similarly, the `THRU MUTE` switch toggles between muting the through signal and leaving it open.
+
+#### MIDI Configuration for Toggle Switches
+
+The configuration for these switches is straightforward. Here's the `DIRECTION` switch:
+
+```text
+### SWITCH V ###
+### DIRECTION ###
+[key9]
+keytimes  = [2]
+ledmode   = [normal]
+ledcolor1 = [0xff0000][0xff0000][0xff0000]
+short_dw1 = [2][CC][10][127]
+
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_dw2 = [2][CC][10][0]
+```
+
+- `keytimes = 2` means there are two configurations for this switch, and each press selects the next one.
+- `ledmode = normal` means you set the led colors for each keypress. (the other options are `select` and `tap`, which i won't get into.)
+- `ledcolor1 = [0xff0000][0xff0000][0xff0000]` sets the color of the LED for the first keypress to red.
+- `short_dw1 = [2][CC][10][127]` sends a MIDI message on the first keypress. This message sends a `CC` message on `Channel 2` with controller number `10` and value `127`.
+- `ledcolor2 = [0x000000][0x000000][0x000000]` sets the color of the LED for the second keypress to off.
+- `short_dw2 = [2][CC][10][0]` sends a MIDI message on the second keypress. This message sends a `CC` message on `Channel 2` with controller number `10` and value `0`.
+
+Put together, this configuration implements a basic toggle switch. The first press sends a `CC` message with value `127`, and the second press sends a `CC` message with value `0`. The LED changes color to indicate the state of the switch.
+
+#### Plugin Behavior for Toggle Switches
+
+In the plugin code, we keep track of the state of the switch. When the switch changes state, we act accordingly. Here's the relevant code for the `DIRECTION` switch:
+
+```cpp
+bool wasReverse = Reverse;                                  // if we were in reverse when we entered this block
+ReverseArmed    = isArmed(inputParameters[kReverseParam]);  // if the reverse toggle is now on
+
+print("Reverse Mode: " + Reverse);
+print("ReverseArmed: " + ReverseArmed);
+
+if(switchChanged(wasReverse, ReverseArmed)) {
+  if(ReverseArmed) {
+    enableReverse();
+  }
+  else {
+    disableReverse();
+  }
+}
+```
+
+### Switch Types: Momentary
+
+Now let's tackle a more complex example.
+
+For example, the `STACK (SPEED)` switch has two very different functions, depending on whether the 'Rang is playing or not:
+  
+  1. When PLAYING, holding down the STACK button overdubs onto the playing loop, until it is released. So it's a momentary switch.
+  1. When IDLE, pressing the STACK button toggles between full and half speed. So it's a latching switch.
+
+The MIDI pedal has no way of keeping its target's state between presses. So i set the `STACK (SPEED)` pedal up to behave exactly like a momentary switch, and leave the state management up to the plugin's software.
+
+The configuration looks like this:
+
+```text
+### SWITCH D ###
+### STACK (SPEED) ###
+[key8]
+keytimes = [1]
+ledmode = [normal]
+ledcolor1 = [0xffffff][0xffffff][0xffffff]
+short_dw1 = [2][CC][9][127]
+short_up1 = [2][CC][9][0]
+long_up1  = [2][CC][9][0]
+```
+
+As you can see, the pedal sends an ON `(127)` message on the `short_down` press, and OFF `(0)` on both the `long_up` and `short_up` presses. This exactly emulates the behavior of a physical momentary switch.
+
+In the plugin code, it's easy to keep state. When the `STACK (SPEED)` switch is pressed, the plugin checks the state of the device. If it's playing, it overdubs. If it's idle, it toggles the speed. I use a few flip-flop variables to keep track of the state of the switch, and the state of the device.
+
+The code looks like this (the `print` statements are for debugging):
+
+```cpp
+// manage the switch state:
+if(switchChanged(stackWasArmed, stackArmed)) {
+  if(isPlaying()) {
+    // if we were in stack mode and the toggle is now off, disable stack mode
+    if(stackMode && !stackArmed) {
+      stackMode=false;
+      print("--> disabling stack mode");
+    }
+    // if we were not in stack mode and the toggle is now on, enable stack mode
+    else if(!stackMode && stackArmed) {
+      stackMode=true;
+      print("--> enabling stack mode");
+    }
+  }
+  else {
+    // if the unit is idle, it toggles the speed setting: full or half speed.
+    // but the stack/speed button is momentary, and always ends in OFF
+    // we'll always get an an on + off
+    // so it's more of a counter + toggle
+    if(speedModeState) {
+      halfSpeedMode = !halfSpeedMode;
+      print("--> halfSpeedMode: " + halfSpeedMode);
+    }
+
+    // this just flips every time the stack/speed is pressed on+off
+    // resulting in the speed mode being toggled every other time.
+    speedModeState = !speedModeState;
+    print("--> speedModeState: " + speedModeState);
+  }
+}
+
+// a lot of other code...
+if(currentlyPlaying) {
+  if(halfSpeedMode && halfToggle) {
+    // flip halftoggle, don't update index
+    // This the workaround for not being able to change the sample rate
+    // we're just playing the same sample twice
+    halfToggle = !halfToggle; 
+  }
+  else {
+    // update index to next sample
+    currentPlayingIndex++;
+    halfToggle = !halfToggle;
+  }
+}
+
+
+
+
+```

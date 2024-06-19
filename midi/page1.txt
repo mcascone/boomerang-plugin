@@ -1,7 +1,7 @@
 ### Page 1
 [PAGE]
 # Change the "NAME" below in uppercase letters <= 4 characters
-# This is configured specifically to emulate the behavior of the 
+# This page is configured specifically to emulate the behavior of the 
 #   Boomerang+ Phrase Sampler. The old-school one, not the III.
 page_name = [BOOM]
 
@@ -66,6 +66,7 @@ ledcolor2 = [0x000000][0x000000][0x000000]
 short_dw2 = [2][CC][2][0]
 
 ### SWITCH 3 ###
+### UNUSED AT THIS TIME ###
 [key2]
 keytimes = [1]
 ledmode = [normal]
@@ -74,6 +75,7 @@ short_dw1 = [2][CC][3][2]
 
 
 ### SWITCH 4 ###
+### UNUSED AT THIS TIME ###
 [key3]
 keytimes = [2]
 ledmode = [normal]
@@ -142,25 +144,13 @@ short_up2 = [2][CC][8][0]
 ###   that also acts as a toggle for a different feature - 1/2 SPEED -
 ###   that only activates when the unit is *not* playing.
 ### The MIDICaptain doesn't have a way to understand the STATE of the unit.
-### So i will have to separate these triggers until a new way appears to get closer to full emulation.
-### This switch is the STACK control.
-### The momentary-style record concept translates into:
-### short_down = record start
-### short_up   = record stop
-### long_down  = record start
-### long_up    = record stop
-### 
-### the cc's have to send on the same ID as RECORD,
-###  because the DAW will only recognize one CC ID attachment (I believe).
-### I suppose i could intercept them with a MIDI filter, but that's a lot of work.
-### ^^^^ THIS IS NOT TRUE ^^^^
-### the midi doesn't need to know what the physical switch is doing behind the scenes. 
+### And, the midi doesn't need to know what the physical switch is doing behind the scenes. 
 ### The plugin has inputs for each switch.
 ### So all the midi needs to do is send the correct CC to the correct input.
 ### The plugin should take care of the rest.
 ### In code-speak this also serves to decouple the midi config from the plugin code.
-### So again, i am only sending a toggle here. But in this button's case, it's implemented for
-###   both long and short presses.
+### I am only sending a toggle here. But in this button's case, it's implemented for
+###   both long and short presses. So it emulated a momentary switch.
 ### And in the plugin, it's still really just a toggle. Don't overcomplicate it.
 [key8]
 keytimes = [1]

@@ -24,6 +24,7 @@
 // DONE: bug: Stack doesn't work (issue #2)
 // TODO: Record LED stops flashing during playback (i think due to outputParams not being processed) (#6)
 // TODO: bug: Once when Idle doesn't set ONCE mode (#9)
+// TODO: consider making every switch a momentary switch
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -63,7 +64,7 @@ enum ParamsStatus
 };
 
 
-array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack (Speed)" };
+array<string> inputParametersNames={"Output Level", "Thru Mute", "Record", "Play (Stop)", "Once", "Direction", "Stack (Speed)"};
 array<double> inputParameters(inputParametersNames.length);
 array<double> inputParametersDefault={
     .5, // OutputLevel
@@ -159,6 +160,7 @@ int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds m
 
 bool recording=false;         // currently recording
 bool recordingArmed=false;    // record button is pressed
+bool recWasStoppedByPlay=false; // workaround for bug #4
 
 double OutputLevel=0;         // output level
 
@@ -257,6 +259,7 @@ void stopRecording()
 void startPlayback()
 {
     print("--> Start Playing");
+    recWasStoppedByPlay   = false; // workaround for bug #4
     playing               = true;
     currentPlayingIndex   = 0;
     playbackGain          = 0;
@@ -355,7 +358,12 @@ void processBlock(BlockData& data) {
         bool doStopRecording=(int(i)==stopRecordingSample);
         
         if(doStartRecording) {
-            startRecording();
+            // workaround for #4
+            // i think caused by the start/stop sample logic
+            // which i don't think we need
+            if(!recWasStoppedByPlay) {
+                startRecording();
+            }
         }
         else if(doStopRecording) {
             stopRecording();
@@ -475,7 +483,7 @@ void processBlock(BlockData& data) {
                 halfToggle = !halfToggle;
             }
             
-            if(currentPlayingIndex>=loopDuration) {
+            if(currentPlayingIndex>=loopDuration && loopDuration>0) {
                 // in once mode, stop playback after one cycle
                 if(onceMode) {
                     stopPlayback();
@@ -516,6 +524,7 @@ void processBlock(BlockData& data) {
                 stopRecording();
                 recordGainInc=0;    // avoid post buffer recording
                 bufferFilled=true;  // down the line this flag will be checked to wait for Record or Play to be pressed
+                print("--> buffer filled");
             }
         }
         
@@ -602,6 +611,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
 
     // if play button state changed
     if(switchChanged(playWasArmed, playArmed)) {
+        print("PLAY --> " + playArmed);
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
             // onceMode = false;                       // if we were in once mode, disable it. TODO: is this right? maybe future feature
@@ -613,6 +623,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
 
             if(recording) {
                 stopRecording();     // sets `recording` false
+                recWasStoppedByPlay = true; // workaround for bug #4
             }
             else {
                 startPlayback();         // sets `playing` true
@@ -640,7 +651,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     //   Repeated presses produces a stutter effect sort of like record scratching.
     // Currently this switch is a toggle, but acts as a momentary switch: any change triggers the ONCE logic.
     // TODO: new feature: if playing in once mode, find a way to disable it so the loop repeats
-    // bool wasOnceMode  = onceMode;                               // if we were in once mode when we entered this block
+    // bool wasOnceMode  = onceMode;                            // if we were in once mode when we entered this block
     bool wasOnceArmed = onceArmed;                              // get once toggle state before we entered this block
     onceArmed         = isArmed(inputParameters[kOnceParam]);   // set onceArmed to current toggle state
 
@@ -649,30 +660,32 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("onceArmed: " + onceArmed);
 
     if(switchChanged(wasOnceArmed, onceArmed)) {
+        print("ONCE pushed");
         if(playing && !onceMode) {
             // Pressing ONCE during playback, when not in Once Mode, tells the Boomerang to finish playing the loop and then stop.
-            print("--> setting once mode true");
             onceMode=true;
+            print("--> Once Mode: " + onceMode);
         }
         // Pressing it while the ONCE LED is on (playing in once mode) will always immediately restart playback. 
         // theoretically, this should be used the next time a block is processed?
         // do we have to go to the sample level for instant response? MAYBE
         // do have to / should we instead call stop/startPlayback()? NO
         else if (playing && onceMode) {
-            currentPlayingIndex=0;   // immediately restart playback at the beginning of the loop
+            currentPlayingIndex=0;        // immediately jump to the beginning of the loop
         }
         // Pressing ONCE while recording will halt recording and initiate an immediate playback of the signal just recorded,
         // but the loop will playback only once. 
         else if (recording) {
             stopRecording(); // sets recording false
-            print("--> setting once mode true");
             onceMode=true;
+            print("--> Once Mode: " + onceMode);
             startPlayback();  // sets playing true
         }
-        else if (!playing && !recording) {
+        else if (!playing && !recording && loopDuration > 0) {
             // If the Boomerang Phrase Sampler is idle, pressing ONCE will playback your recorded loop one time.
-            print("--> setting once mode true");
+            // TODO: feature: once in idle mode will set once for next record or play
             onceMode=true;
+            print("--> Once Mode: " + onceMode);
             startPlayback();
         }
     }
@@ -682,6 +695,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
     // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
     // During playback the RECORD LED will blink briefly at the beginning of the loop each time it comes around.
+    // --> If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
     bool wasRecordingArmed = recordingArmed;                           // get recording toggle state before we entered this block
     recordingArmed         = isArmed(inputParameters[kRecordParam]);   // set recordingArmed to current toggle state
 
@@ -690,6 +704,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("recording: " + recording);
     
     if(switchChanged(wasRecordingArmed, recordingArmed)) {
+        print("RECORD --> " + recordingArmed);
         if((!recording && !playing) || playing) {
             if(playing) 
                 stopPlayback();

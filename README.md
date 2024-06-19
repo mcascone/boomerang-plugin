@@ -178,16 +178,16 @@ Put together, this configuration implements a basic toggle switch. The first pre
 
 #### Plugin Behavior for Toggle Switches
 
-In the plugin code, we keep track of the state of the switch. When the switch changes state, we act accordingly. Here's the relevant code for the `DIRECTION` switch:
+In the plugin code, we keep track of the state of the switch. When the switch changes state, we act accordingly. Here's the relevant code for the `DIRECTION` switch (the `print` statements are for debugging):
 
 ```cpp
-bool wasReverse = Reverse;                                  // if we were in reverse when we entered this block
-ReverseArmed    = isArmed(inputParameters[kReverseParam]);  // if the reverse toggle is now on
+bool wasReverse = Reverse;                               // if we were in reverse when we entered this block
+ReverseArmed    = inputParameters[kReverseParam] >= .5;  // if the reverse toggle is now on
 
 print("Reverse Mode: " + Reverse);
 print("ReverseArmed: " + ReverseArmed);
 
-if(switchChanged(wasReverse, ReverseArmed)) {
+if(wasReverse != ReverseArmed) {
   if(ReverseArmed) {
     enableReverse();
   }
@@ -205,6 +205,8 @@ For example, the `STACK (SPEED)` switch has two very different functions, depend
   
   1. When PLAYING, holding down the STACK button overdubs onto the playing loop, until it is released. So it's a momentary switch.
   1. When IDLE, pressing the STACK button toggles between full and half speed. So it's a latching switch.
+
+#### MIDI Configuration for Momentary Switches
 
 The MIDI pedal has no way of keeping its target's state between presses. So i set the `STACK (SPEED)` pedal up to behave exactly like a momentary switch, and leave the state management up to the plugin's software.
 
@@ -224,13 +226,15 @@ long_up1  = [2][CC][9][0]
 
 As you can see, the pedal sends an ON `(127)` message on the `short_down` press, and OFF `(0)` on both the `long_up` and `short_up` presses. This exactly emulates the behavior of a physical momentary switch.
 
+#### Plugin Behavior for Momentary Switches
+
 In the plugin code, it's easy to keep state. When the `STACK (SPEED)` switch is pressed, the plugin checks the state of the device. If it's playing, it overdubs. If it's idle, it toggles the speed. I use a few flip-flop variables to keep track of the state of the switch, and the state of the device.
 
-The code looks like this (the `print` statements are for debugging):
+The code looks like this:
 
 ```cpp
 // manage the switch state:
-if(switchChanged(stackWasArmed, stackArmed)) {
+if(stackWasArmed != stackArmed) {
   if(isPlaying()) {
     // if we were in stack mode and the toggle is now off, disable stack mode
     if(stackMode && !stackArmed) {
@@ -274,8 +278,4 @@ if(currentlyPlaying) {
     halfToggle = !halfToggle;
   }
 }
-
-
-
-
 ```

@@ -51,11 +51,7 @@ ledcolor2 = [0x000000][0x000000][0x000000]
 short_up2 = [2][CC][1][0]
 
 ### SWITCH 2 ###
-### 1/2 SPEED ###
-### Another toggle. On the physical unit it is also the STACK switch.
-### Going with a separate switch for that functionality, for now.
-### NOT NEEDED, I FIGURED OUT HOW TO DO IT IN THE PLUGIN.
-### 
+### UNUSED AT THIS TIME ###
 [key1]
 keytimes = [2]
 ledmode = [normal]

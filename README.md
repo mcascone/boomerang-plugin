@@ -136,7 +136,7 @@ As mentioned earlier, the plugin has MIDI capability. I have included the config
 
 I have tried to decouple the MIDI configuration from the plugin as much as possible, but the behavior is a little tricky in a few places due to the cool functionality of the Boomerang.
 
-Take a look at [page1.txt](midi/page1.txt) to see how it works. It's fairly self-explanatory, but i'll go over it here.
+Take a look at [page1.txt](midi/page1.txt) to see how it works. It's fairly self-explanatory, and i try to comment the code as much as i can, but i'll go over it here.
 
 ## MIDI Captain Configuration
 

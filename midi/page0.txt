@@ -63,22 +63,23 @@ display_pc_offset = [0]
 display_bank_offset = [1]
 
 ### SWITCH 1 ###
-### TSC ###
+### OFF / TSC / OD / BOTH ###
 [key0]
-keytimes = [2]
+keytimes = [4]
 ledmode = [normal]
-ledcolor1 = [0x0FF000][0x0FF000][0x00FF00]
-short_up1 = [1][CC][1][127]
 
-ledcolor2 = [0x000000][0x000000][0x000000]
-short_up2 = [1][CC][1][0]
+# TSC ON, OD OFF
+ledcolor1 = [0x0FF000][0x000000][0x000000]
+short_up1 = [1][CC][1][127][1][CC][101][0]
 
-# ledcolor3 = [0xFF0000][0xFF0000][0xFF0000]
-# short_up3 = [1][CC][20][127]
+ledcolor2 = [0x000000][0x000FFF][0x000000]
+short_up2 = [1][CC][1][0][1][CC][101][127]
 
-# long1 = [1][CC][1][0]
-# long2 = [1][CC][1][50]
-# long3 = [1][CC][1][100]
+ledcolor3 = [0x0FF000][0x000FFF][0x000000]
+short_up3 = [1][CC][1][127][1][CC][101][127]
+
+ledcolor4 = [0x000000][0x000000][0x000000]
+short_up4 = [1][CC][1][0][1][CC][101][0]
 
 ### SWITCH 2 ###
 ### CHOR ###

@@ -610,7 +610,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("playArmed: " + playArmed);
 
     // if play button state changed
-    if(switchChanged(playWasArmed, playArmed)) {
+    if(playWasArmed != playArmed) {
         print("PLAY --> " + playArmed);
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {

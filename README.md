@@ -44,6 +44,9 @@ Regarding the LEDs in the plugin, they're a bit extraneous, since the controls h
 
 ## Current Status
 
+This project is very much in flux and there are a lot of little bugs/features in motion. Check out [the Issues tab](https://github.com/mcascone/boomerang-plugin/issues) for where my head is at regarding bugs and features.
+
+
 Here is what the GUI looks like now:
 
 ![plugin-ui](img/Screenshot_2024-06-10.png)

@@ -1,6 +1,6 @@
 # Boomerang+ Emulator
 
-VST/AU plugin based on the Boomerang+ Phrase Sampler.
+VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
@@ -18,7 +18,9 @@ Every other looper plugin on the market is too complicated.
 
 So to that end I set about to figure out how to make a plugin that perfectly emulates the unique layout and behavior of this singular piece of gear.
 
-It's done with love and reverence for the creators and keepers of the original device, and I have reached out to them for approval/partnership.
+It's done with love and reverence for the creators and keepers of the original device, and I have reached out to them for approval/partnership. 
+
+However, this is me stating clearly that **this has no affiliation with Boomerang** (yet).
 
 ### Design Approach
 

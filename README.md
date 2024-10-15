@@ -142,15 +142,15 @@ As mentioned earlier, the plugin has MIDI capability. I have included the config
 
 I have tried to decouple the MIDI configuration from the plugin as much as possible, but the behavior is a little tricky in a few places due to the cool functionality of the Boomerang.
 
-Take a look at [page1.txt](midi/page1.txt) to see how it works. It's fairly self-explanatory, and i try to comment the code as much as i can, but i'll go over it here.
+Take a look at [page1.txt](midi/page1.txt) to see how it works. It's fairly self-explanatory, and I try to comment the code as much as I can, but I'll go over it here.
 
 ## MIDI Captain Configuration
 
-I'm using the "Super Mode 4.0" firmware, which allows for a lot of flexibility in the pedal's behavior. It provides for up to 7(?) "keypress" settings per switch, meaning you can cycle through 7(?) completely different configurations with each press of a switch. Each keypress config can send up to 7? MIDI messages with each press. It can also send HID messages - keyboard/mouse messages. It also has individual configurations for each _kind_ of press - short down, short up (release), long down, and long up. You can also configure the LEDS for each keypress. It's a very powerful pedal.
+I'm using the "Super Mode 4.0" firmware, which allows for a lot of flexibility in the pedal's behavior. It provides for up to 7(?) "keypress" settings per switch, meaning you can cycle through 7(?) completely different configurations with each press of a switch. It can also send HID messages: keyboard/mouse messages. Each keypress can send any combination of MIDI/HID messages with each press. It also has individual configurations for each _kind_ of press - short down, short up (release), long down, and long up. You can also configure the LEDS for each keypress. It's a very powerful pedal.
 
-> The pedal's creators provide demos where they play a multi-chord progression on a synth with a single switch, using the multiple keypresses and multiple MIDI messages per keypress features.
+ℹ️ The pedal's creators provide demos where they play a multi-chord progression on a synth with a single switch, using the multiple keypresses and multiple MIDI messages per keypress features.
 
-The Boomerang presents some challenges when programming the MIDI config, for a few reasons. Firstly, the pedals on the physical device appear to be momentary switches, but the device behaves as if some of the switches are latching. On top of that, some of the switches behave differently depending on the state of the device.
+The Boomerang presents some challenges when programming the MIDI config, for a few reasons. Firstly, the pedals on the physical device appear to be momentary switches, but the device behaves like some switches are latching. On top of that, some of the switches behave differently depending on the state of the device.
 
 ### Switch Types: Toggle
 
@@ -174,7 +174,7 @@ short_dw2 = [2][CC][10][0]
 ```
 
 - `keytimes = 2` means there are two configurations for this switch, and each press selects the next one.
-- `ledmode = normal` means you set the led colors for each keypress. (the other options are `select` and `tap`, which i won't get into.)
+- `ledmode = normal` means you set the led colors for each keypress. (the other options are `select` and `tap`, which I won't get into.)
 - `ledcolor1 = [0xff0000][0xff0000][0xff0000]` sets the color of the LED for the first keypress to red.
 - `short_dw1 = [2][CC][10][127]` sends a MIDI message on the first keypress. This message sends a `CC` message on `Channel 2` with controller number `10` and value `127`.
 - `ledcolor2 = [0x000000][0x000000][0x000000]` sets the color of the LED for the second keypress to off.

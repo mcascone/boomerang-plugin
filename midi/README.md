@@ -1,6 +1,6 @@
 # About these files
 
-These are the `supersetup` config files I use for my live jamming setup. 
+These are the Paint Audio MIDI Captain `supersetup` config files I use for my live jamming setup. 
 
 ## page0
 

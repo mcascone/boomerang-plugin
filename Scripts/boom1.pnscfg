@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export applicative_type="PluginConfig" data_type="{0779F8E6-34E0-4DA5-9307-ECC37BE0FA8A}">
+    <content io_config_name="Stereo" plugin_plugin_type="0" encrypt_dsp_script="0" use_generic_skin="1" use_generic_params="0" io_config="Stereo.iocfg" dest_path="/Users/maximiliancascone/Documents/Blue Cat Audio/Blue Cat&apos;s Plug&apos;n Script/Export" plugin_manufacturer_id="MAXC" plugin_manufacturer="Blue Cat Audio" plugin_name="Boomerang" plugin_guid="3563B9779E57CF4F8E1ABEF99E4D6E63" plugin_id="BOOM"/>
+</Export>

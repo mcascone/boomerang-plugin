@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export applicative_type="PluginConfig" data_type="{0779F8E6-34E0-4DA5-9307-ECC37BE0FA8A}">
+    <content io_config_name="Mono or Stereo" plugin_plugin_type="0" encrypt_dsp_script="0" use_generic_skin="1" use_generic_params="0" io_config="Mono or Stereo.iocfg" dest_path="/Users/maximiliancascone/Documents/Blue Cat Audio/Blue Cat&apos;s Plug&apos;n Script/Export" plugin_manufacturer_id="MCGW" plugin_manufacturer="MC Guitar Workshop" plugin_name="Boomerang" plugin_guid="E5821AB5A6BCCB49BD810AF58BA360A8" plugin_id="BOOM"/>
+</Export>

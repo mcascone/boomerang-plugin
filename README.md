@@ -4,6 +4,15 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
+# Update Sept-8-2025
+
+Hello! Thanks for visiting! I've been using this plugin a lot more recently and will be updating it soon.
+
+I'm not going to focus on the UI anymore: I have discovered [Gig Performer](https://gigperformer.com/), which makes a plugin's UI much less important than its functionality.
+
+I highly recommend checking GP out, and stay tuned here for functionality and feature updates!
+
+
 ## Background
 
 Way back when, I had an original Boomerang+ Phrase Sampler. Before it was cool; chiefly inspired by Trey Anastasio's use of one.

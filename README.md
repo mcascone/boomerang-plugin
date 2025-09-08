@@ -8,7 +8,7 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 Hello! Thanks for visiting! I've been using this plugin a lot more recently and will be updating it soon.
 
-I'm not going to focus on the UI anymore: I have discovered [Gig Performer](https://gigperformer.com/), which makes a plugin's UI much less important than its functionality.
+I'm not going to focus on the UI anymore: I have discovered [Gig Performer](https://gigperformer.com/), which [makes a plugin's UI much less important than its functionality](https://www.reddit.com/r/GigPerformer/comments/1n2l468/this_app_is_incredible/).
 
 I highly recommend checking GP out, and stay tuned here for functionality and feature updates!
 

@@ -10,6 +10,8 @@ Hello! Thanks for visiting! I've been using this plugin a lot more recently and 
 
 I'm not going to focus on the UI anymore: I have discovered [Gig Performer](https://gigperformer.com/), which [makes a plugin's UI much less important than its functionality](https://www.reddit.com/r/GigPerformer/comments/1n2l468/this_app_is_incredible/).
 
+I would love to have someone help out with the UI refresh - let me know if you're interested!
+
 I highly recommend checking GP out, and stay tuned here for functionality and feature updates!
 
 

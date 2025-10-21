@@ -4,6 +4,11 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
+# Update Oct-21-2025
+
+1. Starting to wrap my head around the UI/button quirks. I think I have to make _all_ buttons momentary and handle the logic internally.
+1. I added a State Diagram of the current behavior of the 'Rang. [Check it out on the wiki!](https://github.com/mcascone/boomerang-plugin/wiki/State-Machine)
+
 # Update Sept-8-2025
 
 Hello! Thanks for visiting! I've been using this plugin a lot more recently and will be updating it soon.
@@ -13,7 +18,6 @@ I'm not going to focus on the UI anymore: I have discovered [Gig Performer](http
 I would love to have someone help out with the UI refresh - let me know if you're interested!
 
 I highly recommend checking GP out, and stay tuned here for functionality and feature updates!
-
 
 ## Background
 

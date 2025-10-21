@@ -6,7 +6,7 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 # Update Oct-21-2025
 
-1. Starting to wrap my head around the UI/button quirks. I think I have to make _all_ buttons momentary and handle the logic internally.
+1. Starting to wrap my head around the UI/button quirks https://github.com/mcascone/boomerang-plugin/issues/26, https://github.com/mcascone/boomerang-plugin/issues/27, https://github.com/mcascone/boomerang-plugin/issues/28. I think I have to make _all_ buttons momentary and handle the logic internally: https://github.com/mcascone/boomerang-plugin/issues/29.
 1. I added a State Diagram of the current behavior of the 'Rang. [Check it out on the wiki!](https://github.com/mcascone/boomerang-plugin/wiki/State-Machine)
 
 # Update Sept-8-2025

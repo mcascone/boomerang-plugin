@@ -19,12 +19,12 @@
 // DONE: thrumute
 // DONE: implement MIDI control
 // TODO: tests
-// TODO: bug: thru mute intermittently unmutes/remutes (#3)
-// TODO: bug: pressing PLAY while recording doesn't stop recording (#4)
+// NOBUG: bug: thru mute intermittently unmutes/remutes (#3) (this was just because of the free version limitation - resolved by purchasing)
+// INPROGRESS: bug: pressing PLAY while recording doesn't stop recording (#4)
 // DONE: bug: Stack doesn't work (issue #2)
 // TODO: Record LED stops flashing during playback (i think due to outputParams not being processed) (#6)
 // TODO: bug: Once when Idle doesn't set ONCE mode (#9)
-// TODO: consider making every switch a momentary switch
+// INPROGRESS: consider making every switch a momentary switch
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -188,13 +188,16 @@ const double xfadeInc=1/double(fadeTime);  // fade increment
 bool Reverse=false;       // reverse mode
 bool ReverseArmed=false;  // reverse (direction) button is clicked (toggle)
 
+bool wasPlaying=false;    // previous playing state
 bool playing=false;       // currently playing state
+bool playWasArmed=false;  // previous play button state
 bool playArmed=false;     // play button is clicked (toggle)
 
 bool onceMode=false;      // once mode
 bool onceArmed=false;     // once button is clicked (toggle/momentary)
 
 bool stackMode=false;     // stack mode
+bool stackWasArmed=false; // previous stack button state
 bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
@@ -598,9 +601,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
     // If bufferFilled, clear that state and start playback.
     // During playback the PLAY LED will be on and the RECORD LED will blink at the beginning of each pass through the loop.
-    bool wasPlaying   = playing;                            // if we were playing when we entered this block
-    bool playWasArmed = playArmed;                          // if we were play armed when we entered this block
-            playArmed = inputParameters[kPlayParam] >= .5;  // if we are play armed now
+    wasPlaying   = playing;                            // if we were playing when we entered this block
+    playWasArmed = playArmed;                          // if we were play armed when we entered this block
+    playArmed    = inputParameters[kPlayParam] >= .5;  // if we are play armed now
     
     print("wasPlaying: " + wasPlaying);
     print("playWasArmed: " + playWasArmed);
@@ -745,7 +748,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     //
     // If the loop is very short and the STACK button is held down while you continue to play, the effect is essentially the same as that of a conventional delay with a very slow decay setting. The OUTPUT LEVEL roller then becomes the effect/clean mix control. The cool thing is that the delay time is precisely controlled by two presses of the RECORD button, so it will be just what you need at the moment.
     // bool wasStackMode  = stackMode;                           // if we were in stack mode when we entered this block
-    bool stackWasArmed = stackArmed;                            // get stack toggle state before we entered this block
+    stackWasArmed = stackArmed;                            // get stack toggle state before we entered this block
     stackArmed         = inputParameters[kStackParam] >= .5;    // if the stack toggle is now on
 
     print("stackMode: " + stackMode);

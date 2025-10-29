@@ -199,14 +199,16 @@ bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
 bool halfToggle=false;     // half speed toggle
-bool speedModeState=false; // speed mode counter
+bool speedModeCounter=false; // speed mode counter
 // bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
 bool loopCycled=false;     // loop has looped
 
 // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
-bool thruMute=false;       // Thru Mute (toggle)
+bool thruMute=false;        // Thru Mute (toggle)
+bool wasThruMute=false;     // previous Thru Mute state
+
 
 /* Initialization
  *
@@ -767,22 +769,22 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         // - keep a state variable for the toggle
         // - on change, flip the state variable
         // - only change the actual mode if the state variable is true
-        // - so each press will flip the state variable on+off
-        // - but only every other press will change the actual mode
+        // - so each press+release will flip the state variable on+off
+        // - but only every other change will change the actual mode
         else {
             // if the unit is idle, it toggles the speed setting: full or half speed.
             // but the stack/speed button is momentary, and always ends in OFF
             // we'll always get an an on + off
             // so it's more of a counter + toggle
-            if(speedModeState) {
+            if(speedModeCounter) {
                 halfSpeedMode = !halfSpeedMode;
                 print("--> halfSpeedMode: " + halfSpeedMode);
             }
 
             // this just flips every time the stack/speed is pressed on+off
-            // resulting in the speed mode being toggled every other time.
-            speedModeState = !speedModeState;
-            print("--> speedModeState: " + speedModeState);
+            // resulting in the speed mode being toggled every other time: or on each momentary press+release.
+            speedModeCounter = !speedModeCounter;
+            print("--> speedModeCounter: " + speedModeCounter);
         }
     }
 
@@ -824,8 +826,8 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // Thru Mute
     // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
     // this currently functions as a TOGGLE
-    bool wasThruMute  = thruMute;
-    thruMute          = inputParameters[kThruMuteParam] >= .5;
+    wasThruMute  = thruMute;
+    thruMute     = inputParameters[kThruMuteParam] >= .5;
 
     if(wasThruMute != thruMute) {
         print("--> Thru Mute: " + thruMute);

@@ -573,9 +573,9 @@ void processBlock(BlockData& data) {
 void updateInputParametersForBlock(const TransportInfo@ info) {
 
     print("-------------- \nParam Changed\n--------------");
-    print("Loop Duration: " + loopDuration);
-    print("Current Playing Index: " + currentPlayingIndex);
-    print("Current Recording Index: " + currentRecordingIndex);
+    // print("Loop Duration: " + loopDuration);
+    // print("Current Playing Index: " + currentPlayingIndex);
+    // print("Current Recording Index: " + currentRecordingIndex);
 
     // Reverse--------------------------------------------------------------------------
     // If the unit is playing back, pressing this button will immediately reverse the direction through your loop, resulting in reversed audio output. 
@@ -583,16 +583,11 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     bool wasReverse = Reverse;                               // if we were in reverse when we entered this block
     ReverseArmed    = inputParameters[kReverseParam] >= .5;  // if the reverse toggle is now on
     
-    print("Reverse Mode: " + Reverse);
-    print("ReverseArmed: " + ReverseArmed);
+    // print("Reverse Mode: " + Reverse);
+    // print("ReverseArmed: " + ReverseArmed);
 
     if(wasReverse != ReverseArmed) {
-        if(ReverseArmed) {
-            enableReverse();
-        }
-        else {
-            disableReverse();
-        }
+        ReverseArmed ? enableReverse() : disableReverse();
     }
 
     // PLAY/STOP --------------------------------------------------------------------------
@@ -627,7 +622,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             }
             else {
                 startPlayback();         // sets `playing` true
-                // TODO: find way to flip UI play toggle to ON (separate from LED)
+                // TODO: #26 find way to flip UI play toggle to ON (separate from LED)
             }
         }
 
@@ -655,9 +650,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     bool wasOnceArmed = onceArmed;                           // get once toggle state before we entered this block
     onceArmed         = inputParameters[kOnceParam] >= .5;   // set onceArmed to current toggle state
 
-    print("onceMode: " + onceMode);
+    print("onceMode: "     + onceMode);
     print("wasOnceArmed: " + wasOnceArmed);
-    print("onceArmed: " + onceArmed);
+    print("onceArmed: "    + onceArmed);
 
     if(wasOnceArmed != onceArmed) {
         print("ONCE pushed");
@@ -691,10 +686,10 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     }
     
     // RECORD ------------------------------------------------------------------------
-    // When it is pressed, recording begins and the RECORD LED lights up brightly. 
-    // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
+    // When it is pressed, recording begins and the RECORD LED lights up. 
+    // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up to indicate the change.
     // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
-    // During playback the RECORD LED will blink briefly at the beginning of the loop each time it comes around.
+    // During playback the RECORD LED will blink at the beginning of the loop each time it comes around.
     // --> If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
     bool wasRecordingArmed = recordingArmed;                        // get recording toggle state before we entered this block
     recordingArmed         = inputParameters[kRecordParam] >= .5;   // set recordingArmed to current toggle state
@@ -706,9 +701,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     if(wasRecordingArmed != recordingArmed) {
         print("RECORD --> " + recordingArmed);
         if((!recording && !playing) || playing) {
-            if(playing) 
+            if(playing) {
                 stopPlayback();
-            
+            }
             if(bufferFilled) {
                 print("--> clearing buffer filled state");
                 bufferFilled=false;
@@ -722,6 +717,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
             stopRecording();
             startPlayback();
+            // TODO: Flip the Play toggle to ON (separate from LED)
         }
     }
 

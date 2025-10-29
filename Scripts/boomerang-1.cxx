@@ -596,9 +596,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
     // If bufferFilled, clear that state and start playback.
     // During playback the PLAY LED will be on and the RECORD LED will blink at the beginning of each pass through the loop.
-    bool wasPlaying = playing;                      // if we were playing when we entered this block
-    bool playWasArmed = playArmed;                  // if we were play armed when we entered this block
-    playArmed = inputParameters[kPlayParam] >= .5;  // if we are play armed now
+    bool wasPlaying   = playing;                            // if we were playing when we entered this block
+    bool playWasArmed = playArmed;                          // if we were play armed when we entered this block
+            playArmed = inputParameters[kPlayParam] >= .5;  // if we are play armed now
     
     print("wasPlaying: " + wasPlaying);
     print("playWasArmed: " + playWasArmed);
@@ -763,6 +763,12 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
                 print("--> enabling stack mode");
             }
         }
+        // This block is the pattern for momentary switches acting as toggles:
+        // - keep a state variable for the toggle
+        // - on change, flip the state variable
+        // - only change the actual mode if the state variable is true
+        // - so each press will flip the state variable on+off
+        // - but only every other press will change the actual mode
         else {
             // if the unit is idle, it toggles the speed setting: full or half speed.
             // but the stack/speed button is momentary, and always ends in OFF

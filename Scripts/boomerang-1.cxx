@@ -193,6 +193,7 @@ bool wasPlaying=false;    // previous playing state
 bool playing=false;       // currently playing state
 bool playWasArmed=false;  // previous play button state
 bool playArmed=false;     // play button is clicked (toggle)
+bool playToggleDesiredState=false; // desired state of play toggle (for UI feedback)
 
 bool onceMode=false;      // once mode
 bool onceArmed=false;     // once button is clicked (toggle/momentary)
@@ -609,10 +610,21 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     print("wasPlaying: " + wasPlaying);
     print("playWasArmed: " + playWasArmed);
     print("playArmed: " + playArmed);
+    print("playToggleDesiredState: " + playToggleDesiredState);
+    
+    // Check if toggle state doesn't match our desired state
+    if(playArmed != playToggleDesiredState) {
+        print("WARNING: Play toggle state mismatch! Desired: " + playToggleDesiredState + ", Actual: " + playArmed);
+        print("  User needs to click play button to sync UI with actual state");
+    }
 
     // if play button state changed
     if(playWasArmed != playArmed) {
         print("PLAY --> " + playArmed);
+        
+        // Update desired state to match user action
+        playToggleDesiredState = playArmed;
+        
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
             // onceMode = false;                       // if we were in once mode, disable it. TODO: is this right? maybe future feature
@@ -628,7 +640,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             }
             else {
                 startPlayback();         // sets `playing` true
-                // TODO: #26 find way to flip UI play toggle to ON (separate from LED)
+                print("--> UI and state now synchronized: Play toggle ON, playing=true");
             }
         }
 
@@ -636,10 +648,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         // i don't think playWasArmed is necessary
         if(wasPlaying && playWasArmed && !playArmed) {
             stopPlayback();   // sets `playing` false
+            print("--> UI and state now synchronized: Play toggle OFF, playing=false");
             
             // stackMode = stackMode ? false : stackMode; // if stack mode is on, turn it off
-            
-            // TODO: find way to flip UI play toggle to OFF (separate from LED)
         }
     }
 
@@ -731,7 +742,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             // Recording: stop recording and start playback
             stopRecording();
             startPlayback();
+            playToggleDesiredState = true; // We want play toggle to be ON
             print("--> Stopped recording, started playback");
+            print("--> Play toggle should be ON (desired state: " + playToggleDesiredState + ", actual: " + playArmed + ")");
         }
     }
 

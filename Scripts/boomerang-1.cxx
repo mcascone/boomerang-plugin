@@ -160,6 +160,7 @@ int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds m
 
 bool recording=false;         // currently recording
 bool recordingArmed=false;    // record button is pressed
+bool recordWasArmed=false;    // previous record button state
 bool recWasStoppedByPlay=false; // workaround for bug #4
 
 double OutputLevel=0;         // output level
@@ -691,38 +692,46 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     }
     
     // RECORD ------------------------------------------------------------------------
+    // MOMENTARY BEHAVIOR: Act on any state change of the button
     // When it is pressed, recording begins and the RECORD LED lights up. 
     // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up to indicate the change.
     // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
     // During playback the RECORD LED will blink at the beginning of the loop each time it comes around.
-    // --> If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
-    bool wasRecordingArmed = recordingArmed;                        // get recording toggle state before we entered this block
-    recordingArmed         = inputParameters[kRecordParam] >= .5;   // set recordingArmed to current toggle state
+    recordWasArmed = recordingArmed;                            // get recording toggle state before we entered this block
+    recordingArmed = inputParameters[kRecordParam] >= .5;       // set recordingArmed to current toggle state
 
-    print("wasRecordingArmed: " + wasRecordingArmed);
+    print("recordWasArmed: " + recordWasArmed);
     print("recordingArmed: " + recordingArmed);
     print("recording: " + recording);
     
-    if(wasRecordingArmed != recordingArmed) {
-        print("RECORD --> " + recordingArmed);
-        if((!recording && !playing) || playing) {
-            if(playing) {
-                stopPlayback();
-            }
+    // Act on ANY button state change (press or release)
+    if(recordWasArmed != recordingArmed) {
+        print("RECORD button state changed --> " + recordingArmed);
+        
+        if(!recording && !playing) {
+            // Idle state: start recording
             if(bufferFilled) {
                 print("--> clearing buffer filled state");
                 bufferFilled=false;
-                // do we need to do allLedsOff() here?
-                // no, they'll get reset 1-by-1 in computeOutputData()
             }
-            
             startRecording();
+            print("--> Started recording from idle");
+        }
+        else if(playing) {
+            // Playing: stop playback and start recording
+            stopPlayback();
+            if(bufferFilled) {
+                print("--> clearing buffer filled state");
+                bufferFilled=false;
+            }
+            startRecording();
+            print("--> Stopped playback, started recording");
         }
         else if(recording) {
-            // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
+            // Recording: stop recording and start playback
             stopRecording();
             startPlayback();
-            // TODO: Flip the Play toggle to ON (separate from LED)
+            print("--> Stopped recording, started playback");
         }
     }
 

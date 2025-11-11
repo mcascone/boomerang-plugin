@@ -1,0 +1,33 @@
+# Build directories
+build/
+Builds/
+JuceLibraryCode/
+
+# JUCE submodule (should be managed separately)
+JUCE/
+
+# Build artifacts
+*.o
+*.obj
+*.dSYM
+*.pdb
+*.ilk
+*.lib
+
+# IDE files
+.vscode/
+.vs/
+*.vcxproj.user
+*.sln.docstates
+
+# macOS
+.DS_Store
+
+# Backup files
+*.bak
+*~
+
+# Compiled binaries (these get installed to system)
+*.vst3
+*.component
+*.aaxplugin

@@ -8,7 +8,7 @@ echo "Setting up Boomerang+ JUCE Plugin Development Environment..."
 # Check if JUCE is already available
 if [ ! -d "JUCE" ]; then
     echo "Cloning JUCE framework..."
-    git clone --depth 1 --branch 7.0.12 https://github.com/juce-framework/JUCE.git
+    git clone --depth 1 --branch 8.0.10 https://github.com/juce-framework/JUCE.git
 else
     echo "JUCE already exists, skipping clone..."
 fi

@@ -8,6 +8,7 @@ add_subdirectory(JUCE)
 # Plugin configuration
 juce_add_plugin(Boomerang
     COMPANY_NAME "Cascone Audio"
+    BUNDLE_ID com.CasconeAudio.Boomerang
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE

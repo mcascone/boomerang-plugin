@@ -3,9 +3,6 @@ build/
 Builds/
 JuceLibraryCode/
 
-# JUCE submodule (should be managed separately)
-JUCE/
-
 # Build artifacts
 *.o
 *.obj

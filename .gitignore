@@ -9,7 +9,6 @@ BoomerangJUCE/build/
 BoomerangJUCE/Builds/
 BoomerangJUCE/JuceLibraryCode/
 BoomerangJUCE/*.jucer.bak
-BoomerangJUCE/JUCE/
 
 # macOS
 *.dSYM

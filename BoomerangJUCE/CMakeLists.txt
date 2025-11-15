@@ -7,16 +7,16 @@ add_subdirectory(JUCE)
 
 # Plugin configuration
 juce_add_plugin(Boomerang
-    COMPANY_NAME "Cascone Audio"
-    BUNDLE_ID com.CasconeAudio.Boomerang
+    COMPANY_NAME "MC Music Workshop"
+    BUNDLE_ID com.MCMusicWorkshop.Boomerang
     IS_SYNTH FALSE
-    NEEDS_MIDI_INPUT FALSE
+    NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD TRUE
-    PLUGIN_MANUFACTURER_CODE Casc
-    PLUGIN_CODE Boom
+    PLUGIN_MANUFACTURER_CODE MCMW
+    PLUGIN_CODE BOOM
     FORMATS AU VST3 AAX
     PRODUCT_NAME "Boomerang+")
 

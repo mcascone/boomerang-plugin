@@ -1,4 +1,5 @@
 {
   "C_Cpp.errorSquiggles": "disabled",
-  "ansible.python.interpreterPath": "/Users/maximiliancascone/.pyenv/versions/3.11.4/bin/python"
+  "ansible.python.interpreterPath": "/Users/maximiliancascone/.pyenv/versions/3.11.4/bin/python",
+  "cmake.sourceDirectory": "/Users/maximiliancascone/github/boomerang-plugin/BoomerangJUCE"
 }

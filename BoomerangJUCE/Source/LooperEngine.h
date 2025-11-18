@@ -26,7 +26,8 @@ public:
         Recording,
         Playing,
         Overdubbing,
-        ContinuousReverse
+        ContinuousReverse,
+        BufferFilled
     };
 
     enum class LoopMode
@@ -50,6 +51,12 @@ public:
     };
 
     enum class OnceMode
+    {
+        Off,
+        On
+    };
+
+    enum class ThruMuteState
     {
         Off,
         On
@@ -83,7 +90,12 @@ public:
     //==============================================================================
     // State queries for UI updates
     LooperState getState() const { return currentState; }
-    LoopMode getMode() const { return currentMode; }
+    LoopMode getMode() const { return loopMode; }
+    DirectionMode getDirection() const { return currentDirection; }
+    StackMode getStackMode() const { return stackMode; }
+    OnceMode getOnceMode() const { return onceMode; }
+    ThruMuteState getThruMuteState() const { return thruMuteState; }
+
     bool isRecording() const { return currentState == LooperState::Recording || currentState == LooperState::Overdubbing; }
     bool isPlaying() const { return currentState == LooperState::Playing || currentState == LooperState::Overdubbing; }
     float getLoopProgress() const;
@@ -113,7 +125,11 @@ private:
     int activeLoopSlot = 0;
 
     LooperState currentState = LooperState::Stopped;
-    LoopMode currentMode = LoopMode::Normal;
+    LoopMode loopMode = LoopMode::Normal;
+    DirectionMode currentDirection = DirectionMode::Forward;
+    StackMode stackMode = StackMode::Off;
+    OnceMode onceMode = OnceMode::Off;
+    ThruMuteState thruMuteState = ThruMuteState::Off;
 
     double sampleRate = 44100.0;
     int samplesPerBlock = 512;

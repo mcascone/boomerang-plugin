@@ -36,7 +36,11 @@ void LooperEngine::prepare(double sampleRate, int samplesPerBlock, int numChanne
 void LooperEngine::reset()
 {
     currentState = LooperState::Stopped;
-    currentMode = LoopMode::Normal;
+    loopMode = LoopMode::Normal;
+    currentDirection = DirectionMode::Forward;
+    stackMode = StackMode::Off;
+    onceMode = OnceMode::Off;
+    thruMuteState = ThruMuteState::Off;
     activeLoopSlot = 0;
     waitingForFirstLoop = true;
     recordingStartDelay = 0;
@@ -88,6 +92,8 @@ void LooperEngine::onThruMuteButtonPressed()
 
     // Toggle thru/mute state
     // implementation pending
+    // in ThruMute mode, input is recorded but not passed through. Only the recorded sound is played back.
+    thruMuteState = (thruMuteState == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
 }
 //==============================================================================
 void LooperEngine::onRecordButtonPressed()
@@ -149,26 +155,17 @@ void LooperEngine::onPlayButtonPressed()
 
 void LooperEngine::onOnceButtonPressed()
 {
-    if (currentMode == LoopMode::Once)
-        currentMode = LoopMode::Normal;
-    else
-        currentMode = LoopMode::Once;
+    onceMode = (onceMode == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
 }
 
 void LooperEngine::onStackButtonPressed()
 {
-    if (currentMode == LoopMode::Stack)
-        currentMode = LoopMode::Normal;
-    else
-        currentMode = LoopMode::Stack;
+    stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
 }
 
 void LooperEngine::onReverseButtonPressed()
 {
-    if (currentMode == LoopMode::Reverse)
-        currentMode = LoopMode::Normal;
-    else
-        currentMode = LoopMode::Reverse;
+    currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
 }
 
 //==============================================================================
@@ -271,7 +268,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
         {
             float loopSample;
             
-            if (currentMode == LoopMode::Reverse)
+            if (loopMode == LoopMode::Reverse)
             {
                 // Reverse playback
                 int reversePos = slot.length - 1 - slot.playPosition;
@@ -283,7 +280,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             }
             
             // Mix with input or replace based on mode
-            if (currentMode == LoopMode::Stack)
+            if (loopMode == LoopMode::Stack)
             {
                 // Stack mode: mix loop with input
                 float inputSample = buffer.getSample(channel, sample);
@@ -298,7 +295,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
         // Advance playback position
         slot.playPosition++;
         
-        if (currentMode == LoopMode::Once)
+        if (loopMode == LoopMode::Once)
         {
             // Once mode: stop at end
             if (slot.playPosition >= slot.length)

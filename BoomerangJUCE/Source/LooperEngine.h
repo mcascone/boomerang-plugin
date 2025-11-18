@@ -49,6 +49,7 @@ public:
 
     //==============================================================================
     // Button event handlers (called on press, not state)
+    void onThruMuteButtonPressed();
     void onRecordButtonPressed();
     void onPlayButtonPressed();
     void onOnceButtonPressed();

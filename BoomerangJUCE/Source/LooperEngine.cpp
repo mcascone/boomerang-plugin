@@ -82,6 +82,14 @@ void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
 }
 
 //==============================================================================
+void LooperEngine::onThruMuteButtonPressed()
+{
+    auto& activeSlot = loopSlots[activeLoopSlot];
+
+    // Toggle thru/mute state
+    // implementation pending
+}
+//==============================================================================
 void LooperEngine::onRecordButtonPressed()
 {
     auto& activeSlot = loopSlots[activeLoopSlot];

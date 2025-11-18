@@ -199,6 +199,9 @@ void BoomerangAudioProcessorEditor::updateStatusDisplay()
         case LooperEngine::LooperState::Overdubbing:
             statusText = "Overdubbing";
             break;
+        case LooperEngine::LooperState::ContinuousReverse:
+            statusText = "Continuous Reverse";
+            break;
     }
     
     // Add mode info

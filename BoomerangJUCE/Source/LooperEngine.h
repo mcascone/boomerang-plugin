@@ -25,7 +25,8 @@ public:
         Stopped,
         Recording,
         Playing,
-        Overdubbing
+        Overdubbing,
+        ContinuousReverse
     };
 
     enum class LoopMode

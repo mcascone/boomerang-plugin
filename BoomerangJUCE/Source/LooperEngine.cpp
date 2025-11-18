@@ -97,16 +97,8 @@ void LooperEngine::onRecordButtonPressed()
     switch (currentState)
     {
         case LooperState::Stopped:
-            if (!activeSlot.hasContent)
-            {
-                // Start recording first loop
-                startRecording();
-            }
-            else
-            {
-                // Start overdubbing on existing loop
-                startOverdubbing();
-            }
+            // Start recording first loop
+            startRecording();
             break;
 
         case LooperState::Recording:
@@ -116,8 +108,9 @@ void LooperEngine::onRecordButtonPressed()
             break;
 
         case LooperState::Playing:
-            // Start overdubbing
-            startOverdubbing();
+            // Stop playing and start new recording
+            stopPlayback();
+            startRecording();
             break;
 
         case LooperState::Overdubbing:

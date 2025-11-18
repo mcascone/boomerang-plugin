@@ -40,7 +40,7 @@ void LooperEngine::reset()
     currentDirection = DirectionMode::Forward;
     stackMode = StackMode::Off;
     onceMode = OnceMode::Off;
-    thruMuteState = ThruMuteState::Off;
+    thruMute = ThruMuteState::Off;
     activeLoopSlot = 0;
     waitingForFirstLoop = true;
     recordingStartDelay = 0;
@@ -93,7 +93,7 @@ void LooperEngine::onThruMuteButtonPressed()
     // Toggle thru/mute state
     // implementation pending
     // in ThruMute mode, input is recorded but not passed through. Only the recorded sound is played back.
-    thruMuteState = (thruMuteState == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
+    thruMute = (thruMute == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
 }
 //==============================================================================
 void LooperEngine::onRecordButtonPressed()
@@ -221,6 +221,7 @@ void LooperEngine::startOverdubbing()
         activeSlot.isRecording = true;
         activeSlot.isPlaying = true;
         currentState = LooperState::Overdubbing;
+        stackMode = StackMode::On;
     }
 }
 
@@ -230,6 +231,32 @@ void LooperEngine::stopOverdubbing()
     
     activeSlot.isRecording = false;
     currentState = LooperState::Playing;
+    stackMode = StackMode::Off;
+}
+
+void LooperEngine::toggleThruMute()
+// do we even need enable/disable functions separately?
+{
+    auto& activeSlot = loopSlots[activeLoopSlot];
+
+    thruMute = (thruMute == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
+}
+
+void LooperEngine::toggleDirection()
+{
+    auto& activeSlot = loopSlots[activeLoopSlot];
+
+    currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
+}
+
+void LooperEngine::toggleOnceMode()
+{
+    onceMode = (onceMode == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
+}
+
+void LooperEngine::toggleStackMode()
+{
+    stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
 }
 
 //==============================================================================

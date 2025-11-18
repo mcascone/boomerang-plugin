@@ -94,7 +94,7 @@ public:
     DirectionMode getDirection() const { return currentDirection; }
     StackMode getStackMode() const { return stackMode; }
     OnceMode getOnceMode() const { return onceMode; }
-    ThruMuteState getThruMuteState() const { return thruMuteState; }
+    ThruMuteState getThruMuteState() const { return thruMute; }
 
     bool isRecording() const { return currentState == LooperState::Recording || currentState == LooperState::Overdubbing; }
     bool isPlaying() const { return currentState == LooperState::Playing || currentState == LooperState::Overdubbing; }
@@ -129,7 +129,7 @@ private:
     DirectionMode currentDirection = DirectionMode::Forward;
     StackMode stackMode = StackMode::Off;
     OnceMode onceMode = OnceMode::Off;
-    ThruMuteState thruMuteState = ThruMuteState::Off;
+    ThruMuteState thruMute = ThruMuteState::Off;
 
     double sampleRate = 44100.0;
     int samplesPerBlock = 512;

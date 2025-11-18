@@ -36,6 +36,24 @@ public:
         Stack
     };
 
+    enum class DirectionMode
+    {
+        Forward,
+        Reverse
+    };
+
+    enum class StackMode
+    {
+        Off,
+        On
+    };
+
+    enum class OnceMode
+    {
+        Off,
+        On
+    };
+
     //==============================================================================
     LooperEngine();
     ~LooperEngine();

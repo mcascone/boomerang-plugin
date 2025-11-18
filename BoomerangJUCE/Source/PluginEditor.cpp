@@ -15,9 +15,9 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
 
     // Setup buttons
     setupButton(recordButton, "RECORD", recordColour);
-    setupButton(playButton, "PLAY", playColour);
+    setupButton(playButton, "PLAY/STOP", playColour);
     setupButton(onceButton, "ONCE", onceColour);
-    setupButton(stackButton, "STACK", stackColour);
+    setupButton(stackButton, "STACK/SPEED", stackColour);
     setupButton(reverseButton, "REVERSE", reverseColour);
 
     // Setup sliders

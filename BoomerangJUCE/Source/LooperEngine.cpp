@@ -156,11 +156,32 @@ void LooperEngine::onPlayButtonPressed()
 void LooperEngine::onOnceButtonPressed()
 {
     onceMode = (onceMode == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
+
+    if (currentState == LooperState::Playing)
+    {
+        // If currently playing and Once mode is activated, ensure playback stops at end of loop
+        // This is handled in processPlayback
+        stopPlayback();
+        startPlayback();
+    }
+    else if (currentState == LooperState::Stopped)
+    {
+        startPlayback();
+    }
 }
 
 void LooperEngine::onStackButtonPressed()
 {
     stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
+
+    if (currentState == LooperState::Playing)
+    {
+        startOverdubbing();
+    }
+    // else if (currentState == LooperState::Stopped)
+    // {
+    //     toggleSpeed();
+    // }
 }
 
 void LooperEngine::onReverseButtonPressed()

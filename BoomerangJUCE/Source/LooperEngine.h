@@ -151,6 +151,11 @@ private:
     void stopPlayback();
     void startOverdubbing();
     void stopOverdubbing();
+    void toggleSpeed();
+    void toggleThruMute();
+    void toggleDirection();
+    void toggleOnceMode();
+    void toggleStackMode();
 
     void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);

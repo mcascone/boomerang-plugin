@@ -54,6 +54,7 @@ public:
 
     //==============================================================================
     // Parameter access for UI
+    juce::AudioParameterBool* getThruMuteButton() const { return thruMuteButton; }
     juce::AudioParameterBool* getRecordButton() const { return recordButton; }
     juce::AudioParameterBool* getPlayButton() const { return playButton; }
     juce::AudioParameterBool* getOnceButton() const { return onceButton; }
@@ -70,12 +71,15 @@ private:
     // Core looper engine
     std::unique_ptr<LooperEngine> looperEngine;
 
+    // Parameters - toggle buttons
+    juce::AudioParameterBool* thruMuteButton;
+    juce::AudioParameterBool* reverseButton;
+
     // Parameters - momentary buttons
     juce::AudioParameterBool* recordButton;
     juce::AudioParameterBool* playButton;
     juce::AudioParameterBool* onceButton;
     juce::AudioParameterBool* stackButton;
-    juce::AudioParameterBool* reverseButton;
 
     // Parameters - continuous controls
     juce::AudioParameterFloat* volumeParam;

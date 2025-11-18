@@ -14,6 +14,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     addAndMakeVisible(titleLabel);
 
     // Setup buttons
+    setupButton(thruMuteButton, "THRU MUTE", thruMuteColour);
     setupButton(recordButton, "RECORD", recordColour);
     setupButton(playButton, "PLAY/STOP", playColour);
     setupButton(onceButton, "ONCE", onceColour);
@@ -52,6 +53,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
 
     // For momentary buttons, we'll use direct callbacks instead of parameter attachments
     // This gives us more control over the momentary behavior
+    thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
     recordButton.onClick = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
     playButton.onClick = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
     onceButton.onClick = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
@@ -130,6 +132,7 @@ void BoomerangAudioProcessorEditor::resized()
     auto buttonArea = bounds.removeFromTop(120);
     int buttonWidth = buttonArea.getWidth() / 5;
     
+    thruMuteButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
     recordButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
     playButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
     onceButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));

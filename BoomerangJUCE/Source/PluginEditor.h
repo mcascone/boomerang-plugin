@@ -29,6 +29,7 @@ private:
     BoomerangAudioProcessor& audioProcessor;
 
     // UI Components
+    juce::TextButton thruMuteButton;
     juce::TextButton recordButton;
     juce::TextButton playButton;
     juce::TextButton onceButton;
@@ -57,6 +58,7 @@ private:
     juce::Colour onceColour = juce::Colours::blue;
     juce::Colour stackColour = juce::Colours::orange;
     juce::Colour reverseColour = juce::Colours::purple;
+    juce::Colour thruMuteColour = juce::Colours::grey;
 
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour);
     void updateStatusDisplay();

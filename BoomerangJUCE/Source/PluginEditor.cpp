@@ -130,7 +130,7 @@ void BoomerangAudioProcessorEditor::resized()
     
     // Main button area
     auto buttonArea = bounds.removeFromTop(120);
-    int buttonWidth = buttonArea.getWidth() / 5;
+    int buttonWidth = buttonArea.getWidth() / 6;
     
     thruMuteButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
     recordButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));

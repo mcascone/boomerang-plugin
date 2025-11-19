@@ -356,7 +356,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
         // Advance playback position
         slot.playPosition++;
         
-        if (loopMode == LoopMode::Once)
+        if (onceMode == OnceMode::On)
         {
             // Once mode: stop at end
             if (slot.playPosition >= slot.length)

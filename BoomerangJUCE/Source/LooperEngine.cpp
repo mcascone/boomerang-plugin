@@ -157,18 +157,31 @@ void LooperEngine::onPlayButtonPressed()
 
 void LooperEngine::onOnceButtonPressed()
 {
-    setOnceMode(OnceMode::On);
-
     if (currentState == LooperState::Playing)
     {
-        // Once when playing restarts at the beginning of the loop
-        // If currently playing and Once mode is activated, ensure playback stops at end of loop
-        // This is handled in processPlayback
-        stopPlayback();
-        startPlayback();        
+        if (onceMode == OnceMode::Off)
+        {
+            // The first time Once is pressed while playing, enable Once mode.
+            // Playback continues until the end of the loop.
+            // Another Once press will restart the loop.
+            toggleOnceMode();
+        }
+        else
+        {
+            // Once when playing in once mode restarts at the beginning of the loop
+            stopPlayback();
+            startPlayback();        
+        }
     }
-    else if (currentState == LooperState::Stopped)
+    else if (currentState == LooperState::Stopped || currentState == LooperState::Recording)
     {
+        if (currentState == LooperState::Recording)
+        {
+            stopRecording();
+        }
+
+        // If stopped or recording, play once
+        setOnceMode(OnceMode::On);
         startPlayback();
     }
 }

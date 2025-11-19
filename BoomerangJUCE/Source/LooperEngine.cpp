@@ -181,15 +181,15 @@ void LooperEngine::onStackButtonPressed()
     {
         startOverdubbing();
     }
-    // else if (currentState == LooperState::Stopped)
-    // {
-    //     toggleSpeedMode();
-    // }
+    else if (currentState == LooperState::Stopped)
+    {
+        toggleSpeedMode();
+    }
 }
 
 void LooperEngine::onReverseButtonPressed()
 {
-    currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
+    toggleDirection();
 }
 
 //==============================================================================
@@ -267,6 +267,7 @@ void LooperEngine::toggleThruMute()
 void LooperEngine::toggleDirection()
 {
     currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
+    loopMode = (loopMode == LoopMode::Normal) ? LoopMode::Reverse : LoopMode::Normal;
 }
 
 void LooperEngine::toggleOnceMode()
@@ -333,7 +334,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
 
     int numSamples = buffer.getNumSamples();
     
-    for (int sample = 0; sample < numSamples; ++sample)
+    for (int sampleNum = 0; sampleNum < numSamples; ++sampleNum)
     {
         for (int channel = 0; channel < numChannels; ++channel)
         {
@@ -353,13 +354,11 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             // Mix with input or replace based on mode
             if (stackMode == StackMode::On)
             {
-                // Stack mode: mix loop with input
-                float inputSample = buffer.getSample(channel, sample);
-                buffer.setSample(channel, sample, inputSample + loopSample);
+                processOverdubbing(buffer, slot);
             }
-            else
+            else // TODO: add thru mute handling
             {
-                buffer.setSample(channel, sample, loopSample);
+                buffer.setSample(channel, sampleNum, loopSample);
             }
         }
         
@@ -372,6 +371,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             if (slot.playPosition >= slot.length)
             {
                 stopPlayback();
+                toggleOnceMode(); // reset once mode
                 break;
             }
         }

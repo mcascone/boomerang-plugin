@@ -94,7 +94,7 @@ public:
     //==============================================================================
     // State queries for UI updates
     LooperState getState() const { return currentState; }
-    LoopMode getMode() const { return loopMode; }
+    LoopMode getLoopMode() const { return loopMode; }
     DirectionMode getDirection() const { return currentDirection; }
     StackMode getStackMode() const { return stackMode; }
     OnceMode getOnceMode() const { return onceMode; }

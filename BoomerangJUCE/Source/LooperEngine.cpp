@@ -194,6 +194,10 @@ void LooperEngine::onStackButtonPressed()
     {
         startOverdubbing();
     }
+    else if (currentState == LooperState::Overdubbing)
+    {
+        stopOverdubbing();
+    }
     else if (currentState == LooperState::Stopped)
     {
         toggleSpeedMode();

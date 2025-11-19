@@ -88,12 +88,10 @@ void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
 //==============================================================================
 void LooperEngine::onThruMuteButtonPressed()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
-
     // Toggle thru/mute state
     // implementation pending
     // in ThruMute mode, input is recorded but not passed through. Only the recorded sound is played back.
-    thruMute = (thruMute == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
+    toggleThruMute();
 }
 //==============================================================================
 void LooperEngine::onRecordButtonPressed()
@@ -140,9 +138,8 @@ void LooperEngine::onPlayButtonPressed()
             break;
 
         case LooperState::Recording:
-            // Stop recording and start playback
+            // Stop recording, go idle
             stopRecording();
-            startPlayback();
             break;
 
         case LooperState::Playing:
@@ -150,19 +147,25 @@ void LooperEngine::onPlayButtonPressed()
             // Stop playback
             stopPlayback();
             break;
+
+        case LooperState::ContinuousReverse:
+            // go idle
+            stopPlayback();
+            break;
     }
 }
 
 void LooperEngine::onOnceButtonPressed()
 {
-    onceMode = (onceMode == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
+    setOnceMode(OnceMode::On);
 
     if (currentState == LooperState::Playing)
     {
+        // Once when playing restarts at the beginning of the loop
         // If currently playing and Once mode is activated, ensure playback stops at end of loop
         // This is handled in processPlayback
         stopPlayback();
-        startPlayback();
+        startPlayback();        
     }
     else if (currentState == LooperState::Stopped)
     {
@@ -258,15 +261,11 @@ void LooperEngine::stopOverdubbing()
 void LooperEngine::toggleThruMute()
 // do we even need enable/disable functions separately?
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
-
     thruMute = (thruMute == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
 }
 
 void LooperEngine::toggleDirection()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
-
     currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
 }
 
@@ -275,8 +274,14 @@ void LooperEngine::toggleOnceMode()
     onceMode = (onceMode == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
 }
 
+void LooperEngine::setOnceMode(OnceMode mode)
+{
+    onceMode = mode;
+}
+
 void LooperEngine::toggleStackMode()
 {
+    auto& activeSlot = loopSlots[activeLoopSlot];
     stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
 }
 

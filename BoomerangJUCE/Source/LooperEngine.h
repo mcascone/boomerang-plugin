@@ -155,6 +155,7 @@ private:
     void toggleThruMute();
     void toggleDirection();
     void toggleOnceMode();
+    void setOnceMode(OnceMode mode);
     void toggleStackMode();
 
     void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);

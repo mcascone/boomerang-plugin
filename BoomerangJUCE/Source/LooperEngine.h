@@ -157,6 +157,7 @@ private:
     void toggleOnceMode();
     void setOnceMode(OnceMode mode);
     void toggleStackMode();
+    void setStackMode(StackMode mode);
 
     void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);

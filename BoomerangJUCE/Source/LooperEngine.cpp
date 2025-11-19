@@ -281,8 +281,12 @@ void LooperEngine::setOnceMode(OnceMode mode)
 
 void LooperEngine::toggleStackMode()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
     stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
+}
+
+void LooperEngine::setStackMode(StackMode mode)
+{
+    stackMode = mode;
 }
 
 //==============================================================================

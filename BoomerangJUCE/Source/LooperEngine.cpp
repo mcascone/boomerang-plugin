@@ -342,10 +342,11 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             
             if (stackMode == StackMode::On)
             {
-                // TODO: reduce volume of existing loop content when stacking by 2.5dB
                 // Stack mode: mix loop with input
+                // Attenuate existing loop by 2.5dB to prevent overloading
+                constexpr float stackAttenuation = 0.74989420933f; // -2.5dB
                 float inputSample = buffer.getSample(channel, sample);
-                buffer.setSample(channel, sample, inputSample + loopSample);
+                buffer.setSample(channel, sample, inputSample + (loopSample * stackAttenuation));
             }
             else
             {

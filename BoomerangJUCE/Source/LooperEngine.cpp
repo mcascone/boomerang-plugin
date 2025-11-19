@@ -297,7 +297,11 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
     for (int sample = 0; sample < numSamples; ++sample)
     {
         if (slot.recordPosition >= maxLoopSamples)
-            break;
+        {
+            currentState = LooperState::BufferFilled;
+            stopRecording();
+            break; // break exits the for loop
+        }
 
         for (int channel = 0; channel < numChannels; ++channel)
         {

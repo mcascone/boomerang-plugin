@@ -190,17 +190,22 @@ void LooperEngine::onStackButtonPressed()
 {
     stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
 
-    if (currentState == LooperState::Playing)
+    switch (currentState)
     {
-        startOverdubbing();
-    }
-    else if (currentState == LooperState::Overdubbing)
-    {
-        stopOverdubbing();
-    }
-    else if (currentState == LooperState::Stopped)
-    {
-        toggleSpeedMode();
+        case LooperState::Playing:
+            startOverdubbing();
+            break;
+        
+        case LooperState::Overdubbing:
+            stopOverdubbing();
+            break;
+        
+        case LooperState::Stopped:
+            toggleSpeedMode();
+            break;
+        
+        default:
+            break;
     }
 }
 
@@ -384,11 +389,11 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
         
         if (onceMode == OnceMode::On)
         {
-            // Once mode: stop at end
+            // Once mode: stop at end & reset once mode
             if (slot.playPosition >= slot.length)
             {
                 stopPlayback();
-                toggleOnceMode(); // reset once mode
+                toggleOnceMode();
                 break;
             }
         }

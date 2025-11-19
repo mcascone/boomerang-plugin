@@ -43,3 +43,4 @@ _ReSharper*/
 [Tt]est[Rr]esult*/
 *.vssscc
 $tf*/
+_codeql_detected_source_root

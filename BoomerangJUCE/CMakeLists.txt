@@ -43,3 +43,12 @@ target_link_libraries(Boomerang
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
+
+# Suppress specific warnings for now
+target_compile_options(Boomerang
+    PRIVATE
+        -Wno-unused-parameter
+        -Wno-shadow
+        -Wno-sign-conversion
+        -Wno-switch
+        -Wno-unused-variable)

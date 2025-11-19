@@ -340,9 +340,9 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
                 loopSample = slot.buffer.getSample(channel, slot.playPosition);
             }
             
-            // Mix with input or replace based on mode
-            if (loopMode == LoopMode::Stack)
+            if (stackMode == StackMode::On)
             {
+                // TODO: reduce volume of existing loop content when stacking by 2.5dB
                 // Stack mode: mix loop with input
                 float inputSample = buffer.getSample(channel, sample);
                 buffer.setSample(channel, sample, inputSample + loopSample);

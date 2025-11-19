@@ -183,7 +183,7 @@ void LooperEngine::onStackButtonPressed()
     }
     // else if (currentState == LooperState::Stopped)
     // {
-    //     toggleSpeed();
+    //     toggleSpeedMode();
     // }
 }
 
@@ -289,6 +289,16 @@ void LooperEngine::setStackMode(StackMode mode)
     stackMode = mode;
 }
 
+void LooperEngine::toggleSpeedMode()
+{
+    speedMode = (speedMode == SpeedMode::Normal) ? SpeedMode::Half : SpeedMode::Normal;
+}
+
+void LooperEngine::setSpeedMode(SpeedMode mode)
+{
+    speedMode = mode;
+}
+
 //==============================================================================
 void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot)
 {
@@ -341,7 +351,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             }
             
             // Mix with input or replace based on mode
-            if (loopMode == LoopMode::Stack)
+            if (stackMode == StackMode::On)
             {
                 // Stack mode: mix loop with input
                 float inputSample = buffer.getSample(channel, sample);

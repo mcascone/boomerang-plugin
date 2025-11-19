@@ -33,9 +33,7 @@ public:
     enum class LoopMode
     {
         Normal,
-        Once,
         Reverse,
-        Stack
     };
 
     enum class DirectionMode
@@ -60,6 +58,12 @@ public:
     {
         Off,
         On
+    };
+
+    enum class SpeedMode
+    {
+        Normal,
+        Half
     };
 
     //==============================================================================
@@ -95,6 +99,7 @@ public:
     StackMode getStackMode() const { return stackMode; }
     OnceMode getOnceMode() const { return onceMode; }
     ThruMuteState getThruMuteState() const { return thruMute; }
+    SpeedMode getSpeedMode() const { return speedMode; }
 
     bool isRecording() const { return currentState == LooperState::Recording || currentState == LooperState::Overdubbing; }
     bool isPlaying() const { return currentState == LooperState::Playing || currentState == LooperState::Overdubbing; }
@@ -130,6 +135,7 @@ private:
     StackMode stackMode = StackMode::Off;
     OnceMode onceMode = OnceMode::Off;
     ThruMuteState thruMute = ThruMuteState::Off;
+    SpeedMode speedMode = SpeedMode::Normal;
 
     double sampleRate = 44100.0;
     int samplesPerBlock = 512;
@@ -151,13 +157,14 @@ private:
     void stopPlayback();
     void startOverdubbing();
     void stopOverdubbing();
-    void toggleSpeed();
     void toggleThruMute();
     void toggleDirection();
     void toggleOnceMode();
     void setOnceMode(OnceMode mode);
     void toggleStackMode();
     void setStackMode(StackMode mode);
+    void toggleSpeedMode();
+    void setSpeedMode(SpeedMode mode);
 
     void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);

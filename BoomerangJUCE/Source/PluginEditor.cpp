@@ -183,7 +183,10 @@ void BoomerangAudioProcessorEditor::updateStatusDisplay()
 {
     juce::String statusText;
     auto state = audioProcessor.getLooperEngine()->getState();
-    auto mode = audioProcessor.getLooperEngine()->getMode();
+    auto loopMode = audioProcessor.getLooperEngine()->getMode();
+    auto onceMode = audioProcessor.getLooperEngine()->getOnceMode();
+    auto stackMode = audioProcessor.getLooperEngine()->getStackMode();
+    auto speedMode = audioProcessor.getLooperEngine()->getSpeedMode();
     
     switch (state)
     {
@@ -202,24 +205,32 @@ void BoomerangAudioProcessorEditor::updateStatusDisplay()
         case LooperEngine::LooperState::ContinuousReverse:
             statusText = "Continuous Reverse";
             break;
+        case LooperEngine::LooperState::BufferFilled:
+            statusText = "Buffer Filled";
+            break;
+        default:
+            break;
     }
     
     // Add mode info
-    switch (mode)
+    switch (loopMode)
     {
-        case LooperEngine::LoopMode::Once:
-            statusText += " (Once)";
-            break;
         case LooperEngine::LoopMode::Reverse:
             statusText += " (Reverse)";
-            break;
-        case LooperEngine::LoopMode::Stack:
-            statusText += " (Stack)";
             break;
         case LooperEngine::LoopMode::Normal:
         default:
             break;
     }
+
+    if (onceMode == LooperEngine::OnceMode::On)
+        statusText += " [Once]";
+    
+    if (stackMode == LooperEngine::StackMode::On)
+        statusText += " [Stack]";
+
+    if (speedMode == LooperEngine::SpeedMode::Half)
+        statusText += " [1/2 Speed]";
     
     statusLabel.setText(statusText, juce::dontSendNotification);
 }

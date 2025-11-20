@@ -188,8 +188,6 @@ void LooperEngine::onOnceButtonPressed()
 
 void LooperEngine::onStackButtonPressed()
 {
-    stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
-
     switch (currentState)
     {
         case LooperState::Playing:

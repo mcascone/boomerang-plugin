@@ -78,12 +78,13 @@ public:
     void processBlock(juce::AudioBuffer<float>& buffer);
 
     //==============================================================================
-    // Button event handlers (called on press, not state)
+    // Button event handlers
     void onThruMuteButtonPressed();
     void onRecordButtonPressed();
     void onPlayButtonPressed();
     void onOnceButtonPressed();
-    void onStackButtonPressed();
+    void onStackButtonPressed();      // Momentary: called when pressed
+    void onStackButtonReleased();     // Momentary: called when released
     void onReverseButtonPressed();
 
     //==============================================================================

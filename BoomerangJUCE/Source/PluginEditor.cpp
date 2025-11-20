@@ -57,7 +57,15 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     recordButton.onClick = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
     playButton.onClick = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
     onceButton.onClick = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
-    stackButton.onClick = [this]() { audioProcessor.getLooperEngine()->onStackButtonPressed(); };
+    
+    // STACK uses onStateChange for momentary (press/release) behavior
+    stackButton.onStateChange = [this]() {
+        if (stackButton.isDown())
+            audioProcessor.getLooperEngine()->onStackButtonPressed();
+        else
+            audioProcessor.getLooperEngine()->onStackButtonReleased();
+    };
+    
     reverseButton.onClick = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
 
     // Keep parameter attachments for the continuous controls

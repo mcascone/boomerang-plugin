@@ -186,7 +186,8 @@ void LooperEngine::onOnceButtonPressed()
     }
 }
 
-void LooperEngine::onStackButtonPressed()
+// Toggle behavior - preserved for future use
+void LooperEngine::onStackButtonToggled()
 {
     switch (currentState)
     {
@@ -204,6 +205,27 @@ void LooperEngine::onStackButtonPressed()
         
         default:
             break;
+    }
+}
+
+// Momentary behavior - engaged while pressed
+void LooperEngine::onStackButtonPressed()
+{
+    if (currentState == LooperState::Playing)
+    {
+        startOverdubbing();
+    }
+    else if (currentState == LooperState::Stopped)
+    {
+        toggleSpeedMode();
+    }
+}
+
+void LooperEngine::onStackButtonReleased()
+{
+    if (currentState == LooperState::Overdubbing)
+    {
+        stopOverdubbing();
     }
 }
 

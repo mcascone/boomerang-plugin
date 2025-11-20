@@ -463,15 +463,19 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
 void LooperEngine::advancePosition(float& position, int length, float speed)
 {
     if (loopMode == LoopMode::Reverse)
+    {
         position -= speed;
+        // Wrap to end when going below 0
+        if (position < 0)
+            position += length;
+    }
     else
+    {
         position += speed;
-        
-    // Wrap around
-    if (position >= length)
-        position -= length;
-    else if (position < 0)
-        position += length;
+        // Wrap to beginning when going past end
+        if (position >= length)
+            position = 0.0f;
+    }
 }
 
 void LooperEngine::applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples)

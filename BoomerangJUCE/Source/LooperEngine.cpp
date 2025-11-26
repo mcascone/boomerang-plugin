@@ -343,10 +343,8 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             if (stackMode == StackMode::On)
             {
                 // Stack mode: mix loop with input
-                // Attenuate existing loop by 2.5dB to prevent overloading
-                constexpr float stackAttenuation = 0.74989420933f; // -2.5dB
                 float inputSample = buffer.getSample(channel, sample);
-                buffer.setSample(channel, sample, inputSample + (loopSample * stackAttenuation));
+                buffer.setSample(channel, sample, inputSample + loopSample);
             }
             else
             {
@@ -393,7 +391,10 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             float loopSample = slot.buffer.getSample(channel, slot.playPosition);
             
             // Overdub: mix input with existing content
-            float overdubSample = loopSample + (inputSample * feedbackAmount);
+            // Attenuate existing loop by 2.5dB to prevent overloading when stacking
+            constexpr float stackAttenuation = 0.74989420933f; // -2.5dB
+            float attenuatedLoop = loopSample * stackAttenuation;
+            float overdubSample = attenuatedLoop + (inputSample * feedbackAmount);
             slot.buffer.setSample(channel, slot.playPosition, overdubSample);
             
             // Output mixed signal

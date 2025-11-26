@@ -376,6 +376,14 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
         return;
     }
 
+    // If stack mode is active, handle the whole buffer in the overdub path to
+    // avoid re-processing the buffer per channel/sample.
+    if (stackMode == StackMode::On)
+    {
+        processOverdubbing(buffer, slot);
+        return;
+    }
+
     int numSamples = buffer.getNumSamples();
     float speed = (speedMode == SpeedMode::Half) ? 0.5f : 1.0f;
     
@@ -405,15 +413,8 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
                 loopSample = sample1 + frac * (sample2 - sample1);
             }
             
-            // Mix with input or replace based on mode
-            if (stackMode == StackMode::On)
-            {
-                processOverdubbing(buffer, slot);
-            }
-            else // TODO: add thru mute handling
-            {
-                buffer.setSample(channel, sampleNum, loopSample);
-            }
+            // TODO: add thru mute handling
+            buffer.setSample(channel, sampleNum, loopSample);
         }
         
         advancePosition(slot.playPosition, slot.length, speed);

@@ -449,14 +449,14 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
         for (int channel = 0; channel < numChannels; ++channel)
         {
             float inputSample = buffer.getSample(channel, sample);
-            float loopSample = slot.buffer.getSample(channel, slot.playPosition);
+            float loopSample = slot.buffer.getSample(channel, pos);
             
             // Overdub: mix input with existing content
             // Attenuate existing loop by 2.5dB to prevent overloading when stacking
             constexpr float stackAttenuation = 0.74989420933f; // -2.5dB
             float attenuatedLoop = loopSample * stackAttenuation;
             float overdubSample = attenuatedLoop + (inputSample * feedbackAmount);
-            slot.buffer.setSample(channel, slot.playPosition, overdubSample);
+            slot.buffer.setSample(channel, pos, overdubSample);
             buffer.setSample(channel, sample, overdubSample);
         }
         

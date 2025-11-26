@@ -57,7 +57,15 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     recordButton.onClick = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
     playButton.onClick = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
     onceButton.onClick = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
-    stackButton.onClick = [this]() { audioProcessor.getLooperEngine()->onStackButtonPressed(); };
+    
+    // STACK uses onStateChange for momentary (press/release) behavior
+    stackButton.onStateChange = [this]() {
+        if (stackButton.isDown())
+            audioProcessor.getLooperEngine()->onStackButtonPressed();
+        else
+            audioProcessor.getLooperEngine()->onStackButtonReleased();
+    };
+    
     reverseButton.onClick = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
 
     // Keep parameter attachments for the continuous controls
@@ -183,7 +191,11 @@ void BoomerangAudioProcessorEditor::updateStatusDisplay()
 {
     juce::String statusText;
     auto state = audioProcessor.getLooperEngine()->getState();
-    auto mode = audioProcessor.getLooperEngine()->getMode();
+    auto loopMode = audioProcessor.getLooperEngine()->getLoopMode();
+    auto once = audioProcessor.getLooperEngine()->getOnceMode();
+    auto stack = audioProcessor.getLooperEngine()->getStackMode();
+    auto speed = audioProcessor.getLooperEngine()->getSpeedMode();
+    auto thru = audioProcessor.getLooperEngine()->getThruMuteState();
     
     switch (state)
     {
@@ -202,24 +214,28 @@ void BoomerangAudioProcessorEditor::updateStatusDisplay()
         case LooperEngine::LooperState::ContinuousReverse:
             statusText = "Continuous Reverse";
             break;
-    }
-    
-    // Add mode info
-    switch (mode)
-    {
-        case LooperEngine::LoopMode::Once:
-            statusText += " (Once)";
+        case LooperEngine::LooperState::BufferFilled:
+            statusText = "Buffer Filled";
             break;
-        case LooperEngine::LoopMode::Reverse:
-            statusText += " (Reverse)";
-            break;
-        case LooperEngine::LoopMode::Stack:
-            statusText += " (Stack)";
-            break;
-        case LooperEngine::LoopMode::Normal:
         default:
             break;
     }
+    
+    // Add mode info
+    if (loopMode == LooperEngine::LoopMode::Reverse)
+        statusText += " [Reverse]";
+
+    if (once == LooperEngine::OnceMode::On)
+        statusText += " [Once]";
+    
+    if (stack == LooperEngine::StackMode::On)
+        statusText += " [Stack]";
+
+    if (speed == LooperEngine::SpeedMode::Half)
+        statusText += " [1/2 Speed]";
+
+    if (thru == LooperEngine::ThruMuteState::On)
+        statusText += " [Thru Mute]";
     
     statusLabel.setText(statusText, juce::dontSendNotification);
 }

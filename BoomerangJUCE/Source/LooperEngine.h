@@ -33,9 +33,7 @@ public:
     enum class LoopMode
     {
         Normal,
-        Once,
         Reverse,
-        Stack
     };
 
     enum class DirectionMode
@@ -62,6 +60,12 @@ public:
         On
     };
 
+    enum class SpeedMode
+    {
+        Normal,
+        Half
+    };
+
     //==============================================================================
     LooperEngine();
     ~LooperEngine();
@@ -74,12 +78,13 @@ public:
     void processBlock(juce::AudioBuffer<float>& buffer);
 
     //==============================================================================
-    // Button event handlers (called on press, not state)
+    // Button event handlers
     void onThruMuteButtonPressed();
     void onRecordButtonPressed();
     void onPlayButtonPressed();
     void onOnceButtonPressed();
-    void onStackButtonPressed();
+    void onStackButtonPressed();      // Momentary: called when pressed
+    void onStackButtonReleased();     // Momentary: called when released
     void onReverseButtonPressed();
 
     //==============================================================================
@@ -90,11 +95,12 @@ public:
     //==============================================================================
     // State queries for UI updates
     LooperState getState() const { return currentState; }
-    LoopMode getMode() const { return loopMode; }
+    LoopMode getLoopMode() const { return loopMode; }
     DirectionMode getDirection() const { return currentDirection; }
     StackMode getStackMode() const { return stackMode; }
     OnceMode getOnceMode() const { return onceMode; }
     ThruMuteState getThruMuteState() const { return thruMute; }
+    SpeedMode getSpeedMode() const { return speedMode; }
 
     bool isRecording() const { return currentState == LooperState::Recording || currentState == LooperState::Overdubbing; }
     bool isPlaying() const { return currentState == LooperState::Playing || currentState == LooperState::Overdubbing; }
@@ -110,8 +116,8 @@ private:
         bool hasContent = false;
         bool isRecording = false;
         bool isPlaying = false;
-        int playPosition = 0;
-        int recordPosition = 0;
+        float playPosition = 0.0f;
+        float recordPosition = 0.0f;
         float fadeInGain = 1.0f;
         float fadeOutGain = 1.0f;
     };
@@ -130,6 +136,7 @@ private:
     StackMode stackMode = StackMode::Off;
     OnceMode onceMode = OnceMode::Off;
     ThruMuteState thruMute = ThruMuteState::Off;
+    SpeedMode speedMode = SpeedMode::Normal;
 
     double sampleRate = 44100.0;
     int samplesPerBlock = 512;
@@ -151,18 +158,23 @@ private:
     void stopPlayback();
     void startOverdubbing();
     void stopOverdubbing();
-    void toggleSpeed();
     void toggleThruMute();
     void toggleDirection();
     void toggleOnceMode();
     void setOnceMode(OnceMode mode);
     void toggleStackMode();
     void setStackMode(StackMode mode);
+    void toggleSpeedMode();
+    void setSpeedMode(SpeedMode mode);
+    
+    // Preserved toggle behavior for future use
+    void onStackButtonToggled();
 
     void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
 
+    void advancePosition(float& position, int length, float speed);
     void applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples);
     void switchToNextLoopSlot();
 

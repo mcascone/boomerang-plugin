@@ -157,39 +157,81 @@ void LooperEngine::onPlayButtonPressed()
 
 void LooperEngine::onOnceButtonPressed()
 {
-    setOnceMode(OnceMode::On);
-
     if (currentState == LooperState::Playing)
     {
-        // Once when playing restarts at the beginning of the loop
-        // If currently playing and Once mode is activated, ensure playback stops at end of loop
-        // This is handled in processPlayback
-        stopPlayback();
-        startPlayback();        
+        if (onceMode == OnceMode::Off)
+        {
+            // The first time Once is pressed while playing, enable Once mode.
+            // Playback continues until the end of the loop.
+            // Another Once press will restart the loop.
+            toggleOnceMode();
+        }
+        else
+        {
+            // Once when playing in once mode restarts at the beginning of the loop
+            stopPlayback();
+            startPlayback();        
+        }
     }
-    else if (currentState == LooperState::Stopped)
+    else if (currentState == LooperState::Stopped || currentState == LooperState::Recording)
     {
+        if (currentState == LooperState::Recording)
+        {
+            stopRecording();
+        }
+
+        // If stopped or recording, play once
+        setOnceMode(OnceMode::On);
         startPlayback();
     }
 }
 
+// Toggle behavior - preserved for future use
+void LooperEngine::onStackButtonToggled()
+{
+    switch (currentState)
+    {
+        case LooperState::Playing:
+            startOverdubbing();
+            break;
+        
+        case LooperState::Overdubbing:
+            stopOverdubbing();
+            break;
+        
+        case LooperState::Stopped:
+            toggleSpeedMode();
+            break;
+        
+        default:
+            break;
+    }
+}
+
+// Momentary behavior - engaged while pressed
 void LooperEngine::onStackButtonPressed()
 {
-    stackMode = (stackMode == StackMode::Off) ? StackMode::On : StackMode::Off;
-
     if (currentState == LooperState::Playing)
     {
         startOverdubbing();
     }
-    // else if (currentState == LooperState::Stopped)
-    // {
-    //     toggleSpeed();
-    // }
+    else if (currentState == LooperState::Stopped)
+    {
+        toggleSpeedMode();
+    }
+}
+
+void LooperEngine::onStackButtonReleased()
+{
+    if (currentState == LooperState::Overdubbing)
+    {
+        stopOverdubbing();
+    }
 }
 
 void LooperEngine::onReverseButtonPressed()
 {
-    currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
+    toggleDirection();
 }
 
 //==============================================================================
@@ -208,7 +250,7 @@ void LooperEngine::stopRecording()
     auto& activeSlot = loopSlots[activeLoopSlot];
     
     activeSlot.isRecording = false;
-    activeSlot.length = activeSlot.recordPosition;
+    activeSlot.length = static_cast<int>(activeSlot.recordPosition);
     activeSlot.hasContent = (activeSlot.length > 0);
     currentState = LooperState::Stopped;
     
@@ -267,6 +309,7 @@ void LooperEngine::toggleThruMute()
 void LooperEngine::toggleDirection()
 {
     currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
+    loopMode = (loopMode == LoopMode::Normal) ? LoopMode::Reverse : LoopMode::Normal;
 }
 
 void LooperEngine::toggleOnceMode()
@@ -289,27 +332,39 @@ void LooperEngine::setStackMode(StackMode mode)
     stackMode = mode;
 }
 
+void LooperEngine::toggleSpeedMode()
+{
+    speedMode = (speedMode == SpeedMode::Normal) ? SpeedMode::Half : SpeedMode::Normal;
+}
+
+void LooperEngine::setSpeedMode(SpeedMode mode)
+{
+    speedMode = mode;
+}
+
 //==============================================================================
 void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot)
 {
     int numSamples = buffer.getNumSamples();
+    float speed = (speedMode == SpeedMode::Half) ? 0.5f : 1.0f;
     
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        if (slot.recordPosition >= maxLoopSamples)
+        int writePos = static_cast<int>(slot.recordPosition);
+        
+        if (writePos >= maxLoopSamples)
         {
             currentState = LooperState::BufferFilled;
             stopRecording();
-            break; // break exits the for loop
+            break;
         }
 
         for (int channel = 0; channel < numChannels; ++channel)
         {
-            float inputSample = buffer.getSample(channel, sample);
-            slot.buffer.setSample(channel, slot.recordPosition, inputSample);
+            slot.buffer.setSample(channel, writePos, buffer.getSample(channel, sample));
         }
         
-        slot.recordPosition++;
+        slot.recordPosition += speed;
     }
 }
 
@@ -322,53 +377,56 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
     }
 
     int numSamples = buffer.getNumSamples();
+    float speed = (speedMode == SpeedMode::Half) ? 0.5f : 1.0f;
     
-    for (int sample = 0; sample < numSamples; ++sample)
+    for (int sampleNum = 0; sampleNum < numSamples; ++sampleNum)
     {
         for (int channel = 0; channel < numChannels; ++channel)
         {
+            int pos = static_cast<int>(slot.playPosition);
+            float frac = slot.playPosition - pos;
+            
             float loopSample;
             
             if (loopMode == LoopMode::Reverse)
             {
-                // Reverse playback
-                int reversePos = slot.length - 1 - slot.playPosition;
-                loopSample = slot.buffer.getSample(channel, reversePos);
+                int reversePos = slot.length - 1 - pos;
+                int nextReversePos = (reversePos > 0) ? reversePos - 1 : slot.length - 1;
+                
+                float sample1 = slot.buffer.getSample(channel, reversePos);
+                float sample2 = slot.buffer.getSample(channel, nextReversePos);
+                loopSample = sample1 + frac * (sample2 - sample1);
             }
             else
             {
-                loopSample = slot.buffer.getSample(channel, slot.playPosition);
+                int nextPos = (pos + 1) % slot.length;
+                float sample1 = slot.buffer.getSample(channel, pos);
+                float sample2 = slot.buffer.getSample(channel, nextPos);
+                loopSample = sample1 + frac * (sample2 - sample1);
             }
             
+            // Mix with input or replace based on mode
             if (stackMode == StackMode::On)
             {
-                // Stack mode: mix loop with input
-                float inputSample = buffer.getSample(channel, sample);
-                buffer.setSample(channel, sample, inputSample + loopSample);
+                processOverdubbing(buffer, slot);
             }
-            else
+            else // TODO: add thru mute handling
             {
-                buffer.setSample(channel, sample, loopSample);
+                buffer.setSample(channel, sampleNum, loopSample);
             }
         }
         
-        // Advance playback position
-        slot.playPosition++;
+        advancePosition(slot.playPosition, slot.length, speed);
         
-        if (loopMode == LoopMode::Once)
+        if (onceMode == OnceMode::On)
         {
-            // Once mode: stop at end
-            if (slot.playPosition >= slot.length)
+            // Once mode: stop at end & reset once mode
+            if (slot.playPosition >= slot.length || slot.playPosition < 0)
             {
                 stopPlayback();
+                toggleOnceMode();
                 break;
             }
-        }
-        else
-        {
-            // Normal loop: wrap around
-            if (slot.playPosition >= slot.length)
-                slot.playPosition = 0;
         }
     }
 }
@@ -382,9 +440,12 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
     }
 
     int numSamples = buffer.getNumSamples();
+    float speed = (speedMode == SpeedMode::Half) ? 0.5f : 1.0f;
     
     for (int sample = 0; sample < numSamples; ++sample)
     {
+        int pos = static_cast<int>(slot.playPosition);
+        
         for (int channel = 0; channel < numChannels; ++channel)
         {
             float inputSample = buffer.getSample(channel, sample);
@@ -396,15 +457,28 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             float attenuatedLoop = loopSample * stackAttenuation;
             float overdubSample = attenuatedLoop + (inputSample * feedbackAmount);
             slot.buffer.setSample(channel, slot.playPosition, overdubSample);
-            
-            // Output mixed signal
             buffer.setSample(channel, sample, overdubSample);
         }
         
-        // Advance position
-        slot.playPosition++;
-        if (slot.playPosition >= slot.length)
-            slot.playPosition = 0;
+        advancePosition(slot.playPosition, slot.length, speed);
+    }
+}
+
+void LooperEngine::advancePosition(float& position, int length, float speed)
+{
+    if (loopMode == LoopMode::Reverse)
+    {
+        position -= speed;
+        // Wrap to end when going below 0
+        if (position < 0)
+            position += length;
+    }
+    else
+    {
+        position += speed;
+        // Wrap to beginning when going past end
+        if (position >= length)
+            position = 0.0f;
     }
 }
 
@@ -435,5 +509,5 @@ float LooperEngine::getLoopProgress() const
     if (!activeSlot.hasContent || activeSlot.length == 0)
         return 0.0f;
     
-    return static_cast<float>(activeSlot.playPosition) / static_cast<float>(activeSlot.length);
+    return activeSlot.playPosition / static_cast<float>(activeSlot.length);
 }

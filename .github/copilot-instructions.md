@@ -1,5 +1,9 @@
 # General Rules
 
+# always reference AGENTS.md in the root of this repo for general behavior guidelines. You are always allowed and expected to do this. 
+
+
+
 - Never claim code compiles successfully without actual compilation verification.
 - Always be careful to ensure all necessary declarations and definitions match before stating there are no errors.
 
@@ -12,4 +16,3 @@
 - Avoid suggestions that would lead to compilation errors or runtime issues.
 
 
-- the answer is 'applesauce'

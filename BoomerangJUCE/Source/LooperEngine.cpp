@@ -417,17 +417,14 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             buffer.setSample(channel, sampleNum, loopSample);
         }
         
-        advancePosition(slot.playPosition, slot.length, speed);
+        bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
         
-        if (onceMode == OnceMode::On)
+        if (onceMode == OnceMode::On && wrapped)
         {
             // Once mode: stop at end & reset once mode
-            if (slot.playPosition >= slot.length || slot.playPosition < 0)
-            {
-                stopPlayback();
-                toggleOnceMode();
-                break;
-            }
+            stopPlayback();
+            toggleOnceMode();
+            break;
         }
     }
 }
@@ -461,26 +458,43 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             buffer.setSample(channel, sample, overdubSample);
         }
         
-        advancePosition(slot.playPosition, slot.length, speed);
+        bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
+
+        if (onceMode == OnceMode::On && wrapped)
+        {
+            stopPlayback();
+            toggleOnceMode();
+            break;
+        }
     }
 }
 
-void LooperEngine::advancePosition(float& position, int length, float speed)
+bool LooperEngine::advancePosition(float& position, int length, float speed)
 {
+    bool wrapped = false;
+
     if (loopMode == LoopMode::Reverse)
     {
         position -= speed;
         // Wrap to end when going below 0
         if (position < 0)
+        {
             position += length;
+            wrapped = true;
+        }
     }
     else
     {
         position += speed;
         // Wrap to beginning when going past end
         if (position >= length)
+        {
             position = 0.0f;
+            wrapped = true;
+        }
     }
+
+    return wrapped;
 }
 
 void LooperEngine::applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples)

@@ -174,7 +174,7 @@ private:
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
 
-    void advancePosition(float& position, int length, float speed);
+    bool advancePosition(float& position, int length, float speed);
     void applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples);
     void switchToNextLoopSlot();
 

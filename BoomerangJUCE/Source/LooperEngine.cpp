@@ -265,7 +265,9 @@ void LooperEngine::startPlayback()
     if (activeSlot.hasContent)
     {
         activeSlot.isPlaying = true;
-        activeSlot.playPosition = 0;
+        activeSlot.playPosition = (loopMode == LoopMode::Reverse)
+            ? static_cast<float>(activeSlot.length - 1)
+            : 0.0f;
         currentState = LooperState::Playing;
     }
 }
@@ -310,6 +312,13 @@ void LooperEngine::toggleDirection()
 {
     currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
     loopMode = (loopMode == LoopMode::Normal) ? LoopMode::Reverse : LoopMode::Normal;
+
+    auto& activeSlot = loopSlots[activeLoopSlot];
+    // Ensure playhead stays within bounds after direction change
+    if (activeSlot.playPosition < 0.0f && activeSlot.length > 0)
+        activeSlot.playPosition += static_cast<float>(activeSlot.length);
+    if (activeSlot.playPosition >= static_cast<float>(activeSlot.length) && activeSlot.length > 0)
+        activeSlot.playPosition = std::fmod(activeSlot.playPosition, static_cast<float>(activeSlot.length));
 }
 
 void LooperEngine::toggleOnceMode()
@@ -398,11 +407,10 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             
             if (loopMode == LoopMode::Reverse)
             {
-                int reversePos = slot.length - 1 - pos;
-                int nextReversePos = (reversePos > 0) ? reversePos - 1 : slot.length - 1;
-                
-                float sample1 = slot.buffer.getSample(channel, reversePos);
-                float sample2 = slot.buffer.getSample(channel, nextReversePos);
+                // Read directly at the decreasing playhead position
+                int prevPos = (pos > 0) ? pos - 1 : (slot.length - 1);
+                float sample1 = slot.buffer.getSample(channel, pos);
+                float sample2 = slot.buffer.getSample(channel, prevPos);
                 loopSample = sample1 + frac * (sample2 - sample1);
             }
             else

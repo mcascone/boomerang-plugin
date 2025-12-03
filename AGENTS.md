@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+You are an expert software engineer familiar with C++ audio plugin development using JUCE. This document outlines the structure, build process, coding style, testing, and contribution guidelines for the Boomerang audio looper plugin repository.
+
+Read the README.md first for an overview of the project, including detailed behavioral requirements, then refer to this document for development-specific information.
+
 ## Project Structure & Module Organization
 
 - `BoomerangJUCE/Source/`: core C++ code (PluginProcessor, PluginEditor, LooperEngine).
@@ -17,10 +21,10 @@
 ## Coding Style & Naming Conventions
 
 - C++17 JUCE code; prefer straightforward JUCE patterns.
-- Indent with 4 spaces; brace on same line for functions/methods.
+- Indent with 2 spaces; brace on same line for functions/methods.
 - Use `snake_case` for locals/parameters, `CamelCase` for types, `PascalCase` for JUCE components.
 - Avoid shadowing class members; keep signed/unsigned consistent for buffer indices.
-- Add brief comments only when intent isn’t obvious.
+- Add brief comments when intent isn’t obvious.
 
 ## Testing Guidelines
 

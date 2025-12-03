@@ -95,7 +95,10 @@ void BoomerangAudioProcessor::changeProgramName (int index, const juce::String& 
 //==============================================================================
 void BoomerangAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    looperEngine->prepare(sampleRate, samplesPerBlock, getTotalNumInputChannels());
+    // Use whichever is larger so we can still play back in stereo even if the host only
+    // provides a mono input (common with a single mic).
+    const int maxChannels = std::max(getTotalNumInputChannels(), getTotalNumOutputChannels());
+    looperEngine->prepare(sampleRate, samplesPerBlock, maxChannels);
 }
 
 void BoomerangAudioProcessor::releaseResources()
@@ -110,12 +113,23 @@ bool BoomerangAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
     juce::ignoreUnused (layouts);
     return true;
   #else
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    const auto& outSet = layouts.getMainOutputChannelSet();
+    const auto& inSet  = layouts.getMainInputChannelSet();
+
+    // Allow mono or stereo output only
+    if (outSet != juce::AudioChannelSet::mono() && outSet != juce::AudioChannelSet::stereo())
         return false;
 
     #if ! JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+    // Permit mono-in→stereo-out or matching mono/mono, stereo/stereo.
+    const bool inputIsMonoOrStereo = (inSet == juce::AudioChannelSet::mono() || inSet == juce::AudioChannelSet::stereo());
+    if (! inputIsMonoOrStereo)
+        return false;
+
+    // NOTE: We don't currently support stereo-in → mono-out because the engine assumes
+    // output channels >= input channels. If we add downmixing, we can relax this.
+    const bool matches = (inSet == outSet) || (inSet == juce::AudioChannelSet::mono() && outSet == juce::AudioChannelSet::stereo());
+    if (! matches)
         return false;
     #endif
 

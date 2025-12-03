@@ -10,12 +10,12 @@ LooperEngine::~LooperEngine()
 }
 
 //==============================================================================
-void LooperEngine::prepare(double sampleRate, int samplesPerBlock, int numChannels)
+void LooperEngine::prepare(double newSampleRate, int newSamplesPerBlock, int newNumChannels)
 {
-    this->sampleRate = sampleRate;
-    this->samplesPerBlock = samplesPerBlock;
-    this->numChannels = numChannels;
-    this->maxLoopSamples = static_cast<int>(sampleRate * maxLoopLengthSeconds);
+    sampleRate = newSampleRate;
+    samplesPerBlock = newSamplesPerBlock;
+    numChannels = newNumChannels;
+    maxLoopSamples = static_cast<int>(sampleRate * maxLoopLengthSeconds);
 
     // Initialize all loop slots
     for (auto& slot : loopSlots)
@@ -60,7 +60,7 @@ void LooperEngine::reset()
 //==============================================================================
 void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
 
     switch (currentState)
     {
@@ -79,6 +79,11 @@ void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
         case LooperState::Overdubbing:
             processOverdubbing(buffer, activeSlot);
             break;
+
+        case LooperState::ContinuousReverse:
+        case LooperState::BufferFilled:
+            // No processing defined yet
+            break;
     }
 
     // Apply output volume
@@ -96,8 +101,6 @@ void LooperEngine::onThruMuteButtonPressed()
 //==============================================================================
 void LooperEngine::onRecordButtonPressed()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
-
     switch (currentState)
     {
         case LooperState::Stopped:
@@ -121,12 +124,16 @@ void LooperEngine::onRecordButtonPressed()
             // Stop overdubbing, continue playing
             stopOverdubbing();
             break;
+
+        case LooperState::ContinuousReverse:
+        case LooperState::BufferFilled:
+            break;
     }
 }
 
 void LooperEngine::onPlayButtonPressed()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
 
     switch (currentState)
     {
@@ -151,6 +158,9 @@ void LooperEngine::onPlayButtonPressed()
         case LooperState::ContinuousReverse:
             // go idle
             stopPlayback();
+            break;
+
+        case LooperState::BufferFilled:
             break;
     }
 }
@@ -202,8 +212,10 @@ void LooperEngine::onStackButtonToggled()
         case LooperState::Stopped:
             toggleSpeedMode();
             break;
-        
-        default:
+
+        case LooperState::Recording:
+        case LooperState::ContinuousReverse:
+        case LooperState::BufferFilled:
             break;
     }
 }
@@ -237,7 +249,7 @@ void LooperEngine::onReverseButtonPressed()
 //==============================================================================
 void LooperEngine::startRecording()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     activeSlot.isRecording = true;
     activeSlot.recordPosition = 0;
@@ -247,7 +259,7 @@ void LooperEngine::startRecording()
 
 void LooperEngine::stopRecording()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     activeSlot.isRecording = false;
     activeSlot.length = static_cast<int>(activeSlot.recordPosition);
@@ -260,7 +272,7 @@ void LooperEngine::stopRecording()
 
 void LooperEngine::startPlayback()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     if (activeSlot.hasContent)
     {
@@ -274,7 +286,7 @@ void LooperEngine::startPlayback()
 
 void LooperEngine::stopPlayback()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     activeSlot.isPlaying = false;
     currentState = LooperState::Stopped;
@@ -282,7 +294,7 @@ void LooperEngine::stopPlayback()
 
 void LooperEngine::startOverdubbing()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     if (activeSlot.hasContent)
     {
@@ -295,7 +307,7 @@ void LooperEngine::startOverdubbing()
 
 void LooperEngine::stopOverdubbing()
 {
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     activeSlot.isRecording = false;
     currentState = LooperState::Playing;
@@ -313,7 +325,7 @@ void LooperEngine::toggleDirection()
     currentDirection = (currentDirection == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
     loopMode = (loopMode == LoopMode::Normal) ? LoopMode::Reverse : LoopMode::Normal;
 
-    auto& activeSlot = loopSlots[activeLoopSlot];
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     // Ensure playhead stays within bounds after direction change
     if (activeSlot.playPosition < 0.0f && activeSlot.length > 0)
         activeSlot.playPosition += static_cast<float>(activeSlot.length);
@@ -355,6 +367,7 @@ void LooperEngine::setSpeedMode(SpeedMode mode)
 void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot)
 {
     int numSamples = buffer.getNumSamples();
+    const int inputChannels = buffer.getNumChannels();
     float speed = (speedMode == SpeedMode::Half) ? 0.5f : 1.0f;
     
     for (int sample = 0; sample < numSamples; ++sample)
@@ -370,7 +383,10 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
 
         for (int channel = 0; channel < numChannels; ++channel)
         {
-            slot.buffer.setSample(channel, writePos, buffer.getSample(channel, sample));
+            // If we only have a mono input, mirror it across all loop channels
+            const int sourceChannel = (inputChannels > 0) ? juce::jmin(channel, inputChannels - 1) : 0;
+            const float inputSample = (inputChannels > 0) ? buffer.getSample(sourceChannel, sample) : 0.0f;
+            slot.buffer.setSample(channel, writePos, inputSample);
         }
         
         slot.recordPosition += speed;
@@ -446,6 +462,7 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
     }
 
     int numSamples = buffer.getNumSamples();
+    const int inputChannels = buffer.getNumChannels();
     float speed = (speedMode == SpeedMode::Half) ? 0.5f : 1.0f;
     
     for (int sample = 0; sample < numSamples; ++sample)
@@ -454,7 +471,9 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
         
         for (int channel = 0; channel < numChannels; ++channel)
         {
-            float inputSample = buffer.getSample(channel, sample);
+            // Mirror mono input across all loop channels when needed
+            const int sourceChannel = (inputChannels > 0) ? juce::jmin(channel, inputChannels - 1) : 0;
+            float inputSample = (inputChannels > 0) ? buffer.getSample(sourceChannel, sample) : 0.0f;
             float loopSample = slot.buffer.getSample(channel, pos);
             
             // Overdub: mix input with existing content
@@ -507,6 +526,7 @@ bool LooperEngine::advancePosition(float& position, int length, float speed)
 
 void LooperEngine::applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples)
 {
+    juce::ignoreUnused(slot);
     // Implement crossfading for smooth loop transitions
     for (int sample = 0; sample < numSamples; ++sample)
     {
@@ -527,7 +547,7 @@ void LooperEngine::switchToNextLoopSlot()
 
 float LooperEngine::getLoopProgress() const
 {
-    const auto& activeSlot = loopSlots[activeLoopSlot];
+    const auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
     if (!activeSlot.hasContent || activeSlot.length == 0)
         return 0.0f;

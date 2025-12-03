@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Boomerang VERSION 1.0.0)
+project(Boomerang VERSION 2.0.0.1)
 
 # Add JUCE as a subdirectory (you'll need to clone JUCE)
 add_subdirectory(JUCE)
@@ -9,6 +9,8 @@ add_subdirectory(JUCE)
 juce_add_plugin(Boomerang
     COMPANY_NAME "MC Music Workshop"
     BUNDLE_ID com.MCMusicWorkshop.Boomerang
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "Boomerang+ needs microphone access to record loops."
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
@@ -17,7 +19,7 @@ juce_add_plugin(Boomerang
     COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
-    FORMATS Standalone
+    FORMATS Standalone AU VST3
     PRODUCT_NAME "Boomerang+")
 
 # Source files

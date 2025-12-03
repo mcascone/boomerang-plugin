@@ -81,15 +81,18 @@ int BoomerangAudioProcessor::getCurrentProgram()
 
 void BoomerangAudioProcessor::setCurrentProgram (int index)
 {
+    juce::ignoreUnused(index);
 }
 
 const juce::String BoomerangAudioProcessor::getProgramName (int index)
 {
+    juce::ignoreUnused(index);
     return {};
 }
 
 void BoomerangAudioProcessor::changeProgramName (int index, const juce::String& newName)
 {
+    juce::ignoreUnused(index, newName);
 }
 
 //==============================================================================
@@ -141,6 +144,7 @@ bool BoomerangAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
 void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+    juce::ignoreUnused(midiMessages);
 
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -155,6 +159,10 @@ void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 
     // Process audio through looper engine
     looperEngine->processBlock(buffer);
+
+    // Upmix mono input to stereo output so users with a single mic still hear both channels
+    if (totalNumInputChannels == 1 && totalNumOutputChannels >= 2)
+        buffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
 }
 
 //==============================================================================

@@ -46,3 +46,35 @@ Read the README.md first for an overview of the project, including detailed beha
 - VST3 signing warnings are benign for local builds; use proper signing for release (issue #36).
 - Current release: v2.0.0-alpha-0 (JUCE port). Alpha quality; known issues above. Builds shipped: VST3, AU (macOS), Standalone app (macOS); Windows/Linux use VST3. Installation paths: `~/Library/Audio/Plug-Ins/Components`, `~/Library/Audio/Plug-Ins/VST3`. Please file new issues for any problems.
 - Release notes style preference: concise Markdown with top-level title like `v2.0.0-alpha-0 (JUCE port)`, explicit “Alpha” warning, sections for What’s new, Installation (macOS and Windows/Linux), Known issues, and How to help (link to new issue form). Tone should be direct and instructional.
+
+# Style Guideslines
+
+These are my personal preferences for coding style and commit practices when contributing to this repository. They are not enforced by any automated tools, but following them helps maintain consistency and readability across the codebase.
+
+## Two space indentation
+
+I prefer using two spaces for indentation rather than tabs or four spaces. This keeps the code compact and readable.
+
+## Aligned operators and symbols
+
+I prefer code to be aligned like this:
+
+```cpp
+thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
+recordButton.onClick   = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
+playButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
+onceButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
+reverseButton.onClick  = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
+```
+
+Notice how the `=` signs are vertically aligned. This makes it easier to scan and compare similar lines of code.
+
+Incorrect:
+
+```cpp
+thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
+recordButton.onClick = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
+playButton.onClick = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
+onceButton.onClick = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
+reverseButton.onClick = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
+```

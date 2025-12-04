@@ -54,10 +54,11 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     // For momentary buttons, we'll use direct callbacks instead of parameter attachments
     // This gives us more control over the momentary behavior
     thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
-    recordButton.onClick = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
-    playButton.onClick = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
-    onceButton.onClick = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
-    
+    recordButton.onClick   = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
+    playButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
+    onceButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
+    reverseButton.onClick  = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
+
     // STACK uses onStateChange for momentary (press/release) behavior
     stackButton.onStateChange = [this]() {
         if (stackButton.isDown())
@@ -65,8 +66,6 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
         else
             audioProcessor.getLooperEngine()->onStackButtonReleased();
     };
-    
-    reverseButton.onClick = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
 
     // Keep parameter attachments for the continuous controls
     volumeAttachment = std::make_unique<juce::SliderParameterAttachment>(

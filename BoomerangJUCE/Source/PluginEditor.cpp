@@ -22,7 +22,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     setupButton(reverseButton, "REVERSE", reverseColour);
 
     // Setup sliders
-    volumeSlider.setSliderStyle(juce::Slider::Rotary);
+    volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
     volumeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(1.0);

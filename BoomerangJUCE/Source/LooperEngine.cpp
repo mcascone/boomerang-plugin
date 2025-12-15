@@ -458,6 +458,9 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
         
         bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
         
+        if (wrapped)
+            loopWrapped = true;
+        
         if (onceMode == OnceMode::On && wrapped)
         {
             // Once mode: stop at end & reset once mode
@@ -510,6 +513,9 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
         }
         
         bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
+
+        if (wrapped)
+            loopWrapped = true;
 
         if (onceMode == OnceMode::On && wrapped)
         {

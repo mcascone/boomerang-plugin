@@ -179,6 +179,25 @@ void BoomerangAudioProcessorEditor::timerCallback()
                         looperState == LooperEngine::LooperState::Overdubbing);
     recordButton.setToggleState(isRecording, juce::dontSendNotification);
     
+    // Flash record button when loop wraps around
+    if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())
+    {
+        recordFlashCounter = 3;  // Flash for ~180ms (6 frames at 30ms)
+        // Set bright color when flash starts
+        recordButton.setColour(juce::TextButton::buttonOnColourId, recordColour.brighter(0.5f));
+        recordButton.setColour(juce::TextButton::buttonColourId, recordColour.brighter(0.3f));
+    }
+    else if (recordFlashCounter > 0)
+    {
+        recordFlashCounter--;
+        // Restore color when flash ends
+        if (recordFlashCounter == 0)
+        {
+            recordButton.setColour(juce::TextButton::buttonOnColourId, recordColour);
+            recordButton.setColour(juce::TextButton::buttonColourId, recordColour.darker(0.8f));
+        }
+    }
+    
     repaint(); // Refresh loop slot indicators
 }
 

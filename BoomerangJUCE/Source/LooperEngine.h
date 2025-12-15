@@ -2,6 +2,7 @@
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
+#include <atomic>
 
 //==============================================================================
 /**
@@ -106,6 +107,12 @@ public:
     bool isPlaying() const { return currentState == LooperState::Playing || currentState == LooperState::Overdubbing; }
     float getLoopProgress() const;
     int getCurrentLoopSlot() const { return activeLoopSlot; }
+    
+    // Check and clear loop wrap flag for UI flash indicator
+    bool checkAndClearLoopWrapped() 
+    { 
+        return loopWrapped.exchange(false); 
+    }
 
 private:
     //==============================================================================
@@ -150,6 +157,7 @@ private:
     // Timing and synchronization
     bool waitingForFirstLoop = true;
     int recordingStartDelay = 0;
+    std::atomic<bool> loopWrapped{false};  // Set when loop cycles to position 0
 
     //==============================================================================
     void startRecording();

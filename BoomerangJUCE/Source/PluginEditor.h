@@ -60,6 +60,8 @@ private:
     juce::Colour reverseColour = juce::Colours::purple;
     juce::Colour thruMuteColour = juce::Colours::grey;
     juce::Colour thruMuteColour_OFF = juce::Colours::lightgrey;
+    
+    int recordFlashCounter = 0;  // For loop wrap flash indicator
 
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour, bool isToggle = false);
     void updateStatusDisplay();

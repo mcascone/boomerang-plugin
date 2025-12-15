@@ -15,7 +15,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
 
     // Setup buttons
     setupButton(thruMuteButton, "THRU MUTE", thruMuteColour, true);  // toggle
-    setupButton(recordButton, "RECORD", recordColour);                // momentary
+    setupButton(recordButton, "RECORD", recordColour, true);          // toggle
     setupButton(playButton, "PLAY/STOP", playColour);                 // momentary
     setupButton(onceButton, "ONCE", onceColour);                      // momentary
     setupButton(stackButton, "STACK/SPEED", stackColour);             // momentary
@@ -170,9 +170,14 @@ void BoomerangAudioProcessorEditor::timerCallback()
     // Update progress bar
     progressValue = audioProcessor.getLooperEngine()->getLoopProgress();
     
-    // Update thruMute button toggle state to match engine state
+    // Update button toggle states to match engine state
     auto thruState = audioProcessor.getLooperEngine()->getThruMuteState();
     thruMuteButton.setToggleState(thruState == LooperEngine::ThruMuteState::On, juce::dontSendNotification);
+    
+    auto looperState = audioProcessor.getLooperEngine()->getState();
+    bool isRecording = (looperState == LooperEngine::LooperState::Recording || 
+                        looperState == LooperEngine::LooperState::Overdubbing);
+    recordButton.setToggleState(isRecording, juce::dontSendNotification);
     
     repaint(); // Refresh loop slot indicators
 }

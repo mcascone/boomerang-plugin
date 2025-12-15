@@ -49,7 +49,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     addAndMakeVisible(statusLabel);
 
     // Setup version label
-    versionLabel.setText("v" BOOMERANG_VERSION, juce::dontSendNotification);
+    versionLabel.setText("v" BOOMERANG_VERSION " (" BOOMERANG_GIT_HASH ")", juce::dontSendNotification);
     versionLabel.setJustificationType(juce::Justification::bottomRight);
     versionLabel.setFont(juce::Font(juce::FontOptions(10.0f)));
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.5f));

@@ -2,6 +2,20 @@ cmake_minimum_required(VERSION 3.22)
 
 project(Boomerang VERSION 2.0.0.2)
 
+# Get git commit hash
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+
+# If git command fails, set a default value
+if(NOT GIT_HASH)
+    set(GIT_HASH "unknown")
+endif()
+
 # Add JUCE as a subdirectory (you'll need to clone JUCE)
 add_subdirectory(JUCE)
 
@@ -35,7 +49,8 @@ target_compile_definitions(Boomerang
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}")
+        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}"
+        BOOMERANG_GIT_HASH="${GIT_HASH}")
 
 # Required JUCE modules
 target_link_libraries(Boomerang

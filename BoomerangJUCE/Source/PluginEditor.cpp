@@ -49,7 +49,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     addAndMakeVisible(statusLabel);
 
     // Setup progress bar
-    addAndMakeVisible(progressBar);
+    // addAndMakeVisible(progressBar);  // Hidden for now
 
     // thruMuteButton is a toggle - state reflects engine state
     thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
@@ -132,7 +132,7 @@ void BoomerangAudioProcessorEditor::resized()
     
     // Status and progress
     statusLabel.setBounds(bounds.removeFromTop(30).reduced(20, 0));
-    progressBar.setBounds(bounds.removeFromTop(20).reduced(20, 0));
+    // progressBar.setBounds(bounds.removeFromTop(20).reduced(20, 0));  // Hidden for now
     
     bounds.removeFromTop(20); // spacer
     

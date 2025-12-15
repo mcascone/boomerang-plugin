@@ -17,7 +17,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     setupButton(thruMuteButton, "THRU MUTE", thruMuteColour, true);  // toggle
     setupButton(recordButton, "RECORD", recordColour, true);          // toggle
     setupButton(playButton, "PLAY/STOP", playColour, true);           // toggle
-    setupButton(onceButton, "ONCE", onceColour);                      // momentary
+    setupButton(onceButton, "ONCE", onceColour);                      // momentary (visual state synced in timer)
     setupButton(stackButton, "STACK/SPEED", stackColour);             // momentary
     setupButton(reverseButton, "REVERSE", reverseColour, true);       // toggle
 
@@ -194,6 +194,10 @@ void BoomerangAudioProcessorEditor::timerCallback()
     auto loopMode = audioProcessor.getLooperEngine()->getLoopMode();
     bool isReverse = (loopMode == LooperEngine::LoopMode::Reverse);
     reverseButton.setToggleState(isReverse, juce::dontSendNotification);
+    
+    auto onceMode = audioProcessor.getLooperEngine()->getOnceMode();
+    bool isOnce = (onceMode == LooperEngine::OnceMode::On);
+    onceButton.setToggleState(isOnce, juce::dontSendNotification);
     
     // Flash record button when loop wraps around
     if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())

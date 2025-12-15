@@ -19,7 +19,7 @@ juce_add_plugin(Boomerang
     COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
-    FORMATS Standalone VST3 AU
+    FORMATS Standalone
     PRODUCT_NAME "Boomerang+")
 
 # Source files
@@ -34,7 +34,8 @@ target_compile_definitions(Boomerang
     PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
-        JUCE_VST3_CAN_REPLACE_VST2=0)
+        JUCE_VST3_CAN_REPLACE_VST2=0
+        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}")
 
 # Required JUCE modules
 target_link_libraries(Boomerang

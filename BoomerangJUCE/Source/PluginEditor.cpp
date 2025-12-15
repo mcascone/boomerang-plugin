@@ -14,12 +14,12 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     addAndMakeVisible(titleLabel);
 
     // Setup buttons
-    setupButton(thruMuteButton, "THRU MUTE", thruMuteColour);
-    setupButton(recordButton, "RECORD", recordColour);
-    setupButton(playButton, "PLAY/STOP", playColour);
-    setupButton(onceButton, "ONCE", onceColour);
-    setupButton(stackButton, "STACK/SPEED", stackColour);
-    setupButton(reverseButton, "REVERSE", reverseColour);
+    setupButton(thruMuteButton, "THRU MUTE", thruMuteColour, true);  // toggle
+    setupButton(recordButton, "RECORD", recordColour);                // momentary
+    setupButton(playButton, "PLAY/STOP", playColour);                 // momentary
+    setupButton(onceButton, "ONCE", onceColour);                      // momentary
+    setupButton(stackButton, "STACK/SPEED", stackColour);             // momentary
+    setupButton(reverseButton, "REVERSE", reverseColour);             // momentary
 
     // Setup sliders
     volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
@@ -51,9 +51,10 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     // Setup progress bar
     addAndMakeVisible(progressBar);
 
-    // For momentary buttons, we'll use direct callbacks instead of parameter attachments
-    // This gives us more control over the momentary behavior
+    // thruMuteButton is a toggle - state reflects engine state
     thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
+    
+    // Other buttons are momentary
     recordButton.onClick   = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
     playButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
     onceButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
@@ -169,20 +170,25 @@ void BoomerangAudioProcessorEditor::timerCallback()
     // Update progress bar
     progressValue = audioProcessor.getLooperEngine()->getLoopProgress();
     
+    // Update thruMute button toggle state to match engine state
+    auto thruState = audioProcessor.getLooperEngine()->getThruMuteState();
+    thruMuteButton.setToggleState(thruState == LooperEngine::ThruMuteState::On, juce::dontSendNotification);
+    
     repaint(); // Refresh loop slot indicators
 }
 
 //==============================================================================
 void BoomerangAudioProcessorEditor::setupButton(juce::TextButton& button, 
                                                const juce::String& text, 
-                                               juce::Colour colour)
+                                               juce::Colour colour,
+                                               bool isToggle)
 {
     button.setButtonText(text);
     button.setColour(juce::TextButton::buttonColourId, colour.darker(0.8f));
     button.setColour(juce::TextButton::buttonOnColourId, colour);
     button.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     button.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
-    button.setClickingTogglesState(false); // This makes buttons momentary!
+    button.setClickingTogglesState(isToggle);
     addAndMakeVisible(button);
 }
 

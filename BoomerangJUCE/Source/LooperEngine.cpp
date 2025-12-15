@@ -65,7 +65,10 @@ void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
     switch (currentState)
     {
         case LooperState::Stopped:
-            // Pass-through audio when stopped
+            // When thru mute is on, mute the input passthrough
+            if (thruMute == ThruMuteState::On)
+                buffer.clear();
+            // Otherwise pass-through audio when stopped
             break;
 
         case LooperState::Recording:
@@ -391,6 +394,10 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
         
         slot.recordPosition += speed;
     }
+    
+    // When thru mute is on, mute the input passthrough while recording
+    if (thruMute == ThruMuteState::On)
+        buffer.clear();
 }
 
 void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot)
@@ -437,8 +444,16 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
                 loopSample = sample1 + frac * (sample2 - sample1);
             }
             
-            // TODO: add thru mute handling
-            buffer.setSample(channel, sampleNum, loopSample);
+            // Thru mute handling: when ON, only play loop; when OFF, mix input with loop
+            if (thruMute == ThruMuteState::On)
+            {
+                buffer.setSample(channel, sampleNum, loopSample);
+            }
+            else
+            {
+                float inputSample = buffer.getSample(channel, sampleNum);
+                buffer.setSample(channel, sampleNum, loopSample + inputSample);
+            }
         }
         
         bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
@@ -482,7 +497,16 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             float attenuatedLoop = loopSample * stackAttenuation;
             float overdubSample = attenuatedLoop + (inputSample * feedbackAmount);
             slot.buffer.setSample(channel, pos, overdubSample);
-            buffer.setSample(channel, sample, overdubSample);
+            
+            // Thru mute handling: when ON, only output loop; when OFF, mix with input
+            if (thruMute == ThruMuteState::On)
+            {
+                buffer.setSample(channel, sample, overdubSample);
+            }
+            else
+            {
+                buffer.setSample(channel, sample, overdubSample + inputSample);
+            }
         }
         
         bool wrapped = advancePosition(slot.playPosition, slot.length, speed);

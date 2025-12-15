@@ -59,8 +59,9 @@ private:
     juce::Colour stackColour = juce::Colours::orange;
     juce::Colour reverseColour = juce::Colours::purple;
     juce::Colour thruMuteColour = juce::Colours::grey;
+    juce::Colour thruMuteColour_OFF = juce::Colours::lightgrey;
 
-    void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour);
+    void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour, bool isToggle = false);
     void updateStatusDisplay();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BoomerangAudioProcessorEditor)

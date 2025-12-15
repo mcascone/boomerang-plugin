@@ -48,6 +48,13 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     statusLabel.setFont(juce::Font(juce::FontOptions(16.0f)));
     addAndMakeVisible(statusLabel);
 
+    // Setup version label
+    versionLabel.setText("v" BOOMERANG_VERSION, juce::dontSendNotification);
+    versionLabel.setJustificationType(juce::Justification::bottomRight);
+    versionLabel.setFont(juce::Font(juce::FontOptions(10.0f)));
+    versionLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.5f));
+    addAndMakeVisible(versionLabel);
+
     // Setup progress bar
     // addAndMakeVisible(progressBar);  // Hidden for now
 
@@ -101,26 +108,26 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     g.setColour(juce::Colours::white.withAlpha(0.1f));
     g.drawRect(bounds.reduced(2), 2);
 
-    // Draw loop slot indicators
-    auto loopSlotArea = bounds.removeFromBottom(40).reduced(20);
-    int slotWidth = loopSlotArea.getWidth() / 4;
-    
-    for (int i = 0; i < 4; ++i)
-    {
-        auto slotBounds = loopSlotArea.removeFromLeft(slotWidth).reduced(5);
-        
-        // Note: Direct access to looperEngine - in production you'd want getter methods
-        // For now, we'll just show all slots equally
-        g.setColour(juce::Colours::white.withAlpha(0.2f));
-        g.fillRoundedRectangle(slotBounds.toFloat(), 4.0f);
-        
-        g.setColour(juce::Colours::white.withAlpha(0.6f));
-        g.drawRoundedRectangle(slotBounds.toFloat(), 4.0f, 1.0f);
-        
-        g.setColour(juce::Colours::white.withAlpha(0.8f));
-        g.drawText(juce::String("Loop ") + juce::String(i + 1),
-                  slotBounds, juce::Justification::centred, true);
-    }
+    // Draw loop slot indicators (hidden for now)
+    // auto loopSlotArea = bounds.removeFromBottom(40).reduced(20);
+    // int slotWidth = loopSlotArea.getWidth() / 4;
+    // 
+    // for (int i = 0; i < 4; ++i)
+    // {
+    //     auto slotBounds = loopSlotArea.removeFromLeft(slotWidth).reduced(5);
+    //     
+    //     // Note: Direct access to looperEngine - in production you'd want getter methods
+    //     // For now, we'll just show all slots equally
+    //     g.setColour(juce::Colours::white.withAlpha(0.2f));
+    //     g.fillRoundedRectangle(slotBounds.toFloat(), 4.0f);
+    //     
+    //     g.setColour(juce::Colours::white.withAlpha(0.6f));
+    //     g.drawRoundedRectangle(slotBounds.toFloat(), 4.0f, 1.0f);
+    //     
+    //     g.setColour(juce::Colours::white.withAlpha(0.8f));
+    //     g.drawText(juce::String("Loop ") + juce::String(i + 1),
+    //               slotBounds, juce::Justification::centred, true);
+    // }
 }
 
 void BoomerangAudioProcessorEditor::resized()
@@ -160,7 +167,8 @@ void BoomerangAudioProcessorEditor::resized()
     feedbackLabel.setBounds(feedbackArea.removeFromTop(20));
     feedbackSlider.setBounds(feedbackArea);
     
-    // Loop slots will be drawn at the bottom (handled in paint)
+    // Version label in bottom right corner
+    versionLabel.setBounds(getLocalBounds().removeFromBottom(20).removeFromRight(120).reduced(5));
 }
 
 void BoomerangAudioProcessorEditor::timerCallback()

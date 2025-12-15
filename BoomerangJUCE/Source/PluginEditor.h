@@ -43,6 +43,7 @@ private:
     juce::Label feedbackLabel;
     juce::Label titleLabel;
     juce::Label statusLabel;
+    juce::Label versionLabel;
 
     // Progress indicator
     juce::ProgressBar progressBar;

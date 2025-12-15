@@ -19,7 +19,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     setupButton(playButton, "PLAY/STOP", playColour, true);           // toggle
     setupButton(onceButton, "ONCE", onceColour);                      // momentary
     setupButton(stackButton, "STACK/SPEED", stackColour);             // momentary
-    setupButton(reverseButton, "REVERSE", reverseColour);             // momentary
+    setupButton(reverseButton, "REVERSE", reverseColour, true);       // toggle
 
     // Setup sliders
     volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
@@ -182,6 +182,10 @@ void BoomerangAudioProcessorEditor::timerCallback()
     bool isPlaying = (looperState == LooperEngine::LooperState::Playing || 
                       looperState == LooperEngine::LooperState::Overdubbing);
     playButton.setToggleState(isPlaying, juce::dontSendNotification);
+    
+    auto loopMode = audioProcessor.getLooperEngine()->getLoopMode();
+    bool isReverse = (loopMode == LooperEngine::LoopMode::Reverse);
+    reverseButton.setToggleState(isReverse, juce::dontSendNotification);
     
     // Flash record button when loop wraps around
     if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())

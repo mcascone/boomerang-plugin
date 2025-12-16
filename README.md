@@ -4,7 +4,11 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
-# Update Nov-15-2025
+# Update Dec-16-2025
+
+Work is well underway in the JUCE framework. See branch `juce-port` for the latest.
+
+## Update Nov-15-2025
 
 After determining that it's impossible to programmatically update the state of an `input` toggle in Plug n' Script, I used CoPilot/Claude to port the whole thing over to JUCE. Juce is a more established framework and is more flexible. So it'll be a minute to wrap my head around the port and the new framework, and then i should be on my way to finishing v1 of this thing!
 

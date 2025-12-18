@@ -82,8 +82,8 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     feedbackAttachment = std::make_unique<juce::SliderParameterAttachment>(
         *audioProcessor.getFeedbackParam(), feedbackSlider);
 
-    // Start timer for UI updates
-    startTimer(30); // 30ms refresh rate for smooth progress bar
+    // Start timer for UI updates and audio thread request processing (issue #38)
+    startTimer(16); // 16ms (~60Hz) for responsive UI and Once mode auto-off
 }
 
 BoomerangAudioProcessorEditor::~BoomerangAudioProcessorEditor()
@@ -173,6 +173,9 @@ void BoomerangAudioProcessorEditor::resized()
 
 void BoomerangAudioProcessorEditor::timerCallback()
 {
+    // Process audio thread requests (issue #38) - UI thread only
+    audioProcessor.getLooperEngine()->processAudioThreadRequests();
+    
     updateStatusDisplay();
     
     // Update progress bar

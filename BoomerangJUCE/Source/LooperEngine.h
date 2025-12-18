@@ -94,24 +94,34 @@ public:
     void setFeedback(float feedback) { feedbackAmount = feedback; }
 
     //==============================================================================
-    // State queries for UI updates
-    LooperState getState() const { return currentState; }
-    LoopMode getLoopMode() const { return loopMode; }
-    DirectionMode getDirection() const { return currentDirection; }
-    StackMode getStackMode() const { return stackMode; }
-    OnceMode getOnceMode() const { return onceMode; }
-    ThruMuteState getThruMuteState() const { return thruMute; }
-    SpeedMode getSpeedMode() const { return speedMode; }
+    // State queries for UI updates (thread-safe via atomic loads)
+    LooperState getState() const { return currentState.load(); }
+    LoopMode getLoopMode() const { return loopMode.load(); }
+    DirectionMode getDirection() const { return currentDirection.load(); }
+    StackMode getStackMode() const { return stackMode.load(); }
+    OnceMode getOnceMode() const { return onceMode.load(); }
+    ThruMuteState getThruMuteState() const { return thruMute.load(); }
+    SpeedMode getSpeedMode() const { return speedMode.load(); }
 
-    bool isRecording() const { return currentState == LooperState::Recording || currentState == LooperState::Overdubbing; }
-    bool isPlaying() const { return currentState == LooperState::Playing || currentState == LooperState::Overdubbing; }
+    bool isRecording() const { auto state = currentState.load(); return state == LooperState::Recording || state == LooperState::Overdubbing; }
+    bool isPlaying() const { auto state = currentState.load(); return state == LooperState::Playing || state == LooperState::Overdubbing; }
     float getLoopProgress() const;
-    int getCurrentLoopSlot() const { return activeLoopSlot; }
+    int getCurrentLoopSlot() const { return activeLoopSlot.load(); }
     
     // Check and clear loop wrap flag for UI flash indicator
     bool checkAndClearLoopWrapped() 
     { 
         return loopWrapped.exchange(false); 
+    }
+    
+    // Process audio thread requests (called from UI timer - issue #38)
+    void processAudioThreadRequests()
+    {
+        // Check if audio thread requested Once mode disable
+        if (shouldDisableOnce.exchange(false))
+        {
+            toggleOnceMode();
+        }
     }
 
 private:
@@ -135,15 +145,17 @@ private:
     static constexpr int crossfadeSamples = 1024;
 
     std::array<LoopSlot, maxLoopSlots> loopSlots;
-    int activeLoopSlot = 0;
+    std::atomic<int> activeLoopSlot{0};
 
-    LooperState currentState = LooperState::Stopped;
-    LoopMode loopMode = LoopMode::Normal;
-    DirectionMode currentDirection = DirectionMode::Forward;
-    StackMode stackMode = StackMode::Off;
-    OnceMode onceMode = OnceMode::Off;
-    ThruMuteState thruMute = ThruMuteState::Off;
-    SpeedMode speedMode = SpeedMode::Normal;
+    // Thread-safe state variables (issue #38)
+    // These are accessed from both UI and audio threads
+    std::atomic<LooperState> currentState{LooperState::Stopped};
+    std::atomic<LoopMode> loopMode{LoopMode::Normal};
+    std::atomic<DirectionMode> currentDirection{DirectionMode::Forward};
+    std::atomic<StackMode> stackMode{StackMode::Off};
+    std::atomic<OnceMode> onceMode{OnceMode::Off};
+    std::atomic<ThruMuteState> thruMute{ThruMuteState::Off};
+    std::atomic<SpeedMode> speedMode{SpeedMode::Normal};
 
     double sampleRate = 44100.0;
     int samplesPerBlock = 512;
@@ -158,6 +170,10 @@ private:
     bool waitingForFirstLoop = true;
     int recordingStartDelay = 0;
     std::atomic<bool> loopWrapped{false};  // Set when loop cycles to position 0
+    
+    // Request flags for audio→UI thread communication (issue #38)
+    // Audio thread sets these, UI timer processes them
+    std::atomic<bool> shouldDisableOnce{false};
 
     //==============================================================================
     void startRecording();

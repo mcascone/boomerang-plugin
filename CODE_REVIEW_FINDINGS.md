@@ -26,7 +26,7 @@ The Boomerang+ plugin is functionally operational in standalone mode but has arc
 ### 1. Thread Safety Violations (Data Races)
 
 **Severity:** HIGH  
-**Status:** Present but may not cause immediate visible problems  
+**Status:** ✅ FIXED in issue #38  
 **Impact:** Undefined behavior, potential crashes in DAW hosts under load
 
 **Problem:**
@@ -59,11 +59,13 @@ void LooperEngine::processBlock(...) {
 > "Be very careful about what you do in this callback - it's going to be called by the audio thread, so any kind of interaction with the UI is absolutely out of the question."
 
 **Recommendation:**
-- Option A: Make all state variables `std::atomic<>`
-- Option B: Use `AudioProcessor::getCallbackLock()` in button handlers
-- Option C: Migrate to `AudioProcessorValueTreeState` (recommended)
+- ✅ IMPLEMENTED: Made all state variables `std::atomic<>` for lock-free thread safety
+- ✅ IMPLEMENTED: Added `shouldDisableOnce` request flag for audio→UI communication  
+- ✅ IMPLEMENTED: Added 16ms UI timer to process audio thread requests safely
+- ✅ IMPLEMENTED: Removed all direct state writes from audio thread
+- Future: Consider migrating to `AudioProcessorValueTreeState` (tracked in issue #39)
 
-**Why it "works":** Modern CPUs handle small enum/int writes atomically in practice, but this is undefined behavior.
+**Resolution:** All state enums are now atomic, Once mode auto-off uses request flags, and audio thread no longer writes to user-facing state. Thread-safe per C++ memory model.
 
 ---
 

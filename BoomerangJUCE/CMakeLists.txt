@@ -62,15 +62,7 @@ target_link_libraries(Boomerang
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
 
-# Suppress specific warnings for now (see issues #34-35)
-# TODO: Fix these warnings and remove suppressions
-target_compile_options(Boomerang
-    PRIVATE
-        -Wno-unused-parameter
-        -Wno-shadow
-        -Wno-sign-conversion
-        -Wno-switch
-        -Wno-unused-variable)
+# Warning suppressions removed - code is now warning-clean (issues #34-35 resolved)
 
 # ==============================================================================
 # Validation Targets (issue #38)

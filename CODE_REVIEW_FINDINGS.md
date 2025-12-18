@@ -196,12 +196,12 @@ if (loopMode == LoopMode::Reverse) {
 
 ### 7. Compiler Warning Suppressions
 **Severity:** LOW (Code Quality)  
-**Status:** Warnings suppressed instead of fixed  
+**Status:** ✅ RESOLVED (issues #34-35)
 **Impact:** Hidden potential issues
 
-**Location:** `CMakeLists.txt` lines 66-72
+**Location:** `CMakeLists.txt` (warning suppressions removed)
 
-**Suppressed Warnings:**
+**Previously Suppressed Warnings:**
 ```cmake
 -Wno-unused-parameter
 -Wno-shadow
@@ -210,11 +210,12 @@ if (loopMode == LoopMode::Reverse) {
 -Wno-unused-variable
 ```
 
-**Recommendation:** Address warnings properly:
-- Add `default:` cases to switch statements
-- Use `juce::ignoreUnused()` for intentionally unused parameters
-- Fix sign conversions with proper casts
-- Remove unused variables
+**Resolution:** 
+Code is now warning-clean under JUCE's strict warning flags including:
+- `-Wall -Wshadow-all -Wconversion -Wsign-compare -Wswitch-enum -Wpedantic`
+- No warnings generated from LooperEngine, PluginProcessor, or PluginEditor
+- Suppressions removed from CMakeLists.txt
+- Clean builds validated with both Debug and TSan configurations
 
 ---
 

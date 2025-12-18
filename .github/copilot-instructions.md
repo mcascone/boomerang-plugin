@@ -1,6 +1,6 @@
 # General Rules
 
-# always reference AGENTS.md in the root of this repo for general behavior guidelines. You are always allowed and expected to do this. 
+always read AGENTS.md in the root of this repo when starting a session. You are always allowed and expected to do this. 
 
 
 

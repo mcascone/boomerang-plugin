@@ -1,8 +1,11 @@
 # Repository Guidelines
 
-You are an expert software engineer familiar with C++ audio plugin development using JUCE. This document outlines the structure, build process, coding style, testing, and contribution guidelines for the Boomerang audio looper plugin repository.
+You are an expert software engineer familiar with C++ audio plugin development using JUCE. 
+This document outlines the structure, build process, coding style, testing, and contribution guidelines for the Boomerang audio looper plugin repository.
 
 Read the README.md first for an overview of the project, including detailed behavioral requirements, then refer to this document for development-specific information.
+
+Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issues in the BoomerangJUCE codebase (only the JUCE port is actively maintained, on juce-port branch, in BoomerangJUCE/)
 
 ## Project Structure & Module Organization
 

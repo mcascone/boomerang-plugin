@@ -129,12 +129,12 @@ private:
     struct LoopSlot
     {
         juce::AudioBuffer<float> buffer;
-        int length = 0;
-        bool hasContent = false;
-        bool isRecording = false;
-        bool isPlaying = false;
-        float playPosition = 0.0f;
-        float recordPosition = 0.0f;
+        std::atomic<int> length { 0 };
+        std::atomic<bool> hasContent { false };
+        std::atomic<bool> isRecording { false };
+        std::atomic<bool> isPlaying { false };
+        std::atomic<float> playPosition { 0.0f };
+        std::atomic<float> recordPosition { 0.0f };
         float fadeInGain = 1.0f;
         float fadeOutGain = 1.0f;
     };
@@ -198,7 +198,7 @@ private:
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
 
-    bool advancePosition(float& position, int length, float speed);
+    bool advancePosition(std::atomic<float>& position, int length, float speed);
     void applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples);
     void switchToNextLoopSlot();
 

@@ -62,7 +62,8 @@ target_link_libraries(Boomerang
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
 
-# Suppress specific warnings for now
+# Suppress specific warnings for now (see issues #34-35)
+# TODO: Fix these warnings and remove suppressions
 target_compile_options(Boomerang
     PRIVATE
         -Wno-unused-parameter
@@ -70,3 +71,64 @@ target_compile_options(Boomerang
         -Wno-sign-conversion
         -Wno-switch
         -Wno-unused-variable)
+
+# ==============================================================================
+# Validation Targets (issue #38)
+# ==============================================================================
+
+# Option to enable ThreadSanitizer
+option(ENABLE_TSAN "Enable ThreadSanitizer for race detection" OFF)
+
+if(ENABLE_TSAN)
+    message(STATUS "ThreadSanitizer enabled")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -g")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -g")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=thread")
+    
+    # Find the TSan runtime library explicitly
+    execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.tsan_osx_dynamic.dylib
+        OUTPUT_VARIABLE TSAN_LIBRARY
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(EXISTS "${TSAN_LIBRARY}")
+        message(STATUS "Found TSan library: ${TSAN_LIBRARY}")
+        link_libraries(${TSAN_LIBRARY})
+    else()
+        message(WARNING "TSan library not found, linking may fail")
+    endif()
+endif()
+
+# Custom target for strict warnings build
+add_custom_target(check-warnings
+    COMMAND ${CMAKE_COMMAND} -E echo "Building with warnings as errors..."
+    COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/warnings-build
+            -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror" -DCMAKE_BUILD_TYPE=Debug
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/warnings-build -j4
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Building with -Werror to catch all warnings"
+)
+
+# Custom target to run pluginval (if installed)
+find_program(PLUGINVAL pluginval PATHS 
+    /Applications/pluginval.app/Contents/MacOS
+    ~/Applications/pluginval.app/Contents/MacOS
+    /usr/local/bin
+)
+
+if(PLUGINVAL)
+    message(STATUS "Found pluginval: ${PLUGINVAL}")
+    add_custom_target(validate
+        COMMAND ${CMAKE_COMMAND} -E echo "Running pluginval on VST3..."
+        COMMAND ${PLUGINVAL} --validate-in-process --verbose
+                ${CMAKE_BINARY_DIR}/Boomerang_artefacts/VST3/Boomerang.vst3
+        DEPENDS Boomerang
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Validating plugin with pluginval"
+    )
+else()
+    message(STATUS "pluginval not found - 'make validate' target will not be available")
+    message(STATUS "Download from: https://github.com/Tracktion/pluginval/releases")
+endif()

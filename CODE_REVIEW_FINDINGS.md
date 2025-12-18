@@ -60,12 +60,14 @@ void LooperEngine::processBlock(...) {
 
 **Recommendation:**
 - ✅ IMPLEMENTED: Made all state variables `std::atomic<>` for lock-free thread safety
+- ✅ IMPLEMENTED: Made LoopSlot member variables atomic (`length`, `hasContent`, etc.)
 - ✅ IMPLEMENTED: Added `shouldDisableOnce` request flag for audio→UI communication  
 - ✅ IMPLEMENTED: Added 16ms UI timer to process audio thread requests safely
 - ✅ IMPLEMENTED: Removed all direct state writes from audio thread
+- ✅ IMPLEMENTED: ThreadSanitizer (TSan) build target for validation
 - Future: Consider migrating to `AudioProcessorValueTreeState` (tracked in issue #39)
 
-**Resolution:** All state enums are now atomic, Once mode auto-off uses request flags, and audio thread no longer writes to user-facing state. Thread-safe per C++ memory model.
+**Resolution:** All state enums and LoopSlot members are now atomic. Once mode auto-off uses request flags. Audio thread no longer writes to user-facing state. Validated with ThreadSanitizer. Thread-safe per C++ memory model.
 
 ---
 

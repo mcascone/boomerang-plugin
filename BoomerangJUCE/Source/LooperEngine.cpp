@@ -22,12 +22,12 @@ void LooperEngine::prepare(double newSampleRate, int newSamplesPerBlock, int new
     {
         slot.buffer.setSize(numChannels, maxLoopSamples);
         slot.buffer.clear();
-        slot.length = 0;
-        slot.hasContent = false;
-        slot.isRecording = false;
-        slot.isPlaying = false;
-        slot.playPosition = 0;
-        slot.recordPosition = 0;
+        slot.length.store(0);
+        slot.hasContent.store(false);
+        slot.isRecording.store(false);
+        slot.isPlaying.store(false);
+        slot.playPosition.store(0.0f);
+        slot.recordPosition.store(0.0f);
     }
 
     reset();
@@ -48,12 +48,12 @@ void LooperEngine::reset()
     for (auto& slot : loopSlots)
     {
         slot.buffer.clear();
-        slot.length = 0;
-        slot.hasContent = false;
-        slot.isRecording = false;
-        slot.isPlaying = false;
-        slot.playPosition = 0;
-        slot.recordPosition = 0;
+        slot.length.store(0);
+        slot.hasContent.store(false);
+        slot.isRecording.store(false);
+        slot.isPlaying.store(false);
+        slot.playPosition.store(0.0f);
+        slot.recordPosition.store(0.0f);
     }
 }
 
@@ -147,7 +147,7 @@ void LooperEngine::onPlayButtonPressed()
     switch (state)
     {
         case LooperState::Stopped:
-            if (activeSlot.hasContent)
+            if (activeSlot.hasContent.load())
             {
                 startPlayback();
             }
@@ -267,8 +267,8 @@ void LooperEngine::startRecording()
 {
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
-    activeSlot.isRecording = true;
-    activeSlot.recordPosition = 0;
+    activeSlot.isRecording.store(true);
+    activeSlot.recordPosition.store(0.0f);
     currentState.store(LooperState::Recording);
     waitingForFirstLoop = true;
 }
@@ -277,9 +277,10 @@ void LooperEngine::stopRecording()
 {
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
-    activeSlot.isRecording = false;
-    activeSlot.length = static_cast<int>(activeSlot.recordPosition);
-    activeSlot.hasContent = (activeSlot.length > 0);
+    activeSlot.isRecording.store(false);
+    int finalLength = static_cast<int>(activeSlot.recordPosition.load());
+    activeSlot.length.store(finalLength);
+    activeSlot.hasContent.store(finalLength > 0);
     currentState.store(LooperState::Stopped);
     
     if (waitingForFirstLoop)
@@ -290,12 +291,12 @@ void LooperEngine::startPlayback()
 {
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
-    if (activeSlot.hasContent)
+    if (activeSlot.hasContent.load())
     {
-        activeSlot.isPlaying = true;
-        activeSlot.playPosition = (loopMode.load() == LoopMode::Reverse)
-            ? static_cast<float>(activeSlot.length - 1)
-            : 0.0f;
+        activeSlot.isPlaying.store(true);
+        activeSlot.playPosition.store((loopMode.load() == LoopMode::Reverse)
+            ? static_cast<float>(activeSlot.length.load() - 1)
+            : 0.0f);
         currentState.store(LooperState::Playing);
     }
 }
@@ -304,7 +305,7 @@ void LooperEngine::stopPlayback()
 {
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
-    activeSlot.isPlaying = false;
+    activeSlot.isPlaying.store(false);
     currentState.store(LooperState::Stopped);
 }
 
@@ -312,10 +313,10 @@ void LooperEngine::startOverdubbing()
 {
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
-    if (activeSlot.hasContent)
+    if (activeSlot.hasContent.load())
     {
-        activeSlot.isRecording = true;
-        activeSlot.isPlaying = true;
+        activeSlot.isRecording.store(true);
+        activeSlot.isPlaying.store(true);
         currentState.store(LooperState::Overdubbing);
         stackMode.store(StackMode::On);
     }
@@ -325,7 +326,7 @@ void LooperEngine::stopOverdubbing()
 {
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
-    activeSlot.isRecording = false;
+    activeSlot.isRecording.store(false);
     currentState.store(LooperState::Playing);
     stackMode.store(StackMode::Off);
 }
@@ -347,10 +348,12 @@ void LooperEngine::toggleDirection()
 
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     // Ensure playhead stays within bounds after direction change
-    if (activeSlot.playPosition < 0.0f && activeSlot.length > 0)
-        activeSlot.playPosition += static_cast<float>(activeSlot.length);
-    if (activeSlot.playPosition >= static_cast<float>(activeSlot.length) && activeSlot.length > 0)
-        activeSlot.playPosition = std::fmod(activeSlot.playPosition, static_cast<float>(activeSlot.length));
+    float currentPlayPos = activeSlot.playPosition.load();
+    int currentLength = activeSlot.length.load();
+    if (currentPlayPos < 0.0f && currentLength > 0)
+        activeSlot.playPosition.store(currentPlayPos + static_cast<float>(currentLength));
+    else if (currentPlayPos >= static_cast<float>(currentLength) && currentLength > 0)
+        activeSlot.playPosition.store(std::fmod(currentPlayPos, static_cast<float>(currentLength)));
 }
 
 void LooperEngine::toggleOnceMode()
@@ -395,7 +398,8 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
     
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        int writePos = static_cast<int>(slot.recordPosition);
+        float currentRecordPos = slot.recordPosition.load();
+        int writePos = static_cast<int>(currentRecordPos);
         
         if (writePos >= maxLoopSamples)
         {
@@ -412,7 +416,7 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
             slot.buffer.setSample(channel, writePos, inputSample);
         }
         
-        slot.recordPosition += speed;
+        slot.recordPosition.store(currentRecordPos + speed);
     }
     
     // When thru mute is on, mute the input passthrough while recording
@@ -422,7 +426,7 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
 
 void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot)
 {
-    if (!slot.hasContent || slot.length == 0)
+    if (!slot.hasContent.load() || slot.length.load() == 0)
     {
         buffer.clear();
         return;
@@ -441,27 +445,29 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
     auto loopDirection = loopMode.load();
     auto thruMuteState = thruMute.load();
     auto once = onceMode.load();
+    int slotLength = slot.length.load();
     
     for (int sampleNum = 0; sampleNum < numSamples; ++sampleNum)
     {
+        float currentPlayPos = slot.playPosition.load();
         for (int channel = 0; channel < numChannels; ++channel)
         {
-            int pos = static_cast<int>(slot.playPosition);
-            float frac = slot.playPosition - pos;
+            int pos = static_cast<int>(currentPlayPos);
+            float frac = currentPlayPos - pos;
             
             float loopSample;
             
             if (loopDirection == LoopMode::Reverse)
             {
                 // Read directly at the decreasing playhead position
-                int prevPos = (pos > 0) ? pos - 1 : (slot.length - 1);
+                int prevPos = (pos > 0) ? pos - 1 : (slotLength - 1);
                 float sample1 = slot.buffer.getSample(channel, pos);
                 float sample2 = slot.buffer.getSample(channel, prevPos);
                 loopSample = sample1 + frac * (sample2 - sample1);
             }
             else
             {
-                int nextPos = (pos + 1) % slot.length;
+                int nextPos = (pos + 1) % slotLength;
                 float sample1 = slot.buffer.getSample(channel, pos);
                 float sample2 = slot.buffer.getSample(channel, nextPos);
                 loopSample = sample1 + frac * (sample2 - sample1);
@@ -479,7 +485,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
             }
         }
         
-        bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
+        bool wrapped = advancePosition(slot.playPosition, slotLength, speed);
         
         if (wrapped)
             loopWrapped.store(true);
@@ -496,7 +502,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
 
 void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot& slot)
 {
-    if (!slot.hasContent || slot.length == 0)
+    if (!slot.hasContent.load() || slot.length.load() == 0)
     {
         processRecording(buffer, slot);
         return;
@@ -507,10 +513,12 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
     float speed = (speedMode.load() == SpeedMode::Half) ? 0.5f : 1.0f;
     auto thruMuteState = thruMute.load();
     auto once = onceMode.load();
+    int slotLength = slot.length.load();
     
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        int pos = static_cast<int>(slot.playPosition);
+        float currentPlayPos = slot.playPosition.load();
+        int pos = static_cast<int>(currentPlayPos);
         
         for (int channel = 0; channel < numChannels; ++channel)
         {
@@ -537,7 +545,7 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             }
         }
         
-        bool wrapped = advancePosition(slot.playPosition, slot.length, speed);
+        bool wrapped = advancePosition(slot.playPosition, slotLength, speed);
 
         if (wrapped)
             loopWrapped.store(true);
@@ -552,32 +560,34 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
     }
 }
 
-bool LooperEngine::advancePosition(float& position, int length, float speed)
+bool LooperEngine::advancePosition(std::atomic<float>& position, int length, float speed)
 {
     bool wrapped = false;
     auto loopDirection = loopMode.load();
+    float currentPos = position.load();
 
     if (loopDirection == LoopMode::Reverse)
     {
-        position -= speed;
+        currentPos -= speed;
         // Wrap to end when going below 0
-        if (position < 0)
+        if (currentPos < 0)
         {
-            position += length;
+            currentPos += length;
             wrapped = true;
         }
     }
     else
     {
-        position += speed;
+        currentPos += speed;
         // Wrap to beginning when going past end
-        if (position >= length)
+        if (currentPos >= length)
         {
-            position = 0.0f;
+            currentPos = 0.0f;
             wrapped = true;
         }
     }
 
+    position.store(currentPos);
     return wrapped;
 }
 
@@ -606,8 +616,8 @@ float LooperEngine::getLoopProgress() const
 {
     const auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot)];
     
-    if (!activeSlot.hasContent || activeSlot.length == 0)
+    if (!activeSlot.hasContent.load() || activeSlot.length.load() == 0)
         return 0.0f;
     
-    return activeSlot.playPosition / static_cast<float>(activeSlot.length);
+    return activeSlot.playPosition.load() / static_cast<float>(activeSlot.length.load());
 }

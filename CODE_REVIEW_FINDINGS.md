@@ -104,41 +104,19 @@ void LooperEngine::processBlock(...) {
 
 ### 3. Reverse Playback Position Wrapping (#32)
 **Severity:** HIGH (Core Functionality)  
-**Status:** Known issue, needs fix  
+**Status:** ✅ RESOLVED  
 **Impact:** Playback bounces/jumps mid-loop in reverse mode
 
-**Location:** `LooperEngine.cpp` lines 559-575 (`advancePosition()`)
-
-**Current Logic:**
-```cpp
-if (loopMode == LoopMode::Reverse) {
-    position -= speed;
-    if (position < 0) {
-        position += length;  // Wraps correctly
-        wrapped = true;
-    }
-}
-```
-
-**Additional Issue:** Interpolation in `processPlayback()` (lines 438-445) may cause jitter at wrap boundaries.
-
-**Recommendation:** Review fractional position handling and interpolation near boundaries.
+**Resolution:** Fixed through atomic refactoring and proper position handling in `advancePosition()` method. Reverse playback now wraps correctly without bouncing.
 
 ---
 
 ### 4. Once Mode Reliability in Overdub/Stack (#33)
 **Severity:** MEDIUM  
-**Status:** Known issue, behavior undefined  
-**Impact:** Once mode doesn't work reliably when combined with overdub
+**Status:** ✅ RESOLVED  
+**Impact:** Once mode didn't work reliably when combined with overdub
 
-**Location:** 
-- `LooperEngine.cpp` lines 182-207 (`onOnceButtonPressed()`)
-- `LooperEngine.cpp` lines 470-476 (once mode stop logic in playback)
-- `LooperEngine.cpp` lines 527-533 (once mode stop logic in overdub)
-
-**Problem:** Once mode is toggled off after playback ends in audio thread without proper state separation.
-
-**Recommendation:** Separate "once armed" from "once executing" states, handle atomically.
+**Resolution:** Fixed through thread-safe request flag pattern (`shouldDisableOnce`). Once mode now works correctly in all combinations (play, overdub, stack). Audio thread sets request flag, UI timer processes it safely.
 
 ---
 
@@ -355,15 +333,15 @@ void LooperEngine::prepare(double sampleRate, int samplesPerBlock, int numChanne
 ## Priority Summary
 
 ### Must Fix Before Beta
-1. ✅ Thread safety (atomic states or locks)
-2. ✅ Reverse playback bug (#32)
+1. ✅ ~~Thread safety (atomic states or locks)~~ - RESOLVED issue #38
+2. ✅ ~~Reverse playback bug (#32)~~ - RESOLVED
 3. ⚠️ Decide on parameter automation strategy
 
 ### Should Fix Before Release
-4. ✅ Once mode reliability (#33)
-5. ✅ Complete state persistence
-6. ✅ Fix compiler warnings
-7. ✅ Remove dead code
+4. ✅ ~~Once mode reliability (#33)~~ - RESOLVED
+5. ⚠️ Complete state persistence
+6. ✅ ~~Fix compiler warnings~~ - RESOLVED issues #34-35
+7. ⚠️ Remove dead code
 
 ### Nice to Have
 8. ⚠️ Migrate to APVTS
@@ -378,17 +356,18 @@ void LooperEngine::prepare(double sampleRate, int samplesPerBlock, int numChanne
 The Boomerang+ plugin demonstrates solid understanding of JUCE audio processing fundamentals. The core audio engine is well-structured and the basic functionality works correctly.
 
 **Primary concerns are:**
-1. Thread safety between UI and audio threads (real but subtle issue)
-2. Incomplete host integration (no parameter automation)
-3. Known playback bugs that need addressing
+1. ✅ ~~Thread safety between UI and audio threads~~ - RESOLVED with atomics
+2. ⚠️ Incomplete host integration (no parameter automation)
+3. ✅ ~~Once mode reliability~~ - RESOLVED with request flags
 
-**The code is production-ready for standalone use** but needs threading fixes and better host integration for professional DAW deployment.
+**The code is production-ready for standalone use** with thread-safe operation and reliable playback. Needs better host integration for professional DAW deployment.
 
-**Estimated effort to address critical issues:** 2-3 days
-**Estimated effort for full best-practices compliance:** 1-2 weeks
+**Estimated effort to address remaining issues:** 1-2 days
+**Estimated effort for full best-practices compliance:** 1 week
 
 ---
 
 *Review conducted: December 16, 2025*  
+*Updated: December 18, 2025*  
 *Reviewer: AI Code Analysis with JUCE Documentation Cross-Reference*  
 *Plugin Version: v2.0.0-alpha-0*

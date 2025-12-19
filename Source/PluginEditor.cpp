@@ -75,12 +75,12 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
             audioProcessor.getLooperEngine()->onStackButtonReleased();
     };
 
-    // Keep parameter attachments for the continuous controls
-    volumeAttachment = std::make_unique<juce::SliderParameterAttachment>(
-        *audioProcessor.getVolumeParam(), volumeSlider);
+    // Attach continuous controls to APVTS parameters
+    volumeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        audioProcessor.getAPVTS(), "volume", volumeSlider);
     
-    feedbackAttachment = std::make_unique<juce::SliderParameterAttachment>(
-        *audioProcessor.getFeedbackParam(), feedbackSlider);
+    feedbackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        audioProcessor.getAPVTS(), "feedback", feedbackSlider);
 
     // Start timer for UI updates and audio thread request processing (issue #38)
     startTimer(16); // 16ms (~60Hz) for responsive UI and Once mode auto-off

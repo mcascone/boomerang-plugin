@@ -2,6 +2,73 @@
 #include "PluginEditor.h"
 
 //==============================================================================
+// Parameter IDs
+namespace ParameterIDs
+{
+    const juce::String thruMute   = "thruMute";
+    const juce::String record     = "record";
+    const juce::String play       = "play";
+    const juce::String once       = "once";
+    const juce::String stack      = "stack";
+    const juce::String reverse    = "reverse";
+    const juce::String volume     = "volume";
+    const juce::String feedback   = "feedback";
+}
+
+//==============================================================================
+juce::AudioProcessorValueTreeState::ParameterLayout BoomerangAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    // Button parameters - use bool parameters that can be MIDI mapped
+    // Note: For momentary buttons, we'll handle press/release in parameter change callback
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::thruMute, 1),
+        "Thru/Mute",
+        false));  // toggle button
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::record, 1),
+        "Record",
+        false));  // momentary button
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::play, 1),
+        "Play/Stop",
+        false));  // momentary button
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::once, 1),
+        "Once",
+        false));  // momentary button
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::stack, 1),
+        "Stack/Speed",
+        false));  // momentary button (tracks press/release)
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::reverse, 1),
+        "Reverse",
+        false));  // toggle button
+
+    // Continuous parameters
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID(ParameterIDs::volume, 1),
+        "Volume",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+        1.0f));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID(ParameterIDs::feedback, 1),
+        "Feedback",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+        0.5f));
+
+    return layout;
+}
+
+//==============================================================================
 BoomerangAudioProcessor::BoomerangAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
@@ -11,20 +78,12 @@ BoomerangAudioProcessor::BoomerangAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+       apvts(*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
     // Initialize looper engine
     looperEngine = std::make_unique<LooperEngine>();
-
-    // Create continuous parameters
-    addParameter(volumeParam = new juce::AudioParameterFloat(
-        juce::ParameterID("volume", 1), "Volume", 
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 1.0f));
-    
-    addParameter(feedbackParam = new juce::AudioParameterFloat(
-        juce::ParameterID("feedback", 1), "Feedback", 
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
 }
 
 BoomerangAudioProcessor::~BoomerangAudioProcessor()
@@ -153,9 +212,15 @@ void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // Update continuous parameters
-    looperEngine->setVolume(volumeParam->get());
-    looperEngine->setFeedback(feedbackParam->get());
+    // Update continuous parameters from APVTS
+    auto* volumeParam = apvts.getRawParameterValue(ParameterIDs::volume);
+    auto* feedbackParam = apvts.getRawParameterValue(ParameterIDs::feedback);
+    
+    if (volumeParam != nullptr)
+        looperEngine->setVolume(volumeParam->load());
+    
+    if (feedbackParam != nullptr)
+        looperEngine->setFeedback(feedbackParam->load());
 
     // Process audio through looper engine
     looperEngine->processBlock(buffer);
@@ -179,29 +244,20 @@ juce::AudioProcessorEditor* BoomerangAudioProcessor::createEditor()
 //==============================================================================
 void BoomerangAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    auto state = juce::ValueTree("BoomerangState");
-    
-    state.setProperty("volume", volumeParam->get(), nullptr);
-    state.setProperty("feedback", feedbackParam->get(), nullptr);
-    
-    std::unique_ptr<juce::XmlElement> xml (state.createXml());
-    copyXmlToBinary (*xml, destData);
+    // Save APVTS state - this automatically handles all parameters
+    auto state = apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void BoomerangAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    // Restore APVTS state - this automatically handles all parameters
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
     if (xmlState.get() != nullptr)
-    {
-        if (xmlState->hasTagName("BoomerangState"))
-        {
-            auto state = juce::ValueTree::fromXml(*xmlState);
-            
-            volumeParam->setValueNotifyingHost((float)state.getProperty("volume", 1.0f));
-            feedbackParam->setValueNotifyingHost((float)state.getProperty("feedback", 0.5f));
-        }
-    }
+        if (xmlState->hasTagName(apvts.state.getType()))
+            apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
 }
 
 //==============================================================================

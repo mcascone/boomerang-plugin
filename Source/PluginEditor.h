@@ -49,9 +49,9 @@ private:
     juce::ProgressBar progressBar;
     double progressValue = 0.0;
 
-    // Parameter Attachments - Only for continuous controls
-    std::unique_ptr<juce::SliderParameterAttachment> volumeAttachment;
-    std::unique_ptr<juce::SliderParameterAttachment> feedbackAttachment;
+    // Parameter Attachments - Only for continuous controls (using APVTS)
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> feedbackAttachment;
 
     // Visual state
     juce::Colour recordColour = juce::Colours::red;

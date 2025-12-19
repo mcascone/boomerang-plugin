@@ -53,15 +53,8 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    // Parameter access for UI
-    juce::AudioParameterBool* getThruMuteButton() const { return thruMuteButton; }
-    juce::AudioParameterBool* getRecordButton() const { return recordButton; }
-    juce::AudioParameterBool* getPlayButton() const { return playButton; }
-    juce::AudioParameterBool* getOnceButton() const { return onceButton; }
-    juce::AudioParameterBool* getStackButton() const { return stackButton; }
-    juce::AudioParameterBool* getReverseButton() const { return reverseButton; }
-    juce::AudioParameterFloat* getVolumeParam() const { return volumeParam; }
-    juce::AudioParameterFloat* getFeedbackParam() const { return feedbackParam; }
+    // APVTS access for UI and DAW automation
+    juce::AudioProcessorValueTreeState& getAPVTS() { return apvts; }
     
     // Looper engine access for UI
     LooperEngine* getLooperEngine() const { return looperEngine.get(); }
@@ -71,19 +64,11 @@ private:
     // Core looper engine
     std::unique_ptr<LooperEngine> looperEngine;
 
-    // Parameters - toggle buttons
-    juce::AudioParameterBool* thruMuteButton;
-    juce::AudioParameterBool* reverseButton;
-
-    // Parameters - momentary buttons
-    juce::AudioParameterBool* recordButton;
-    juce::AudioParameterBool* playButton;
-    juce::AudioParameterBool* onceButton;
-    juce::AudioParameterBool* stackButton;
-
-    // Parameters - continuous controls
-    juce::AudioParameterFloat* volumeParam;
-    juce::AudioParameterFloat* feedbackParam;
+    // AudioProcessorValueTreeState for parameter management
+    juce::AudioProcessorValueTreeState apvts;
+    
+    // Helper function to create parameter layout
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BoomerangAudioProcessor)
 };

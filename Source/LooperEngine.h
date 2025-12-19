@@ -190,16 +190,12 @@ private:
     void setStackMode(StackMode mode);
     void toggleSpeedMode();
     void setSpeedMode(SpeedMode mode);
-    
-    // Preserved toggle behavior for future use
-    void onStackButtonToggled();
 
     void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
     void processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
 
     bool advancePosition(std::atomic<float>& position, int length, float speed);
-    void applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples);
     void switchToNextLoopSlot();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LooperEngine)

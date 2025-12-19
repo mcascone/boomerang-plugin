@@ -208,30 +208,6 @@ void LooperEngine::onOnceButtonPressed()
     }
 }
 
-// Toggle behavior - preserved for future use
-void LooperEngine::onStackButtonToggled()
-{
-    switch (currentState)
-    {
-        case LooperState::Playing:
-            startOverdubbing();
-            break;
-        
-        case LooperState::Overdubbing:
-            stopOverdubbing();
-            break;
-        
-        case LooperState::Stopped:
-            toggleSpeedMode();
-            break;
-
-        case LooperState::Recording:
-        case LooperState::ContinuousReverse:
-        case LooperState::BufferFilled:
-            break;
-    }
-}
-
 // Momentary behavior - engaged while pressed
 void LooperEngine::onStackButtonPressed()
 {
@@ -589,22 +565,6 @@ bool LooperEngine::advancePosition(std::atomic<float>& position, int length, flo
 
     position.store(currentPos);
     return wrapped;
-}
-
-void LooperEngine::applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples)
-{
-    juce::ignoreUnused(slot);
-    // Implement crossfading for smooth loop transitions
-    for (int sample = 0; sample < numSamples; ++sample)
-    {
-        float fadeGain = static_cast<float>(sample) / static_cast<float>(numSamples);
-        
-        for (int channel = 0; channel < numChannels; ++channel)
-        {
-            float currentSample = buffer.getSample(channel, startSample + sample);
-            buffer.setSample(channel, startSample + sample, currentSample * fadeGain);
-        }
-    }
 }
 
 void LooperEngine::switchToNextLoopSlot()

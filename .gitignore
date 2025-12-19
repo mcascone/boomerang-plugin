@@ -1,25 +1,29 @@
-.DS_Store
-.vscode/
-Logs/
-Export/
-Scripts/.DS_Store
+# Build directories
+build/
+Builds/
+JuceLibraryCode/
 
-# JUCE build artifacts
-BoomerangJUCE/build/
-BoomerangJUCE/Builds/
-BoomerangJUCE/JuceLibraryCode/
-BoomerangJUCE/*.jucer.bak
-
-# macOS
-*.dSYM
-.DS_Store
-
-# Windows
+# Build artifacts
+*.o
 *.obj
-*.exe
+*.dSYM
 *.pdb
+*.ilk
+*.lib
+*.exe
+
+# IDE files
+.vscode/
+.vs/
+*.vcxproj.user
+*.sln.docstates
 *.user
 *.aps
+
+# macOS
+.DS_Store
+
+# Windows artifacts
 *.pch
 *.vspscc
 *_i.c
@@ -28,11 +32,7 @@ BoomerangJUCE/*.jucer.bak
 *.suo
 *.tlb
 *.tlh
-*.bak
 *.cache
-*.ilk
-*.log
-*.lib
 *.sbr
 *.scc
 [Bb]in/
@@ -44,3 +44,16 @@ _ReSharper*/
 *.vssscc
 $tf*/
 _codeql_detected_source_root
+
+# Backup files
+*.bak
+*~
+
+# Compiled plugins (installed to system)
+*.vst3
+*.component
+*.aaxplugin
+
+# Archived legacy code
+Logs/
+Export/

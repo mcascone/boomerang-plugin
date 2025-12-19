@@ -84,10 +84,72 @@ BoomerangAudioProcessor::BoomerangAudioProcessor()
 {
     // Initialize looper engine
     looperEngine = std::make_unique<LooperEngine>();
+    
+    // Add parameter listeners for MIDI/automation support
+    apvts.addParameterListener(ParameterIDs::thruMute, this);
+    apvts.addParameterListener(ParameterIDs::record, this);
+    apvts.addParameterListener(ParameterIDs::play, this);
+    apvts.addParameterListener(ParameterIDs::once, this);
+    apvts.addParameterListener(ParameterIDs::stack, this);
+    apvts.addParameterListener(ParameterIDs::reverse, this);
 }
 
 BoomerangAudioProcessor::~BoomerangAudioProcessor()
 {
+    // Remove parameter listeners
+    apvts.removeParameterListener(ParameterIDs::thruMute, this);
+    apvts.removeParameterListener(ParameterIDs::record, this);
+    apvts.removeParameterListener(ParameterIDs::play, this);
+    apvts.removeParameterListener(ParameterIDs::once, this);
+    apvts.removeParameterListener(ParameterIDs::stack, this);
+    apvts.removeParameterListener(ParameterIDs::reverse, this);
+}
+
+//==============================================================================
+// Parameter change listener - handles MIDI CC and DAW automation
+void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+    const bool buttonPressed = (newValue >= 0.5f);  // Treat bool params as pressed when >= 0.5
+    
+    // Toggle buttons - just update engine when value changes
+    if (parameterID == ParameterIDs::thruMute)
+    {
+        if (buttonPressed)
+            looperEngine->onThruMuteButtonPressed();
+    }
+    else if (parameterID == ParameterIDs::reverse)
+    {
+        if (buttonPressed)
+            looperEngine->onReverseButtonPressed();
+    }
+    // Momentary buttons - trigger on press (0→1 transition)
+    else if (parameterID == ParameterIDs::record)
+    {
+        if (buttonPressed)
+            looperEngine->onRecordButtonPressed();
+    }
+    else if (parameterID == ParameterIDs::play)
+    {
+        if (buttonPressed)
+            looperEngine->onPlayButtonPressed();
+    }
+    else if (parameterID == ParameterIDs::once)
+    {
+        if (buttonPressed)
+            looperEngine->onOnceButtonPressed();
+    }
+    // Stack button - needs both press and release events
+    else if (parameterID == ParameterIDs::stack)
+    {
+        bool prevValue = prevStackValue.load();
+        prevStackValue.store(buttonPressed);
+        
+        // Detect edges: 0→1 = press, 1→0 = release
+        if (buttonPressed && !prevValue)
+            looperEngine->onStackButtonPressed();
+        else if (!buttonPressed && prevValue)
+            looperEngine->onStackButtonReleased();
+    }
 }
 
 //==============================================================================

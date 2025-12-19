@@ -11,8 +11,12 @@
     
     Professional looper with momentary button controls, multiple loop slots,
     overdubbing, reverse, and stack modes.
+    
+    Implements APVTS::Listener to respond to parameter changes from MIDI CC
+    or DAW automation, in addition to UI button clicks.
 */
-class BoomerangAudioProcessor : public juce::AudioProcessor
+class BoomerangAudioProcessor : public juce::AudioProcessor,
+                                 private juce::AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
@@ -61,11 +65,18 @@ public:
 
 private:
     //==============================================================================
+    // AudioProcessorValueTreeState::Listener implementation
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
+    //==============================================================================
     // Core looper engine
     std::unique_ptr<LooperEngine> looperEngine;
 
     // AudioProcessorValueTreeState for parameter management
     juce::AudioProcessorValueTreeState apvts;
+    
+    // Track previous button states to detect edges (press/release)
+    std::atomic<bool> prevStackValue { false };
     
     // Helper function to create parameter layout
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

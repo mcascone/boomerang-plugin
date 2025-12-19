@@ -5,19 +5,20 @@ This document outlines the structure, build process, coding style, testing, and 
 
 Read the README.md first for an overview of the project, including detailed behavioral requirements, then refer to this document for development-specific information.
 
-Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issues in the BoomerangJUCE codebase (only the JUCE port is actively maintained, on juce-port branch, in BoomerangJUCE/)
+Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issues in the codebase. The JUCE implementation is now on the main branch.
 
 ## Project Structure & Module Organization
 
-- `BoomerangJUCE/Source/`: core C++ code (PluginProcessor, PluginEditor, LooperEngine).
-- `BoomerangJUCE/build/`: generated build artifacts and Makefile (use this for `make`).
-- `build/`: alternate/legacy CMake output; no Makefile by default.
+- `Source/`: core C++ code (PluginProcessor, PluginEditor, LooperEngine).
+- `build/`: generated build artifacts and Makefile.
+- `JUCE/`: JUCE framework (git submodule).
+- `archive/plug-n-script/`: archived legacy Plug n Script implementation.
 - `Presets/`, `midi/`, `img/`: assets and examples.
 
 ## Build, Test, and Development Commands
 
-- Configure/build from repo root: `cmake -S BoomerangJUCE -B build && cmake --build build`.
-- From JUCE build dir: `cd BoomerangJUCE/build && make -j4` (reuses generated Makefile).
+- Configure/build from repo root: `cmake -S . -B build && cmake --build build -j4`.
+- Or from build dir: `cd build && make -j4` (reuses generated Makefile).
 - Install VST3 locally (macOS): `cmake --build build --target install` (writes to `~/Library/Audio/Plug-Ins/VST3`).
 - Tests: none defined yet; manual audio validation required.
 

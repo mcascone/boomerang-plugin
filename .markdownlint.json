@@ -3,5 +3,6 @@
   "blanks-around-lists": false,
   "MD031": false,
   "MD022":false,
-  "MD013":false
+  "MD013":false,
+  "MD025": false
 }

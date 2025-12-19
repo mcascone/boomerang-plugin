@@ -4,7 +4,11 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
-# Update Dec-16-2025
+# Update Dec-19-2025
+
+The JUCE port is now complete and merged to `main`. All critical issues resolved, ready for alpha testing!
+
+## Update Dec-16-2025
 
 Work is well underway in the JUCE framework. See branch `juce-port` for the latest.
 

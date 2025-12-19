@@ -19,12 +19,12 @@
 // DONE: thrumute
 // DONE: implement MIDI control
 // TODO: tests
-// TODO: bug: thru mute intermittently unmutes/remutes (#3)
-// TODO: bug: pressing PLAY while recording doesn't stop recording (#4)
+// NOBUG: bug: thru mute intermittently unmutes/remutes (#3) (this was just because of the free version limitation - resolved by purchasing)
+// INPROGRESS: bug: pressing PLAY while recording doesn't stop recording (#4)
 // DONE: bug: Stack doesn't work (issue #2)
 // TODO: Record LED stops flashing during playback (i think due to outputParams not being processed) (#6)
 // TODO: bug: Once when Idle doesn't set ONCE mode (#9)
-// TODO: consider making every switch a momentary switch
+// INPROGRESS: consider making every switch a momentary switch
 //
 // FUTURE FEATURE IDEAS
 // - record/play stop options
@@ -160,6 +160,7 @@ int allocatedLength=int(sampleRate * MAX_LOOP_DURATION_SECONDS); // 60 seconds m
 
 bool recording=false;         // currently recording
 bool recordingArmed=false;    // record button is pressed
+bool recordWasArmed=false;    // previous record button state
 bool recWasStoppedByPlay=false; // workaround for bug #4
 
 double OutputLevel=0;         // output level
@@ -188,25 +189,31 @@ const double xfadeInc=1/double(fadeTime);  // fade increment
 bool Reverse=false;       // reverse mode
 bool ReverseArmed=false;  // reverse (direction) button is clicked (toggle)
 
+bool wasPlaying=false;    // previous playing state
 bool playing=false;       // currently playing state
+bool playWasArmed=false;  // previous play button state
 bool playArmed=false;     // play button is clicked (toggle)
+bool playToggleDesiredState=false; // desired state of play toggle (for UI feedback)
 
 bool onceMode=false;      // once mode
 bool onceArmed=false;     // once button is clicked (toggle/momentary)
 
 bool stackMode=false;     // stack mode
+bool stackWasArmed=false; // previous stack button state
 bool stackArmed=false;    // stack button is clicked (momentary)
 
 bool halfSpeedMode=false;  // half speed mode
 bool halfToggle=false;     // half speed toggle
-bool speedModeState=false; // speed mode counter
+bool speedModeCounter=false; // speed mode counter
 // bool halfSpeedArmed=false; // half speed button is pressed (toggle)
 
 bool bufferFilled=false;   // OOM
 bool loopCycled=false;     // loop has looped
 
 // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
-bool thruMute=false;       // Thru Mute (toggle)
+bool thruMute=false;        // Thru Mute (toggle)
+bool wasThruMute=false;     // previous Thru Mute state
+
 
 /* Initialization
  *
@@ -573,9 +580,9 @@ void processBlock(BlockData& data) {
 void updateInputParametersForBlock(const TransportInfo@ info) {
 
     print("-------------- \nParam Changed\n--------------");
-    print("Loop Duration: " + loopDuration);
-    print("Current Playing Index: " + currentPlayingIndex);
-    print("Current Recording Index: " + currentRecordingIndex);
+    // print("Loop Duration: " + loopDuration);
+    // print("Current Playing Index: " + currentPlayingIndex);
+    // print("Current Recording Index: " + currentRecordingIndex);
 
     // Reverse--------------------------------------------------------------------------
     // If the unit is playing back, pressing this button will immediately reverse the direction through your loop, resulting in reversed audio output. 
@@ -583,16 +590,11 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     bool wasReverse = Reverse;                               // if we were in reverse when we entered this block
     ReverseArmed    = inputParameters[kReverseParam] >= .5;  // if the reverse toggle is now on
     
-    print("Reverse Mode: " + Reverse);
-    print("ReverseArmed: " + ReverseArmed);
+    // print("Reverse Mode: " + Reverse);
+    // print("ReverseArmed: " + ReverseArmed);
 
     if(wasReverse != ReverseArmed) {
-        if(ReverseArmed) {
-            enableReverse();
-        }
-        else {
-            disableReverse();
-        }
+        ReverseArmed ? enableReverse() : disableReverse();
     }
 
     // PLAY/STOP --------------------------------------------------------------------------
@@ -601,17 +603,28 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
     // If bufferFilled, clear that state and start playback.
     // During playback the PLAY LED will be on and the RECORD LED will blink at the beginning of each pass through the loop.
-    bool wasPlaying = playing;                      // if we were playing when we entered this block
-    bool playWasArmed = playArmed;                  // if we were play armed when we entered this block
-    playArmed = inputParameters[kPlayParam] >= .5;  // if we are play armed now
+    wasPlaying   = playing;                            // if we were playing when we entered this block
+    playWasArmed = playArmed;                          // if we were play armed when we entered this block
+    playArmed    = inputParameters[kPlayParam] >= .5;  // if we are play armed now
     
     print("wasPlaying: " + wasPlaying);
     print("playWasArmed: " + playWasArmed);
     print("playArmed: " + playArmed);
+    print("playToggleDesiredState: " + playToggleDesiredState);
+    
+    // Check if toggle state doesn't match our desired state
+    if(playArmed != playToggleDesiredState) {
+        print("WARNING: Play toggle state mismatch! Desired: " + playToggleDesiredState + ", Actual: " + playArmed);
+        print("  User needs to click play button to sync UI with actual state");
+    }
 
     // if play button state changed
     if(playWasArmed != playArmed) {
         print("PLAY --> " + playArmed);
+        
+        // Update desired state to match user action
+        playToggleDesiredState = playArmed;
+        
         // If idle, pressing PLAY starts playback of whatever was last recorded, in a continuously looping manner.
         if(!wasPlaying && playArmed) {
             // onceMode = false;                       // if we were in once mode, disable it. TODO: is this right? maybe future feature
@@ -627,7 +640,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
             }
             else {
                 startPlayback();         // sets `playing` true
-                // TODO: find way to flip UI play toggle to ON (separate from LED)
+                print("--> UI and state now synchronized: Play toggle ON, playing=true");
             }
         }
 
@@ -635,10 +648,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
         // i don't think playWasArmed is necessary
         if(wasPlaying && playWasArmed && !playArmed) {
             stopPlayback();   // sets `playing` false
+            print("--> UI and state now synchronized: Play toggle OFF, playing=false");
             
             // stackMode = stackMode ? false : stackMode; // if stack mode is on, turn it off
-            
-            // TODO: find way to flip UI play toggle to OFF (separate from LED)
         }
     }
 
@@ -655,9 +667,9 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     bool wasOnceArmed = onceArmed;                           // get once toggle state before we entered this block
     onceArmed         = inputParameters[kOnceParam] >= .5;   // set onceArmed to current toggle state
 
-    print("onceMode: " + onceMode);
+    print("onceMode: "     + onceMode);
     print("wasOnceArmed: " + wasOnceArmed);
-    print("onceArmed: " + onceArmed);
+    print("onceArmed: "    + onceArmed);
 
     if(wasOnceArmed != onceArmed) {
         print("ONCE pushed");
@@ -691,37 +703,48 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     }
     
     // RECORD ------------------------------------------------------------------------
-    // When it is pressed, recording begins and the RECORD LED lights up brightly. 
-    // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
+    // MOMENTARY BEHAVIOR: Act on any state change of the button
+    // When it is pressed, recording begins and the RECORD LED lights up. 
+    // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up to indicate the change.
     // During playback the RECORD button can be pressed again and a new recording will begin. Recording erases any previously stored sounds. 
-    // During playback the RECORD LED will blink briefly at the beginning of the loop each time it comes around.
-    // --> If the Rang is recording, pressing PLAY/STOP halts the recording and the unit becomes idle; your music is recorded and ready for playback.
-    bool wasRecordingArmed = recordingArmed;                        // get recording toggle state before we entered this block
-    recordingArmed         = inputParameters[kRecordParam] >= .5;   // set recordingArmed to current toggle state
+    // During playback the RECORD LED will blink at the beginning of the loop each time it comes around.
+    recordWasArmed = recordingArmed;                            // get recording toggle state before we entered this block
+    recordingArmed = inputParameters[kRecordParam] >= .5;       // set recordingArmed to current toggle state
 
-    print("wasRecordingArmed: " + wasRecordingArmed);
+    print("recordWasArmed: " + recordWasArmed);
     print("recordingArmed: " + recordingArmed);
     print("recording: " + recording);
     
-    if(wasRecordingArmed != recordingArmed) {
-        print("RECORD --> " + recordingArmed);
-        if((!recording && !playing) || playing) {
-            if(playing) 
-                stopPlayback();
-            
+    // Act on ANY button state change (press or release)
+    if(recordWasArmed != recordingArmed) {
+        print("RECORD button state changed --> " + recordingArmed);
+        
+        if(!recording && !playing) {
+            // Idle state: start recording
             if(bufferFilled) {
                 print("--> clearing buffer filled state");
                 bufferFilled=false;
-                // do we need to do allLedsOff() here?
-                // no, they'll get reset 1-by-1 in computeOutputData()
             }
-            
             startRecording();
+            print("--> Started recording from idle");
+        }
+        else if(playing) {
+            // Playing: stop playback and start recording
+            stopPlayback();
+            if(bufferFilled) {
+                print("--> clearing buffer filled state");
+                bufferFilled=false;
+            }
+            startRecording();
+            print("--> Stopped playback, started recording");
         }
         else if(recording) {
-            // A second press ends the recording and the BPS begins playing back; the PLAY LED lights up brightly to indicate the change.
+            // Recording: stop recording and start playback
             stopRecording();
             startPlayback();
+            playToggleDesiredState = true; // We want play toggle to be ON
+            print("--> Stopped recording, started playback");
+            print("--> Play toggle should be ON (desired state: " + playToggleDesiredState + ", actual: " + playArmed + ")");
         }
     }
 
@@ -747,7 +770,7 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     //
     // If the loop is very short and the STACK button is held down while you continue to play, the effect is essentially the same as that of a conventional delay with a very slow decay setting. The OUTPUT LEVEL roller then becomes the effect/clean mix control. The cool thing is that the delay time is precisely controlled by two presses of the RECORD button, so it will be just what you need at the moment.
     // bool wasStackMode  = stackMode;                           // if we were in stack mode when we entered this block
-    bool stackWasArmed = stackArmed;                            // get stack toggle state before we entered this block
+    stackWasArmed = stackArmed;                            // get stack toggle state before we entered this block
     stackArmed         = inputParameters[kStackParam] >= .5;    // if the stack toggle is now on
 
     print("stackMode: " + stackMode);
@@ -767,20 +790,26 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
                 print("--> enabling stack mode");
             }
         }
+        // This block is the pattern for momentary switches acting as toggles:
+        // - keep a state variable for the toggle
+        // - on change, flip the state variable
+        // - only change the actual mode if the state variable is true
+        // - so each press+release will flip the state variable on+off
+        // - but only every other change will change the actual mode
         else {
             // if the unit is idle, it toggles the speed setting: full or half speed.
             // but the stack/speed button is momentary, and always ends in OFF
             // we'll always get an an on + off
             // so it's more of a counter + toggle
-            if(speedModeState) {
+            if(speedModeCounter) {
                 halfSpeedMode = !halfSpeedMode;
                 print("--> halfSpeedMode: " + halfSpeedMode);
             }
 
             // this just flips every time the stack/speed is pressed on+off
-            // resulting in the speed mode being toggled every other time.
-            speedModeState = !speedModeState;
-            print("--> speedModeState: " + speedModeState);
+            // resulting in the speed mode being toggled every other time: or on each momentary press+release.
+            speedModeCounter = !speedModeCounter;
+            print("--> speedModeCounter: " + speedModeCounter);
         }
     }
 
@@ -822,8 +851,8 @@ void updateInputParametersForBlock(const TransportInfo@ info) {
     // Thru Mute
     // The THRU MUTE foot switch, on the upper-left front panel, turns the through signal on or off and can be changed at any time
     // this currently functions as a TOGGLE
-    bool wasThruMute  = thruMute;
-    thruMute          = inputParameters[kThruMuteParam] >= .5;
+    wasThruMute  = thruMute;
+    thruMute     = inputParameters[kThruMuteParam] >= .5;
 
     if(wasThruMute != thruMute) {
         print("--> Thru Mute: " + thruMute);

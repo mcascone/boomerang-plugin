@@ -1,0 +1,206 @@
+#pragma once
+
+#include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_dsp/juce_dsp.h>
+#include <atomic>
+
+//==============================================================================
+/**
+    Core looper engine implementing the Boomerang+ functionality
+    
+    Features:
+    - Circular buffer recording/playback
+    - Multiple loop slots
+    - Overdubbing with crossfading
+    - Reverse playback
+    - Stack mode
+    - Once mode
+    - Proper momentary button handling
+*/
+class LooperEngine
+{
+public:
+    //==============================================================================
+    enum class LooperState
+    {
+        Stopped,
+        Recording,
+        Playing,
+        Overdubbing,
+        ContinuousReverse,
+        BufferFilled
+    };
+
+    enum class LoopMode
+    {
+        Normal,
+        Reverse,
+    };
+
+    enum class DirectionMode
+    {
+        Forward,
+        Reverse
+    };
+
+    enum class StackMode
+    {
+        Off,
+        On
+    };
+
+    enum class OnceMode
+    {
+        Off,
+        On
+    };
+
+    enum class ThruMuteState
+    {
+        Off,
+        On
+    };
+
+    enum class SpeedMode
+    {
+        Normal,
+        Half
+    };
+
+    //==============================================================================
+    LooperEngine();
+    ~LooperEngine();
+
+    //==============================================================================
+    void prepare(double sampleRate, int samplesPerBlock, int numChannels);
+    void reset();
+
+    //==============================================================================
+    void processBlock(juce::AudioBuffer<float>& buffer);
+
+    //==============================================================================
+    // Button event handlers
+    void onThruMuteButtonPressed();
+    void onRecordButtonPressed();
+    void onPlayButtonPressed();
+    void onOnceButtonPressed();
+    void onStackButtonPressed();      // Momentary: called when pressed
+    void onStackButtonReleased();     // Momentary: called when released
+    void onReverseButtonPressed();
+
+    //==============================================================================
+    // Parameter setters
+    void setVolume(float volume) { outputVolume = volume; }
+    void setFeedback(float feedback) { feedbackAmount = feedback; }
+
+    //==============================================================================
+    // State queries for UI updates (thread-safe via atomic loads)
+    LooperState getState() const { return currentState.load(); }
+    LoopMode getLoopMode() const { return loopMode.load(); }
+    DirectionMode getDirection() const { return currentDirection.load(); }
+    StackMode getStackMode() const { return stackMode.load(); }
+    OnceMode getOnceMode() const { return onceMode.load(); }
+    ThruMuteState getThruMuteState() const { return thruMute.load(); }
+    SpeedMode getSpeedMode() const { return speedMode.load(); }
+
+    bool isRecording() const { auto state = currentState.load(); return state == LooperState::Recording || state == LooperState::Overdubbing; }
+    bool isPlaying() const { auto state = currentState.load(); return state == LooperState::Playing || state == LooperState::Overdubbing; }
+    float getLoopProgress() const;
+    int getCurrentLoopSlot() const { return activeLoopSlot.load(); }
+    
+    // Check and clear loop wrap flag for UI flash indicator
+    bool checkAndClearLoopWrapped() 
+    { 
+        return loopWrapped.exchange(false); 
+    }
+    
+    // Process audio thread requests (called from UI timer - issue #38)
+    void processAudioThreadRequests()
+    {
+        // Check if audio thread requested Once mode disable
+        if (shouldDisableOnce.exchange(false))
+        {
+            toggleOnceMode();
+        }
+    }
+
+private:
+    //==============================================================================
+    struct LoopSlot
+    {
+        juce::AudioBuffer<float> buffer;
+        std::atomic<int> length { 0 };
+        std::atomic<bool> hasContent { false };
+        std::atomic<bool> isRecording { false };
+        std::atomic<bool> isPlaying { false };
+        std::atomic<float> playPosition { 0.0f };
+        std::atomic<float> recordPosition { 0.0f };
+        float fadeInGain = 1.0f;
+        float fadeOutGain = 1.0f;
+    };
+
+    //==============================================================================
+    static constexpr int maxLoopSlots = 4;
+    static constexpr int maxLoopLengthSeconds = 240; // 4 minutes
+    static constexpr int crossfadeSamples = 1024;
+
+    std::array<LoopSlot, maxLoopSlots> loopSlots;
+    std::atomic<int> activeLoopSlot{0};
+
+    // Thread-safe state variables (issue #38)
+    // These are accessed from both UI and audio threads
+    std::atomic<LooperState> currentState{LooperState::Stopped};
+    std::atomic<LoopMode> loopMode{LoopMode::Normal};
+    std::atomic<DirectionMode> currentDirection{DirectionMode::Forward};
+    std::atomic<StackMode> stackMode{StackMode::Off};
+    std::atomic<OnceMode> onceMode{OnceMode::Off};
+    std::atomic<ThruMuteState> thruMute{ThruMuteState::Off};
+    std::atomic<SpeedMode> speedMode{SpeedMode::Normal};
+
+    double sampleRate = 44100.0;
+    int samplesPerBlock = 512;
+    int numChannels = 2;
+    int maxLoopSamples = 0;
+
+    // Audio processing parameters
+    float outputVolume = 1.0f;
+    float feedbackAmount = 0.5f;
+
+    // Timing and synchronization
+    bool waitingForFirstLoop = true;
+    int recordingStartDelay = 0;
+    std::atomic<bool> loopWrapped{false};  // Set when loop cycles to position 0
+    
+    // Request flags for audio→UI thread communication (issue #38)
+    // Audio thread sets these, UI timer processes them
+    std::atomic<bool> shouldDisableOnce{false};
+
+    //==============================================================================
+    void startRecording();
+    void stopRecording();
+    void startPlayback();
+    void stopPlayback();
+    void startOverdubbing();
+    void stopOverdubbing();
+    void toggleThruMute();
+    void toggleDirection();
+    void toggleOnceMode();
+    void setOnceMode(OnceMode mode);
+    void toggleStackMode();
+    void setStackMode(StackMode mode);
+    void toggleSpeedMode();
+    void setSpeedMode(SpeedMode mode);
+    
+    // Preserved toggle behavior for future use
+    void onStackButtonToggled();
+
+    void processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
+    void processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
+    void processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot& slot);
+
+    bool advancePosition(std::atomic<float>& position, int length, float speed);
+    void applyCrossfade(juce::AudioBuffer<float>& buffer, LoopSlot& slot, int startSample, int numSamples);
+    void switchToNextLoopSlot();
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LooperEngine)
+};

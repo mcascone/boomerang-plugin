@@ -1,0 +1,3 @@
+[submodule "BoomerangJUCE/JUCE"]
+	path = BoomerangJUCE/JUCE
+	url = https://github.com/juce-framework/JUCE.git

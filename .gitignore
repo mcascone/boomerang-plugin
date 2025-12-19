@@ -1,4 +1,46 @@
 .DS_Store
-.vscode
+.vscode/
 Logs/
 Export/
+Scripts/.DS_Store
+
+# JUCE build artifacts
+BoomerangJUCE/build/
+BoomerangJUCE/Builds/
+BoomerangJUCE/JuceLibraryCode/
+BoomerangJUCE/*.jucer.bak
+
+# macOS
+*.dSYM
+.DS_Store
+
+# Windows
+*.obj
+*.exe
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.scc
+[Bb]in/
+[Dd]ebug*/
+obj/
+[Rr]elease*/
+_ReSharper*/
+[Tt]est[Rr]esult*/
+*.vssscc
+$tf*/
+_codeql_detected_source_root

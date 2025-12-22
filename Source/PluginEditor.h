@@ -49,9 +49,16 @@ private:
     juce::ProgressBar progressBar;
     double progressValue = 0.0;
 
-    // Parameter Attachments - Only for continuous controls (using APVTS)
+    // Parameter Attachments
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> feedbackAttachment;
+    
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> thruMuteAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> recordAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> playAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> onceAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> stackAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> reverseAttachment;
 
     // Visual state
     juce::Colour recordColour = juce::Colours::red;

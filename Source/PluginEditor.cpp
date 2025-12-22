@@ -58,29 +58,31 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     // Setup progress bar
     // addAndMakeVisible(progressBar);  // Hidden for now
 
-    // thruMuteButton is a toggle - state reflects engine state
-    thruMuteButton.onClick = [this]() { audioProcessor.getLooperEngine()->onThruMuteButtonPressed(); };
-    
-    // Other buttons are momentary
-    recordButton.onClick   = [this]() { audioProcessor.getLooperEngine()->onRecordButtonPressed(); };
-    playButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onPlayButtonPressed(); };
-    onceButton.onClick     = [this]() { audioProcessor.getLooperEngine()->onOnceButtonPressed(); };
-    reverseButton.onClick  = [this]() { audioProcessor.getLooperEngine()->onReverseButtonPressed(); };
-
-    // STACK uses onStateChange for momentary (press/release) behavior
-    stackButton.onStateChange = [this]() {
-        if (stackButton.isDown())
-            audioProcessor.getLooperEngine()->onStackButtonPressed();
-        else
-            audioProcessor.getLooperEngine()->onStackButtonReleased();
-    };
-
-    // Attach continuous controls to APVTS parameters
+    // Attach all controls to APVTS parameters
+    // This creates perfect sync between UI, parameters, MIDI CC, and automation
     volumeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.getAPVTS(), "volume", volumeSlider);
     
     feedbackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.getAPVTS(), "feedback", feedbackSlider);
+    
+    thruMuteAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        audioProcessor.getAPVTS(), "thruMute", thruMuteButton);
+    
+    recordAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        audioProcessor.getAPVTS(), "record", recordButton);
+    
+    playAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        audioProcessor.getAPVTS(), "play", playButton);
+    
+    onceAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        audioProcessor.getAPVTS(), "once", onceButton);
+    
+    stackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        audioProcessor.getAPVTS(), "stack", stackButton);
+    
+    reverseAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        audioProcessor.getAPVTS(), "reverse", reverseButton);
 
     // Start timer for UI updates and audio thread request processing (issue #38)
     startTimer(16); // 16ms (~60Hz) for responsive UI and Once mode auto-off

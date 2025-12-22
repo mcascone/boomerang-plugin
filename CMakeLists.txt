@@ -33,7 +33,7 @@ juce_add_plugin(Boomerang
     COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
-    FORMATS AU VST3 Standalone
+    FORMATS Standalone
     PRODUCT_NAME "Boomerang+")
 
 # Source files

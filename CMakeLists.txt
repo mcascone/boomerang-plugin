@@ -33,8 +33,35 @@ juce_add_plugin(Boomerang
     COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
-    FORMATS Standalone VST3
-    PRODUCT_NAME "Boomerang+")
+    FORMATS AU VST3 Standalone
+    PRODUCT_NAME "Boomerang+"
+    # Skip automatic install to avoid signing warnings (issue #36)
+    COPY_PLUGIN_AFTER_BUILD FALSE)
+
+# Post-build: Ad-hoc sign and install bundles cleanly (macOS only, issue #36)
+if(APPLE)
+    # Sign AU
+    add_custom_command(TARGET Boomerang_AU POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources"
+        COMMAND ${CMAKE_COMMAND} -E touch "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources/.keep"
+        COMMAND codesign --force --deep --sign - "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory 
+                "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
+                "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Boomerang+.component"
+        COMMENT "Signing and installing AU plugin"
+        VERBATIM
+    )
+    
+    # Sign VST3 - moduleinfo.json creates Resources folder, just sign it
+    add_custom_command(TARGET Boomerang_VST3 POST_BUILD
+        COMMAND codesign --force --deep --sign - "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory 
+                "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
+                "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Boomerang+.vst3"
+        COMMENT "Signing and installing VST3 plugin"
+        VERBATIM
+    )
+endif()
 
 # Source files
 target_sources(Boomerang

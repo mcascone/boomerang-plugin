@@ -42,7 +42,6 @@ void LooperEngine::reset()
     onceMode = OnceMode::Off;
     thruMute = ThruMuteState::Off;
     activeLoopSlot = 0;
-    waitingForFirstLoop = true;
     recordingStartDelay = 0;
 
     for (auto& slot : loopSlots)
@@ -250,7 +249,6 @@ void LooperEngine::startRecording()
     activeSlot.isRecording.store(true);
     activeSlot.recordPosition.store(0.0f);
     currentState.store(LooperState::Recording);
-    waitingForFirstLoop = true;
 }
 
 void LooperEngine::stopRecording()
@@ -262,9 +260,7 @@ void LooperEngine::stopRecording()
     activeSlot.length.store(finalLength);
     activeSlot.hasContent.store(finalLength > 0);
     currentState.store(LooperState::Stopped);
-    
-    if (waitingForFirstLoop)
-        waitingForFirstLoop = false;
+
 }
 
 void LooperEngine::startPlayback()

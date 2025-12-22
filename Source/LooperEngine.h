@@ -167,7 +167,6 @@ private:
     float feedbackAmount = 0.5f;
 
     // Timing and synchronization
-    bool waitingForFirstLoop = true;
     int recordingStartDelay = 0;
     std::atomic<bool> loopWrapped{false};  // Set when loop cycles to position 0
     

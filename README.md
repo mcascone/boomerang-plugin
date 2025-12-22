@@ -4,6 +4,16 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
+# Update Dec-22-2025
+
+Added **MIDI CC mapping and DAW automation support**! All 8 parameters are now exposed for control:
+- **Buttons**: Thru/Mute, Record, Play, Once, Stack, Reverse
+- **Continuous controls**: Volume, Feedback
+
+Map MIDI CCs or write automation in your DAW to control all looper functions. Parameters respond to external control and update the UI in real-time. Reverse recording direction is now correctly implemented - loops recorded in reverse mode will sound forward when played back in reverse.
+
+Note that the Standalone build does not currently support MIDI input; please use a plugin host for MIDI control.
+
 # Update Dec-19-2025
 
 The JUCE port is now complete and merged to `main`. All critical issues resolved, ready for alpha testing!

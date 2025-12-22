@@ -107,6 +107,7 @@ void LooperEngine::onThruMuteButtonPressed()
 //==============================================================================
 void LooperEngine::onRecordButtonPressed()
 {
+    auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     auto state = currentState.load();
     
     switch (state)
@@ -117,9 +118,12 @@ void LooperEngine::onRecordButtonPressed()
             break;
 
         case LooperState::Recording:
-            // Stop recording, start playback
-            stopRecording();
-            startPlayback();
+            if (activeSlot.hasContent.load())
+            {
+                // Stop recording, start playback
+                stopRecording();
+                startPlayback();
+            }
             break;
 
         case LooperState::Playing:

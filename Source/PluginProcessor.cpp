@@ -120,7 +120,7 @@ void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, 
     {
         looperEngine->onReverseButtonPressed();
     }
-    // Action buttons - trigger only on press (0→1 transition)
+    // State buttons - can be affected by other actions, so respond to every change
     else if (parameterID == ParameterIDs::record)
     {
         if (buttonPressed)
@@ -131,6 +131,7 @@ void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, 
         if (buttonPressed)
             looperEngine->onPlayButtonPressed();
     }
+    // Trigger button - only on press
     else if (parameterID == ParameterIDs::once)
     {
         if (buttonPressed)

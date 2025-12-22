@@ -260,7 +260,12 @@ void LooperEngine::stopRecording()
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     
     activeSlot.isRecording.store(false);
+    
+    // Calculate recorded length based on direction
     int finalLength = static_cast<int>(activeSlot.recordPosition.load());
+    if (loopMode.load() == LoopMode::Reverse)
+        finalLength = (maxLoopSamples - 1) - finalLength;
+    
     activeSlot.length.store(finalLength);
     activeSlot.hasContent.store(finalLength > 0);
     currentState.store(LooperState::Stopped);

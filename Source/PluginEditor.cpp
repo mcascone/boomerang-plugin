@@ -1,27 +1,38 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "BinaryData.h"
 
 //==============================================================================
 BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p), progressBar(progressValue)
 {
-    setSize (600, 400);
+    // Load background image from embedded binary data
+    backgroundImage = juce::ImageCache::getFromMemory(BinaryData::boomerang_jpg, 
+                                                      BinaryData::boomerang_jpgSize);
+    
+    // Set size to match image (700x200) with some padding for controls
+    setSize (700, 300);
 
-    // Setup title
-    titleLabel.setText("Boomerang+", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(juce::FontOptions(24.0f, juce::Font::bold)));
-    titleLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(titleLabel);
+    // Setup buttons as transparent overlays
+    // Position them over the foot switches in the image
+    // Image dimensions: 700x200, buttons are roughly centered vertically at y~130
+    
+    setupButton(thruMuteButton, "", juce::Colours::transparentBlack, true);  // No text, transparent
+    setupButton(recordButton, "", juce::Colours::transparentBlack, false);
+    setupButton(playButton, "", juce::Colours::transparentBlack, false);
+    setupButton(onceButton, "", juce::Colours::transparentBlack, false);
+    setupButton(stackButton, "", juce::Colours::transparentBlack, false);
+    setupButton(reverseButton, "", juce::Colours::transparentBlack, true);
+    
+    // Make buttons semi-transparent for hover feedback
+    thruMuteButton.setAlpha(0.0f);  // Fully transparent by default
+    recordButton.setAlpha(0.0f);
+    playButton.setAlpha(0.0f);
+    onceButton.setAlpha(0.0f);
+    stackButton.setAlpha(0.0f);
+    reverseButton.setAlpha(0.0f);
 
-    // Setup buttons
-    setupButton(thruMuteButton, "THRU MUTE", thruMuteColour, true);  // toggle
-    setupButton(recordButton, "RECORD", recordColour, false);        // momentary
-    setupButton(playButton, "PLAY/STOP", playColour, false);         // momentary
-    setupButton(onceButton, "ONCE", onceColour, false);              // momentary
-    setupButton(stackButton, "STACK/SPEED", stackColour, false);     // momentary
-    setupButton(reverseButton, "REVERSE", reverseColour, true);      // toggle
-
-    // Setup sliders
+    // Setup sliders (below the image)
     volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
     volumeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
     volumeSlider.setRange(0.0, 1.0, 0.01);
@@ -45,7 +56,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
 
     statusLabel.setText("Stopped", juce::dontSendNotification);
     statusLabel.setJustificationType(juce::Justification::centred);
-    statusLabel.setFont(juce::Font(juce::FontOptions(16.0f)));
+    statusLabel.setFont(juce::Font(juce::FontOptions(12.0f)));
     addAndMakeVisible(statusLabel);
 
     // Setup version label
@@ -106,81 +117,97 @@ BoomerangAudioProcessorEditor::~BoomerangAudioProcessorEditor()
 //==============================================================================
 void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // Background gradient
-    g.fillAll (juce::Colour(0xff2d2d30));
+    // Draw background image if loaded
+    if (backgroundImage.isValid())
+    {
+        g.drawImage(backgroundImage, 0, 0, 700, 200, 0, 0, 
+                   backgroundImage.getWidth(), backgroundImage.getHeight());
+    }
+    else
+    {
+        // Fallback: solid color
+        g.fillAll(juce::Colour(0xff404040));
+        g.setColour(juce::Colours::white);
+        g.drawText("Background image not found", getLocalBounds(), juce::Justification::centred);
+    }
     
-    auto bounds = getLocalBounds();
-    g.setGradientFill(juce::ColourGradient(
-        juce::Colour(0xff404040), bounds.getTopLeft().toFloat(),
-        juce::Colour(0xff2d2d30), bounds.getBottomRight().toFloat(),
-        false));
-    g.fillAll();
-
-    // Draw decorative border
-    g.setColour(juce::Colours::white.withAlpha(0.1f));
-    g.drawRect(bounds.reduced(2), 2);
-
-    // Draw loop slot indicators (hidden for now)
-    // auto loopSlotArea = bounds.removeFromBottom(40).reduced(20);
-    // int slotWidth = loopSlotArea.getWidth() / 4;
-    // 
-    // for (int i = 0; i < 4; ++i)
-    // {
-    //     auto slotBounds = loopSlotArea.removeFromLeft(slotWidth).reduced(5);
-    //     
-    //     // Note: Direct access to looperEngine - in production you'd want getter methods
-    //     // For now, we'll just show all slots equally
-    //     g.setColour(juce::Colours::white.withAlpha(0.2f));
-    //     g.fillRoundedRectangle(slotBounds.toFloat(), 4.0f);
-    //     
-    //     g.setColour(juce::Colours::white.withAlpha(0.6f));
-    //     g.drawRoundedRectangle(slotBounds.toFloat(), 4.0f, 1.0f);
-    //     
-    //     g.setColour(juce::Colours::white.withAlpha(0.8f));
-    //     g.drawText(juce::String("Loop ") + juce::String(i + 1),
-    //               slotBounds, juce::Justification::centred, true);
-    // }
+    // Draw button hover overlays (when mouse is over)
+    // This provides visual feedback since buttons are transparent
+    auto drawHoverOverlay = [&](juce::TextButton& button, juce::Colour colour) {
+        if (button.isMouseOver())
+        {
+            g.setColour(colour.withAlpha(0.3f));
+            g.fillRect(button.getBounds());
+        }
+        if (button.getToggleState())
+        {
+            g.setColour(colour.withAlpha(0.5f));
+            g.fillRect(button.getBounds());
+        }
+    };
+    
+    drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
+    drawHoverOverlay(recordButton, juce::Colours::red);
+    drawHoverOverlay(playButton, juce::Colours::green);
+    drawHoverOverlay(onceButton, juce::Colours::blue);
+    drawHoverOverlay(stackButton, juce::Colours::orange);
+    drawHoverOverlay(reverseButton, juce::Colours::purple);
 }
 
 void BoomerangAudioProcessorEditor::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Title
-    titleLabel.setBounds(bounds.removeFromTop(50));
+    // Position transparent buttons over foot switches in the background image
+    // Image is 700x200 at top of window
+    // Foot switches are roughly at y=115-175, evenly spaced horizontally
     
-    // Status and progress
-    statusLabel.setBounds(bounds.removeFromTop(30).reduced(20, 0));
-    // progressBar.setBounds(bounds.removeFromTop(20).reduced(20, 0));  // Hidden for now
+    // Button positions measured from the image:
+    // Each button is ~100px wide, centered on the foot switch
+    // Y position ~115, height ~60 to cover the foot switch
     
-    bounds.removeFromTop(20); // spacer
+    int buttonY = 115;
+    int buttonHeight = 60;
+    int buttonWidth = 100;
     
-    // Main button area
-    auto buttonArea = bounds.removeFromTop(120);
-    int buttonWidth = buttonArea.getWidth() / 6;
+    // Calculate positions (left to right):
+    // RECORD, PLAY, ONCE, DIRECTION, STACK
+    // Note: THRU MUTE is on the left side, separate from the main buttons
     
-    thruMuteButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
-    recordButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
-    playButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
-    onceButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
-    stackButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
-    reverseButton.setBounds(buttonArea.removeFromLeft(buttonWidth).reduced(10));
+    // Thru/Mute button (left side, above OUTPUT LEVEL)
+    thruMuteButton.setBounds(30, 140, 50, 30);
     
-    bounds.removeFromTop(20); // spacer
+    // Main foot switches (centered horizontally)
+    int startX = 140;  // Starting X position for first button
+    int spacing = 112; // Space between button centers
     
-    // Controls area
-    auto controlsArea = bounds.removeFromTop(120);
-    auto volumeArea = controlsArea.removeFromLeft(controlsArea.getWidth() / 2).reduced(20);
-    auto feedbackArea = controlsArea.reduced(20);
+    recordButton.setBounds(startX, buttonY, buttonWidth, buttonHeight);
+    playButton.setBounds(startX + spacing, buttonY, buttonWidth, buttonHeight);
+    onceButton.setBounds(startX + spacing * 2, buttonY, buttonWidth, buttonHeight);
+    reverseButton.setBounds(startX + spacing * 3, buttonY, buttonWidth, buttonHeight);
+    stackButton.setBounds(startX + spacing * 4, buttonY, buttonWidth, buttonHeight);
     
-    volumeLabel.setBounds(volumeArea.removeFromTop(20));
+    // Controls area below the image
+    auto controlsArea = bounds;
+    controlsArea.removeFromTop(210); // Skip image area
+    controlsArea = controlsArea.removeFromTop(70).reduced(20, 10);
+    
+    // Status label
+    statusLabel.setBounds(controlsArea.removeFromTop(20));
+    
+    // Volume and feedback sliders
+    auto sliderArea = controlsArea.reduced(0, 5);
+    auto volumeArea = sliderArea.removeFromLeft(sliderArea.getWidth() / 2).reduced(10, 0);
+    auto feedbackArea = sliderArea.reduced(10, 0);
+    
+    volumeLabel.setBounds(volumeArea.removeFromTop(15));
     volumeSlider.setBounds(volumeArea);
     
-    feedbackLabel.setBounds(feedbackArea.removeFromTop(20));
+    feedbackLabel.setBounds(feedbackArea.removeFromTop(15));
     feedbackSlider.setBounds(feedbackArea);
     
-    // Version label in bottom right corner
-    versionLabel.setBounds(getLocalBounds().removeFromBottom(20).removeFromRight(120).reduced(5));
+    // Version label (bottom right)
+    versionLabel.setBounds(getWidth() - 150, getHeight() - 20, 140, 15);
 }
 
 void BoomerangAudioProcessorEditor::timerCallback()

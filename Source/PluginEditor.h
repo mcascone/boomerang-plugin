@@ -48,6 +48,9 @@ private:
     // Progress indicator
     juce::ProgressBar progressBar;
     double progressValue = 0.0;
+    
+    // Background image
+    juce::Image backgroundImage;
 
     // Parameter Attachments - only for continuous controls
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;

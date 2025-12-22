@@ -105,6 +105,16 @@ target_sources(Boomerang
         Source/PluginEditor.cpp
         Source/LooperEngine.cpp)
 
+# Add binary resources (embeds image in binary)
+juce_add_binary_data(BoomerangBinaryData
+    SOURCES
+        img/boomerang.jpg)
+
+# Link binary data to plugin
+target_link_libraries(Boomerang
+    PRIVATE
+        BoomerangBinaryData)
+
 # Compile definitions
 target_compile_definitions(Boomerang
     PUBLIC

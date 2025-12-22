@@ -117,7 +117,8 @@ void LooperEngine::onRecordButtonPressed()
             break;
 
         case LooperState::Recording:
-            if (activeSlot.hasContent.load())
+            // Check if we've recorded anything yet
+            if (activeSlot.recordPosition.load() > 0) 
             {
                 // Stop recording, start playback
                 stopRecording();

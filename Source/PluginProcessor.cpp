@@ -112,6 +112,7 @@ void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, 
     const bool buttonPressed = (newValue >= 0.5f);  // Treat bool params as pressed when >= 0.5
     
     // Pure toggle buttons - call engine on EVERY change (both on and off)
+    // These buttons toggle their internal state each time they're pressed
     if (parameterID == ParameterIDs::thruMute)
     {
         looperEngine->onThruMuteButtonPressed();
@@ -120,18 +121,16 @@ void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, 
     {
         looperEngine->onReverseButtonPressed();
     }
-    // State buttons - can be affected by other actions, so respond to every change
+    // Action buttons - also call on every change since ButtonAttachment toggles
+    // The engine methods handle the state logic internally
     else if (parameterID == ParameterIDs::record)
     {
-        if (buttonPressed)
-            looperEngine->onRecordButtonPressed();
+        looperEngine->onRecordButtonPressed();
     }
     else if (parameterID == ParameterIDs::play)
     {
-        if (buttonPressed)
-            looperEngine->onPlayButtonPressed();
+        looperEngine->onPlayButtonPressed();
     }
-    // Trigger button - only on press
     else if (parameterID == ParameterIDs::once)
     {
         if (buttonPressed)

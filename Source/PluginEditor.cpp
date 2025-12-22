@@ -15,11 +15,11 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
 
     // Setup buttons
     setupButton(thruMuteButton, "THRU MUTE", thruMuteColour, true);  // toggle
-    setupButton(recordButton, "RECORD", recordColour, true);          // toggle
-    setupButton(playButton, "PLAY/STOP", playColour, true);           // toggle
-    setupButton(onceButton, "ONCE", onceColour);                      // momentary (visual state synced in timer)
-    setupButton(stackButton, "STACK/SPEED", stackColour);             // momentary
-    setupButton(reverseButton, "REVERSE", reverseColour, true);       // toggle
+    setupButton(recordButton, "RECORD", recordColour, false);        // momentary
+    setupButton(playButton, "PLAY/STOP", playColour, false);         // momentary
+    setupButton(onceButton, "ONCE", onceColour, false);              // momentary
+    setupButton(stackButton, "STACK/SPEED", stackColour, false);     // momentary
+    setupButton(reverseButton, "REVERSE", reverseColour, true);      // toggle
 
     // Setup sliders
     volumeSlider.setSliderStyle(juce::Slider::LinearVertical);

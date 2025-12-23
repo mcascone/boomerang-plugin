@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.22)
 
 project(Boomerang VERSION 2.0.0.2)
 
+# Generate compile_commands.json for IDE support
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Get git commit hash
 execute_process(
     COMMAND git rev-parse --short HEAD

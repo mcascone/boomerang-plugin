@@ -166,20 +166,20 @@ void BoomerangAudioProcessorEditor::resized()
     // Each button is ~100px wide, centered on the foot switch
     // Y position ~115, height ~60 to cover the foot switch
     
-    int buttonY = 115;
+    int buttonY = 120;
     int buttonHeight = 60;
-    int buttonWidth = 100;
+    int buttonWidth = 60;
     
     // Calculate positions (left to right):
     // RECORD, PLAY, ONCE, DIRECTION, STACK
     // Note: THRU MUTE is on the left side, separate from the main buttons
     
     // Thru/Mute button (left side, above OUTPUT LEVEL)
-    thruMuteButton.setBounds(30, 140, 50, 30);
+    thruMuteButton.setBounds(100, 20, 50, 30);
     
     // Main foot switches (centered horizontally)
-    int startX = 140;  // Starting X position for first button
-    int spacing = 112; // Space between button centers
+    int startX = 175;  // Starting X position for first button
+    int spacing = 95; // Space between button centers
     
     recordButton.setBounds(startX, buttonY, buttonWidth, buttonHeight);
     playButton.setBounds(startX + spacing, buttonY, buttonWidth, buttonHeight);

@@ -32,11 +32,13 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     stackButton.setAlpha(0.0f);
     reverseButton.setAlpha(0.0f);
 
-    // Setup sliders (below the image)
+    // Setup sliders
+    // Volume slider overlays the OUTPUT LEVEL knob in the image
     volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
-    volumeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+    volumeSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(1.0);
+    volumeSlider.setAlpha(1.0f);  // Semi-transparent to show device knob
     addAndMakeVisible(volumeSlider);
 
     feedbackSlider.setSliderStyle(juce::Slider::Rotary);
@@ -177,6 +179,9 @@ void BoomerangAudioProcessorEditor::resized()
     // Thru/Mute button (left side, above OUTPUT LEVEL)
     thruMuteButton.setBounds(100, 20, 50, 30);
     
+    // Volume slider overlays OUTPUT LEVEL knob on left side
+    volumeSlider.setBounds(100, 80, 55, 55);
+    
     // Main foot switches (centered horizontally)
     int startX = 175;  // Starting X position for first button
     int spacing = 95; // Space between button centers
@@ -195,13 +200,9 @@ void BoomerangAudioProcessorEditor::resized()
     // Status label
     statusLabel.setBounds(controlsArea.removeFromTop(20));
     
-    // Volume and feedback sliders
+    // Feedback slider in controls area (volume is now on device image)
     auto sliderArea = controlsArea.reduced(0, 5);
-    auto volumeArea = sliderArea.removeFromLeft(sliderArea.getWidth() / 2).reduced(10, 0);
     auto feedbackArea = sliderArea.reduced(10, 0);
-    
-    volumeLabel.setBounds(volumeArea.removeFromTop(15));
-    volumeSlider.setBounds(volumeArea);
     
     feedbackLabel.setBounds(feedbackArea.removeFromTop(15));
     feedbackSlider.setBounds(feedbackArea);

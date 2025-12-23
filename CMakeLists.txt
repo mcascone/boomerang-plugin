@@ -36,10 +36,10 @@ juce_add_plugin(Boomerang
     COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
-    FORMATS AU VST3 Standalone
+    FORMATS Standalone
     PRODUCT_NAME "Boomerang+"
     # Skip automatic install to avoid signing warnings (issue #36)
-    COPY_PLUGIN_AFTER_BUILD FALSE)
+    COPY_PLUGIN_AFTER_BUILD TRUE)
 
 # ==============================================================================
 # Code Signing Configuration (issue #36)
@@ -48,58 +48,58 @@ juce_add_plugin(Boomerang
 # Optional: Enable official Apple Developer code signing for distribution
 option(ENABLE_CODESIGNING "Enable official code signing for distribution" OFF)
 
-if(APPLE AND ENABLE_CODESIGNING)
-    # TODO: Replace with your actual certificate name and Team ID
-    # Find certificate: security find-identity -v -p codesigning
-    # Find Team ID: developer.apple.com > Account > Membership
-    set(CODESIGN_IDENTITY "Developer ID Application: Your Name (TEAMID)" CACHE STRING "Code signing identity")
-    set(DEVELOPMENT_TEAM "TEAMID" CACHE STRING "Apple Developer Team ID")
+# if(APPLE AND ENABLE_CODESIGNING)
+#     # TODO: Replace with your actual certificate name and Team ID
+#     # Find certificate: security find-identity -v -p codesigning
+#     # Find Team ID: developer.apple.com > Account > Membership
+#     set(CODESIGN_IDENTITY "Developer ID Application: Your Name (TEAMID)" CACHE STRING "Code signing identity")
+#     set(DEVELOPMENT_TEAM "TEAMID" CACHE STRING "Apple Developer Team ID")
     
-    message(STATUS "Code signing enabled with identity: ${CODESIGN_IDENTITY}")
+#     message(STATUS "Code signing enabled with identity: ${CODESIGN_IDENTITY}")
     
-    # Apply to plugin targets
-    set_target_properties(Boomerang_AU Boomerang_VST3 PROPERTIES
-        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${CODESIGN_IDENTITY}"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
-        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED YES
-    )
-else()
-    message(STATUS "Using ad-hoc code signing for local development")
-    message(STATUS "To enable distribution signing: cmake -DENABLE_CODESIGNING=ON")
-endif()
+#     # Apply to plugin targets
+#     set_target_properties(Boomerang_AU Boomerang_VST3 PROPERTIES
+#         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${CODESIGN_IDENTITY}"
+#         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
+#         XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED YES
+#     )
+# else()
+#     message(STATUS "Using ad-hoc code signing for local development")
+#     message(STATUS "To enable distribution signing: cmake -DENABLE_CODESIGNING=ON")
+# endif()
 
 # Post-build: Ad-hoc sign and install bundles cleanly (macOS only, issue #36)
-if(APPLE)
-    if(ENABLE_CODESIGNING)
-        # Use official signing identity
-        set(SIGN_COMMAND codesign --force --deep --sign "${CODESIGN_IDENTITY}" --timestamp)
-    else()
-        # Use ad-hoc signing for local development
-        set(SIGN_COMMAND codesign --force --deep --sign -)
-    endif()
+# if(APPLE)
+#     if(ENABLE_CODESIGNING)
+#         # Use official signing identity
+#         set(SIGN_COMMAND codesign --force --deep --sign "${CODESIGN_IDENTITY}" --timestamp)
+#     else()
+#         # Use ad-hoc signing for local development
+#         set(SIGN_COMMAND codesign --force --deep --sign -)
+#     endif()
     
-    # Sign AU
-    add_custom_command(TARGET Boomerang_AU POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources"
-        COMMAND ${CMAKE_COMMAND} -E touch "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources/.keep"
-        COMMAND ${SIGN_COMMAND} "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory 
-                "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
-                "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Boomerang+.component"
-        COMMENT "Signing and installing AU plugin"
-        VERBATIM
-    )
+#     # Sign AU
+#     add_custom_command(TARGET Boomerang_AU POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources"
+#         COMMAND ${CMAKE_COMMAND} -E touch "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources/.keep"
+#         COMMAND ${SIGN_COMMAND} "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
+#         COMMAND ${CMAKE_COMMAND} -E copy_directory 
+#                 "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
+#                 "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Boomerang+.component"
+#         COMMENT "Signing and installing AU plugin"
+#         VERBATIM
+#     )
     
-    # Sign VST3 - moduleinfo.json creates Resources folder, just sign it
-    add_custom_command(TARGET Boomerang_VST3 POST_BUILD
-        COMMAND ${SIGN_COMMAND} "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory 
-                "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
-                "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Boomerang+.vst3"
-        COMMENT "Signing and installing VST3 plugin"
-        VERBATIM
-    )
-endif()
+#     # Sign VST3 - moduleinfo.json creates Resources folder, just sign it
+#     add_custom_command(TARGET Boomerang_VST3 POST_BUILD
+#         COMMAND ${SIGN_COMMAND} "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
+#         COMMAND ${CMAKE_COMMAND} -E copy_directory 
+#                 "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
+#                 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Boomerang+.vst3"
+#         COMMENT "Signing and installing VST3 plugin"
+#         VERBATIM
+#     )
+# endif()
 
 # Source files
 target_sources(Boomerang

@@ -216,7 +216,7 @@ void LooperEngine::onOnceButtonPressed()
 void LooperEngine::onStackButtonPressed()
 {
     auto state = currentState.load();
-    
+
     if (state == LooperState::Playing)
     {
         startOverdubbing();

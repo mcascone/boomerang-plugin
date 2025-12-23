@@ -21,7 +21,7 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     setupButton(recordButton, "", juce::Colours::transparentBlack, false);
     setupButton(playButton, "", juce::Colours::transparentBlack, false);
     setupButton(onceButton, "", juce::Colours::transparentBlack, false);
-    setupButton(stackButton, "", juce::Colours::transparentBlack, false);
+    setupButton(stackButton, "", juce::Colours::transparentBlack, false);  // Momentary, not toggle
     setupButton(reverseButton, "", juce::Colours::transparentBlack, true);
     
     // Make buttons semi-transparent for hover feedback
@@ -99,12 +99,41 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
         audioProcessor.getLooperEngine()->onReverseButtonPressed();
     };
     
-    // Stack needs press/release detection
-    stackButton.onStateChange = [this]() {
-        if (stackButton.isDown())
+    // Stack button - use onClick for stopped (speed toggle), onStateChange for playing (overdub)
+    stackButton.onClick = [this]() {
+        auto state = audioProcessor.getLooperEngine()->getState();
+        // onClick only does something when stopped - toggles speed
+        if (state == LooperEngine::LooperState::Stopped)
+        {
             audioProcessor.getLooperEngine()->onStackButtonPressed();
+        }
+    };
+    
+    // Handle press/release for overdub while playing
+    stackButton.onStateChange = [this]() {
+        bool isDown = stackButton.isDown();
+        bool wasDown = stackButtonWasDown.load();
+        auto state = audioProcessor.getLooperEngine()->getState();
+        
+        // Only handle state changes when playing/overdubbing
+        if (state == LooperEngine::LooperState::Playing || state == LooperEngine::LooperState::Overdubbing)
+        {
+            if (isDown && !wasDown)
+            {
+                audioProcessor.getLooperEngine()->onStackButtonPressed();
+                stackButtonWasDown.store(true);
+            }
+            else if (!isDown && wasDown)
+            {
+                audioProcessor.getLooperEngine()->onStackButtonReleased();
+                stackButtonWasDown.store(false);
+            }
+        }
         else
-            audioProcessor.getLooperEngine()->onStackButtonReleased();
+        {
+            // Keep tracking synced when not playing
+            stackButtonWasDown.store(isDown);
+        }
     };
 
     // Start timer for UI updates and audio thread request processing (issue #38)
@@ -148,8 +177,18 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
         }
     };
     
+    // Special case: RECORD button flash on loop wrap
+    if (recordFlashCounter > 0)
+    {
+        g.setColour(juce::Colours::red.withAlpha(0.7f));
+        g.fillRect(recordButton.getBounds());
+    }
+    else
+    {
+        drawHoverOverlay(recordButton, juce::Colours::red);
+    }
+    
     drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
-    drawHoverOverlay(recordButton, juce::Colours::red);
     drawHoverOverlay(playButton, juce::Colours::green);
     drawHoverOverlay(onceButton, juce::Colours::blue);
     drawHoverOverlay(stackButton, juce::Colours::orange);
@@ -249,23 +288,14 @@ void BoomerangAudioProcessorEditor::timerCallback()
     // Flash record button when loop wraps around
     if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())
     {
-        recordFlashCounter = 3;  // Flash for ~180ms (6 frames at 30ms)
-        // Set bright color when flash starts
-        recordButton.setColour(juce::TextButton::buttonOnColourId, recordColour.brighter(0.5f));
-        recordButton.setColour(juce::TextButton::buttonColourId, recordColour.brighter(0.3f));
+        recordFlashCounter = 10;  // Flash for ~160ms (10 frames at 16ms)
     }
     else if (recordFlashCounter > 0)
     {
         recordFlashCounter--;
-        // Restore color when flash ends
-        if (recordFlashCounter == 0)
-        {
-            recordButton.setColour(juce::TextButton::buttonOnColourId, recordColour);
-            recordButton.setColour(juce::TextButton::buttonColourId, recordColour.darker(0.8f));
-        }
     }
     
-    repaint(); // Refresh loop slot indicators
+    repaint(); // Refresh overlays and flash indicators
 }
 
 //==============================================================================

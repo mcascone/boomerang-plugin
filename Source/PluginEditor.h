@@ -66,6 +66,7 @@ private:
     juce::Colour thruMuteColour_OFF = juce::Colours::lightgrey;
     
     int recordFlashCounter = 0;  // For loop wrap flash indicator
+    std::atomic<bool> stackButtonWasDown { false };  // Track STACK button state for proper press/release
 
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour, bool isToggle = false);
     void updateStatusDisplay();

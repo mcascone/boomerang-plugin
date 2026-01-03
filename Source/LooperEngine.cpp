@@ -91,21 +91,32 @@ void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
             break;
     }
 
-    // Apply output volume
-    buffer.applyGain(outputVolume);
+    // Apply output volume (thread-safe atomic load)
+    buffer.applyGain(outputVolume.load());
 }
 
 //==============================================================================
 void LooperEngine::onThruMuteButtonPressed()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     // Toggle thru/mute state
-    // implementation pending
-    // in ThruMute mode, input is recorded but not passed through. Only the recorded sound is played back.
+    // In ThruMute mode, input is recorded but not passed through. Only the recorded sound is played back.
     toggleThruMute();
+    
+    stateTransitionInProgress.store(false);
 }
 //==============================================================================
 void LooperEngine::onRecordButtonPressed()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     auto state = currentState.load();
     
@@ -141,10 +152,17 @@ void LooperEngine::onRecordButtonPressed()
         case LooperState::BufferFilled:
             break;
     }
+    
+    stateTransitionInProgress.store(false);
 }
 
 void LooperEngine::onPlayButtonPressed()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     auto state = currentState.load();
 
@@ -176,10 +194,17 @@ void LooperEngine::onPlayButtonPressed()
         case LooperState::BufferFilled:
             break;
     }
+    
+    stateTransitionInProgress.store(false);
 }
 
 void LooperEngine::onOnceButtonPressed()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     auto state = currentState.load();
     auto once = onceMode.load();
     
@@ -210,11 +235,18 @@ void LooperEngine::onOnceButtonPressed()
         setOnceMode(OnceMode::On);
         startPlayback();
     }
+    
+    stateTransitionInProgress.store(false);
 }
 
 // Momentary behavior - engaged while pressed
 void LooperEngine::onStackButtonPressed()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     auto state = currentState.load();
 
     if (state == LooperState::Playing)
@@ -225,21 +257,37 @@ void LooperEngine::onStackButtonPressed()
     {
         toggleSpeedMode();
     }
+    
+    stateTransitionInProgress.store(false);
 }
 
 void LooperEngine::onStackButtonReleased()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     auto state = currentState.load();
     
     if (state == LooperState::Overdubbing)
     {
         stopOverdubbing();
     }
+    
+    stateTransitionInProgress.store(false);
 }
 
 void LooperEngine::onReverseButtonPressed()
 {
+    // Thread safety: Only allow one button press at a time
+    bool expected = false;
+    if (!stateTransitionInProgress.compare_exchange_strong(expected, true))
+        return;  // Another thread is already processing a button press
+    
     toggleDirection();
+    
+    stateTransitionInProgress.store(false);
 }
 
 //==============================================================================
@@ -269,7 +317,6 @@ void LooperEngine::stopRecording()
     activeSlot.length.store(finalLength);
     activeSlot.hasContent.store(finalLength > 0);
     currentState.store(LooperState::Stopped);
-
 }
 
 void LooperEngine::startPlayback()
@@ -386,11 +433,12 @@ void LooperEngine::processRecording(juce::AudioBuffer<float>& buffer, LoopSlot& 
         float currentRecordPos = slot.recordPosition.load();
         int writePos = static_cast<int>(currentRecordPos);
         
-        if (writePos >= maxLoopSamples)
+        // Check bounds BEFORE writing
+        if (writePos < 0 || writePos >= maxLoopSamples)
         {
-            // Buffer filled - stop recording (state write removed, handled elsewhere)
+            // Buffer filled or invalid position - stop recording
             stopRecording();
-            break;
+            return;  // Exit immediately, don't process remaining samples
         }
 
         for (int channel = 0; channel < numChannels; ++channel)
@@ -520,7 +568,7 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             // Attenuate existing loop by 2.5dB to prevent overloading when stacking
             constexpr float stackAttenuation = 0.74989420933f; // -2.5dB
             float attenuatedLoop = loopSample * stackAttenuation;
-            float overdubSample = attenuatedLoop + (inputSample * feedbackAmount);
+            float overdubSample = attenuatedLoop + (inputSample * feedbackAmount.load());
             slot.buffer.setSample(channel, pos, overdubSample);
             
             // Thru mute handling: when ON, only output loop; when OFF, mix with input

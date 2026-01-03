@@ -109,6 +109,10 @@ BoomerangAudioProcessor::~BoomerangAudioProcessor()
 // Parameter change listener - handles MIDI CC and DAW automation
 void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
 {
+    // Safety check - ensure looperEngine exists
+    if (looperEngine == nullptr)
+        return;
+    
     const bool buttonPressed = (newValue >= 0.5f);  // Treat bool params as pressed when >= 0.5
     
     // Pure toggle buttons - call engine on EVERY change (both on and off)
@@ -271,6 +275,13 @@ void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // Clear any unused output channels
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+
+    // Safety check
+    if (looperEngine == nullptr)
+    {
+        buffer.clear();
+        return;
+    }
 
     // Update continuous parameters from APVTS (thread-safe)
     if (auto* volumeParam = apvts.getRawParameterValue(ParameterIDs::volume))

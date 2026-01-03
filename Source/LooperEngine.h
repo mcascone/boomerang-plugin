@@ -90,8 +90,8 @@ public:
 
     //==============================================================================
     // Parameter setters
-    void setVolume(float volume) { outputVolume = volume; }
-    void setFeedback(float feedback) { feedbackAmount = feedback; }
+    void setVolume(float volume) { outputVolume.store(volume); }
+    void setFeedback(float feedback) { feedbackAmount.store(feedback); }
 
     //==============================================================================
     // State queries for UI updates (thread-safe via atomic loads)
@@ -162,9 +162,9 @@ private:
     int numChannels = 2;
     int maxLoopSamples = 0;
 
-    // Audio processing parameters
-    float outputVolume = 1.0f;
-    float feedbackAmount = 0.5f;
+    // Audio processing parameters (thread-safe)
+    std::atomic<float> outputVolume { 1.0f };
+    std::atomic<float> feedbackAmount { 0.5f };
 
     // Timing and synchronization
     int recordingStartDelay = 0;
@@ -173,6 +173,9 @@ private:
     // Request flags for audio→UI thread communication (issue #38)
     // Audio thread sets these, UI timer processes them
     std::atomic<bool> shouldDisableOnce{false};
+    
+    // Thread safety: Prevent concurrent state transitions (issue #39)
+    std::atomic<bool> stateTransitionInProgress{false};
 
     //==============================================================================
     void startRecording();

@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Boomerang VERSION 2.0.0.2)
+project(Boomerang VERSION 2.0.0.3)
 
 # Generate compile_commands.json for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Build universal binary for both Intel and Apple Silicon
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for macOS")
+endif()
 
 # Get git commit hash
 execute_process(
@@ -36,7 +41,7 @@ juce_add_plugin(Boomerang
     COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
-    FORMATS Standalone
+    FORMATS Standalone VST3 AU
     PRODUCT_NAME "Boomerang+"
     # Skip automatic install to avoid signing warnings (issue #36)
     COPY_PLUGIN_AFTER_BUILD TRUE)

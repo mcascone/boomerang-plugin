@@ -272,15 +272,20 @@ void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // Update continuous parameters from APVTS
-    auto* volumeParam = apvts.getRawParameterValue(ParameterIDs::volume);
-    auto* feedbackParam = apvts.getRawParameterValue(ParameterIDs::feedback);
+    // Update continuous parameters from APVTS (thread-safe)
+    if (auto* volumeParam = apvts.getRawParameterValue(ParameterIDs::volume))
+    {
+        float volumeValue = volumeParam->load();
+        if (!std::isnan(volumeValue) && !std::isinf(volumeValue))
+            looperEngine->setVolume(volumeValue);
+    }
     
-    if (volumeParam != nullptr)
-        looperEngine->setVolume(volumeParam->load());
-    
-    if (feedbackParam != nullptr)
-        looperEngine->setFeedback(feedbackParam->load());
+    if (auto* feedbackParam = apvts.getRawParameterValue(ParameterIDs::feedback))
+    {
+        float feedbackValue = feedbackParam->load();
+        if (!std::isnan(feedbackValue) && !std::isinf(feedbackValue))
+            looperEngine->setFeedback(feedbackValue);
+    }
 
     // Process audio through looper engine
     looperEngine->processBlock(buffer);

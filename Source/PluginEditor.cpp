@@ -10,8 +10,12 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     backgroundImage = juce::ImageCache::getFromMemory(BinaryData::boomerang_jpg, 
                                                       BinaryData::boomerang_jpgSize);
     
-    // Set size to match image (700x200) with minimal padding
-    setSize (700, 240);
+    // Set default size and make resizable with aspect ratio constraint
+    // Base size: 700x240, default at 1.5x scale (1050x360)
+    setSize (1050, 360);
+    setResizable(true, true);
+    setResizeLimits(350, 120, 1400, 480);  // 0.5x to 2x scale
+    getConstrainer()->setFixedAspectRatio(700.0 / 240.0);
 
     // Setup buttons as transparent overlays
     // Position them over the foot switches in the image
@@ -130,11 +134,18 @@ BoomerangAudioProcessorEditor::~BoomerangAudioProcessorEditor()
 //==============================================================================
 void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // Draw background image if loaded
+    // Draw background image scaled to window size
     if (backgroundImage.isValid())
     {
-        g.drawImage(backgroundImage, 0, 0, 700, 200, 0, 0, 
-                   backgroundImage.getWidth(), backgroundImage.getHeight());
+        // Calculate scaled image height (proportional to window width)
+        float scale = getWidth() / 700.0f;
+        int scaledImageHeight = static_cast<int>(200 * scale);
+        
+        // drawImage(image, destX, destY, destW, destH, srcX, srcY, srcW, srcH)
+        g.drawImage(backgroundImage, 
+                   0, 0, getWidth(), scaledImageHeight,
+                   0, 0, backgroundImage.getWidth(), backgroundImage.getHeight(),
+                   false);
     }
     else
     {
@@ -181,48 +192,62 @@ void BoomerangAudioProcessorEditor::resized()
 {
     auto bounds = getLocalBounds();
     
+    // Calculate scale factor based on current width (base width is 700)
+    float scale = getWidth() / 700.0f;
+    
+    // Helper lambda to scale positions
+    auto scaleRect = [scale](int x, int y, int w, int h) {
+        return juce::Rectangle<int>(
+            static_cast<int>(x * scale),
+            static_cast<int>(y * scale),
+            static_cast<int>(w * scale),
+            static_cast<int>(h * scale)
+        );
+    };
+    
     // Position transparent buttons over foot switches in the background image
-    // Image is 700x200 at top of window
-    // Foot switches are roughly at y=115-175, evenly spaced horizontally
-    
-    // Button positions measured from the image:
-    // Each button is ~100px wide, centered on the foot switch
-    // Y position ~115, height ~60 to cover the foot switch
-    
-    int buttonY = 120;
-    int buttonHeight = 60;
-    int buttonWidth = 60;
-    
-    // Calculate positions (left to right):
-    // RECORD, PLAY, ONCE, DIRECTION, STACK
-    // Note: THRU MUTE is on the left side, separate from the main buttons
+    // Base positions for 700x240 window:
     
     // Thru/Mute button (left side, above OUTPUT LEVEL)
-    thruMuteButton.setBounds(100, 20, 50, 30);
+    thruMuteButton.setBounds(scaleRect(100, 20, 50, 30));
     
     // Volume slider overlays OUTPUT LEVEL knob on left side
-    volumeSlider.setBounds(100, 80, 55, 55);
+    volumeSlider.setBounds(scaleRect(100, 80, 55, 55));
     
     // Main foot switches (centered horizontally)
-    int startX = 175;  // Starting X position for first button
-    int spacing = 95; // Space between button centers
+    // Base positions: startX=175, spacing=95, buttonY=120, width=60, height=60
+    int baseStartX = 175;
+    int baseSpacing = 95;
+    int baseButtonY = 120;
+    int baseButtonWidth = 60;
+    int baseButtonHeight = 60;
     
-    recordButton.setBounds(startX, buttonY, buttonWidth, buttonHeight);
-    playButton.setBounds(startX + spacing, buttonY, buttonWidth, buttonHeight);
-    onceButton.setBounds(startX + spacing * 2, buttonY, buttonWidth, buttonHeight);
-    reverseButton.setBounds(startX + spacing * 3, buttonY, buttonWidth, buttonHeight);
-    stackButton.setBounds(startX + spacing * 4, buttonY, buttonWidth, buttonHeight);
+    recordButton.setBounds(scaleRect(baseStartX, baseButtonY, baseButtonWidth, baseButtonHeight));
+    playButton.setBounds(scaleRect(baseStartX + baseSpacing, baseButtonY, baseButtonWidth, baseButtonHeight));
+    onceButton.setBounds(scaleRect(baseStartX + baseSpacing * 2, baseButtonY, baseButtonWidth, baseButtonHeight));
+    reverseButton.setBounds(scaleRect(baseStartX + baseSpacing * 3, baseButtonY, baseButtonWidth, baseButtonHeight));
+    stackButton.setBounds(scaleRect(baseStartX + baseSpacing * 4, baseButtonY, baseButtonWidth, baseButtonHeight));
     
-    // Controls area below the image
+    // Controls area below the image (base: skip 210px for image, then 30px for controls)
     auto controlsArea = bounds;
-    controlsArea.removeFromTop(210); // Skip image area
-    controlsArea = controlsArea.removeFromTop(30).reduced(20, 5);
+    controlsArea.removeFromTop(static_cast<int>(210 * scale));
+    controlsArea = controlsArea.removeFromTop(static_cast<int>(30 * scale)).reduced(
+        static_cast<int>(20 * scale),
+        static_cast<int>(5 * scale)
+    );
     
     // Status label
     statusLabel.setBounds(controlsArea);
+    statusLabel.setFont(juce::Font(juce::FontOptions(12.0f * scale)));
     
-    // Version label (bottom right)
-    versionLabel.setBounds(getWidth() - 150, getHeight() - 20, 140, 15);
+    // Version label (bottom right, scaled)
+    versionLabel.setBounds(
+        getWidth() - static_cast<int>(150 * scale),
+        getHeight() - static_cast<int>(20 * scale),
+        static_cast<int>(140 * scale),
+        static_cast<int>(15 * scale)
+    );
+    versionLabel.setFont(juce::Font(juce::FontOptions(10.0f * scale)));
 }
 
 void BoomerangAudioProcessorEditor::timerCallback()

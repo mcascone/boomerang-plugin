@@ -10,8 +10,8 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     backgroundImage = juce::ImageCache::getFromMemory(BinaryData::boomerang_jpg, 
                                                       BinaryData::boomerang_jpgSize);
     
-    // Set size to match image (700x200) with some padding for controls
-    setSize (700, 300);
+    // Set size to match image (700x200) with minimal padding
+    setSize (700, 240);
 
     // Setup buttons as transparent overlays
     // Position them over the foot switches in the image
@@ -41,21 +41,6 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     volumeSlider.setAlpha(1.0f);  // Semi-transparent to show device knob
     addAndMakeVisible(volumeSlider);
 
-    feedbackSlider.setSliderStyle(juce::Slider::Rotary);
-    feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
-    feedbackSlider.setRange(0.0, 1.0, 0.01);
-    feedbackSlider.setValue(0.5);
-    addAndMakeVisible(feedbackSlider);
-
-    // Setup labels
-    volumeLabel.setText("Volume", juce::dontSendNotification);
-    volumeLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(volumeLabel);
-
-    feedbackLabel.setText("Feedback", juce::dontSendNotification);
-    feedbackLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(feedbackLabel);
-
     statusLabel.setText("Stopped", juce::dontSendNotification);
     statusLabel.setJustificationType(juce::Justification::centred);
     statusLabel.setFont(juce::Font(juce::FontOptions(12.0f)));
@@ -74,9 +59,6 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     // Attach continuous controls to APVTS
     volumeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.getAPVTS(), "volume", volumeSlider);
-    
-    feedbackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.getAPVTS(), "feedback", feedbackSlider);
     
     // All buttons use onClick - manual control, visual state synced in timer
     thruMuteButton.onClick = [this]() {
@@ -234,17 +216,10 @@ void BoomerangAudioProcessorEditor::resized()
     // Controls area below the image
     auto controlsArea = bounds;
     controlsArea.removeFromTop(210); // Skip image area
-    controlsArea = controlsArea.removeFromTop(70).reduced(20, 10);
+    controlsArea = controlsArea.removeFromTop(30).reduced(20, 5);
     
     // Status label
-    statusLabel.setBounds(controlsArea.removeFromTop(20));
-    
-    // Feedback slider in controls area (volume is now on device image)
-    auto sliderArea = controlsArea.reduced(0, 5);
-    auto feedbackArea = sliderArea.reduced(10, 0);
-    
-    feedbackLabel.setBounds(feedbackArea.removeFromTop(15));
-    feedbackSlider.setBounds(feedbackArea);
+    statusLabel.setBounds(controlsArea);
     
     // Version label (bottom right)
     versionLabel.setBounds(getWidth() - 150, getHeight() - 20, 140, 15);

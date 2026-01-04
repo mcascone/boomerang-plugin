@@ -37,10 +37,7 @@ private:
     juce::TextButton reverseButton;
     
     juce::Slider volumeSlider;
-    juce::Slider feedbackSlider;
     
-    juce::Label volumeLabel;
-    juce::Label feedbackLabel;
     juce::Label titleLabel;
     juce::Label statusLabel;
     juce::Label versionLabel;
@@ -54,7 +51,6 @@ private:
 
     // Parameter Attachments - only for continuous controls
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> feedbackAttachment;
 
     // Visual state
     juce::Colour recordColour = juce::Colours::red;

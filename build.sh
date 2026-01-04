@@ -1,0 +1,25 @@
+#!/bin/bash
+# Boomerang Plugin Build Script
+# Builds universal binary (Intel + Apple Silicon) for macOS 11.0+
+
+set -e  # Exit on error
+
+echo "Cleaning build directory..."
+rm -rf build
+
+echo "Configuring CMake..."
+cmake -S . -B build \
+  -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+
+echo "Building with 8 parallel jobs..."
+cmake --build build -j8
+
+echo ""
+echo "Build complete!"
+echo "Artifacts location: build/Boomerang_artefacts/"
+echo ""
+echo "Verifying architectures:"
+lipo -info build/Boomerang_artefacts/Standalone/Boomerang+.app/Contents/MacOS/Boomerang+
+lipo -info build/Boomerang_artefacts/VST3/Boomerang+.vst3/Contents/MacOS/Boomerang+
+lipo -info build/Boomerang_artefacts/AU/Boomerang+.component/Contents/MacOS/Boomerang+

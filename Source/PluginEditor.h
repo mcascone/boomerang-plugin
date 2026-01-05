@@ -48,6 +48,14 @@ private:
     
     // Background image
     juce::Image backgroundImage;
+    
+    // LED states
+    bool recordLED  = false;
+    bool playLED    = false;
+    bool onceLED    = false;
+    bool reverseLED = false;
+    bool stackLED   = false;
+    bool slowLED    = false;
 
     // Parameter Attachments - only for continuous controls
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;
@@ -66,6 +74,7 @@ private:
 
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour, bool isToggle = false);
     void updateStatusDisplay();
+    void drawLED(juce::Graphics& g, int x, int y, int size, juce::Colour colour, bool isLit);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BoomerangAudioProcessorEditor)
 };

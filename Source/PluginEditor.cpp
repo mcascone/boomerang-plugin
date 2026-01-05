@@ -186,6 +186,25 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     drawHoverOverlay(onceButton, juce::Colours::blue);
     drawHoverOverlay(stackButton, juce::Colours::orange);
     drawHoverOverlay(reverseButton, juce::Colours::purple);
+    
+    // Volume slider overlay when interacting - small box that follows the slider position
+    if (volumeSlider.isMouseOver() || volumeSlider.isMouseButtonDown())
+    {
+        auto sliderBounds = volumeSlider.getBounds();
+        double proportion = (volumeSlider.getValue() - volumeSlider.getMinimum()) / 
+                           (volumeSlider.getMaximum() - volumeSlider.getMinimum());
+        
+        // Calculate thumb position (inverted for vertical slider - top is max)
+        int thumbHeight = sliderBounds.getHeight() / 8;  // Small box
+        int thumbWidth = sliderBounds.getWidth() / 2;     // Half width
+        int thumbX = sliderBounds.getX() + (sliderBounds.getWidth() - thumbWidth) / 2;  // Center horizontally
+        int thumbY = sliderBounds.getY() + static_cast<int>((1.0 - proportion) * (sliderBounds.getHeight() - thumbHeight));
+        
+        juce::Rectangle<int> thumbRect(thumbX, thumbY, thumbWidth, thumbHeight);
+        
+        g.setColour(juce::Colours::cyan.withAlpha(volumeSlider.isMouseButtonDown() ? 0.5f : 0.3f));
+        g.fillRect(thumbRect);
+    }
 }
 
 void BoomerangAudioProcessorEditor::resized()
@@ -212,7 +231,8 @@ void BoomerangAudioProcessorEditor::resized()
     thruMuteButton.setBounds(scaleRect(100, 20, 50, 30));
     
     // Volume slider overlays OUTPUT LEVEL knob on left side
-    volumeSlider.setBounds(scaleRect(100, 80, 55, 55));
+    // Wide clickable area to emulate rolling the volume knob
+    volumeSlider.setBounds(scaleRect(70, 60, 120, 90));
     
     // Main foot switches (centered horizontally)
     // Base positions: startX=175, spacing=95, buttonY=120, width=60, height=60

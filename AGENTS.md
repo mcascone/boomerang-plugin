@@ -17,10 +17,10 @@ Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issue
 
 ## Build, Test, and Development Commands
 
-- Configure/build from repo root: `cmake -S . -B build && cmake --build build -j4`.
-- Or from build dir: `cd build && make -j4` (reuses generated Makefile).
+- Configure/build from repo root: `cmake -S . -B build && cmake --build build -j8`.
+- Or from build dir: `cd build && make -j8` (reuses generated Makefile).
 - Install VST3 locally (macOS): `cmake --build build --target install` (writes to `~/Library/Audio/Plug-Ins/VST3`).
-- Tests: none defined yet; manual audio validation required.
+- Tests: use pluginval to run VST3 compliance tests on built plugin.
 
 ## Coding Style & Naming Conventions
 
@@ -29,6 +29,15 @@ Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issue
 - Use `snake_case` for locals/parameters, `CamelCase` for types, `PascalCase` for JUCE components.
 - Avoid shadowing class members; keep signed/unsigned consistent for buffer indices.
 - Add brief comments when intent isn’t obvious.
+- Prefer simpler code over clever constructs. Easy-to-maintain code is better than complex optimizations.
+- Re-use existing patterns in the codebase for ease of understanding and consistency. Re-use existing JUCE functionality where possible. Don't reinvent the wheel. Do not introduce new dependencies unless absolutely necessary.
+- Follow DRY and YAGNI principles.
+
+## Agent Best Practices
+
+- check where you are before running location-dependent commands; or use full path when appropriate.
+- check paths and filenames for typos and existence before running commands that depend on them.
+- don't do that thing where you run a command and then immediately run another command that depends on the first command having completed successfully; instead, check the exit status of the first command before proceeding.
 
 ## Testing Guidelines
 

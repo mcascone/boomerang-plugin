@@ -212,7 +212,9 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     int ledY = static_cast<int>(44 * scale);  // Near top of device
     
     // LED positions aligned with buttons below (approximate x positions)
-    drawLED(g, static_cast<int>(208 * scale), ledY, ledSize, juce::Colours::green, recordLED);
+    // Record LED: flash when loop wraps (like record button overlay), otherwise show normal state
+    bool recordLEDFlashing = (recordFlashCounter > 0);
+    drawLED(g, static_cast<int>(208 * scale), ledY, ledSize, juce::Colours::green, recordLEDFlashing || recordLED);
     drawLED(g, static_cast<int>(300 * scale), ledY, ledSize, juce::Colours::green, playLED);
     drawLED(g, static_cast<int>(393 * scale), ledY, ledSize, juce::Colours::green, onceLED);
     drawLED(g, static_cast<int>(485 * scale), ledY, ledSize, juce::Colours::green, reverseLED);
@@ -321,7 +323,7 @@ void BoomerangAudioProcessorEditor::timerCallback()
     // Flash record button when loop wraps around
     if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())
     {
-        recordFlashCounter = 10;  // Flash for ~160ms (10 frames at 16ms)
+        recordFlashCounter = 5;  // Flash for ~80ms (5 frames at 16ms)
     }
     else if (recordFlashCounter > 0)
     {

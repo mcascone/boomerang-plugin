@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Boomerang VERSION 2.0.0.3)
+project(Boomerang VERSION 2.0.0.4)
 
 # Generate compile_commands.json for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -39,7 +39,6 @@ juce_add_plugin(Boomerang
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-    COPY_PLUGIN_AFTER_BUILD TRUE
     PLUGIN_MANUFACTURER_CODE MCMW
     PLUGIN_CODE BOOM
     FORMATS Standalone VST3 AU

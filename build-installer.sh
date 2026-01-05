@@ -4,7 +4,7 @@
 
 set -e
 
-VERSION="2.0.0-alpha-3"
+VERSION="2.0.0-alpha-4"
 IDENTIFIER="com.MCMusicWorkshop.Boomerang"
 BUILD_DIR="build/Boomerang_artefacts"
 OUTPUT_DIR="build/installer"
@@ -86,11 +86,33 @@ exit 0
 EOF
 chmod +x "$STANDALONE_SCRIPTS/postinstall"
 
+# Create component plist to prevent bundle relocation
+COMP_PLIST="$OUTPUT_DIR/component.plist"
+cat > "$COMP_PLIST" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    <dict>
+        <key>BundleIsRelocatable</key>
+        <false/>
+        <key>BundleIsVersionChecked</key>
+        <false/>
+        <key>BundleHasStrictIdentifier</key>
+        <false/>
+        <key>RootRelativeBundlePath</key>
+        <string>Applications/Boomerang+.app</string>
+    </dict>
+</array>
+</plist>
+EOF
+
 pkgbuild --root "$STANDALONE_ROOT" \
          --identifier "${IDENTIFIER}.standalone" \
          --version "$VERSION" \
          --scripts "$STANDALONE_SCRIPTS" \
          --install-location "/" \
+         --component-plist "$COMP_PLIST" \
          "$COMPONENT_PKGS/Standalone.pkg"
 
 # Create distribution XML for custom installer
@@ -123,9 +145,9 @@ cat > "$OUTPUT_DIR/distribution.xml" << EOF
         <pkg-ref id="${IDENTIFIER}.standalone"/>
     </choice>
     
-    <pkg-ref id="${IDENTIFIER}.vst3" version="${VERSION}">components/VST3.pkg</pkg-ref>
-    <pkg-ref id="${IDENTIFIER}.au" version="${VERSION}">components/AU.pkg</pkg-ref>
-    <pkg-ref id="${IDENTIFIER}.standalone" version="${VERSION}">components/Standalone.pkg</pkg-ref>
+    <pkg-ref id="${IDENTIFIER}.vst3" version="${VERSION}" auth="root">components/VST3.pkg</pkg-ref>
+    <pkg-ref id="${IDENTIFIER}.au" version="${VERSION}" auth="root">components/AU.pkg</pkg-ref>
+    <pkg-ref id="${IDENTIFIER}.standalone" version="${VERSION}" auth="root">components/Standalone.pkg</pkg-ref>
 </installer-gui-script>
 EOF
 

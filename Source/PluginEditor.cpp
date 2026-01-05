@@ -132,6 +132,23 @@ BoomerangAudioProcessorEditor::~BoomerangAudioProcessorEditor()
 }
 
 //==============================================================================
+void BoomerangAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
+{
+    if (event.mods.isPopupMenu())
+    {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Show Button Overlays", true, showButtonOverlays);
+        
+        menu.showMenuAsync(juce::PopupMenu::Options(), [this](int result) {
+            if (result == 1)
+            {
+                showButtonOverlays = !showButtonOverlays;
+                repaint();
+            }
+        });
+    }
+}
+
 void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // Draw background image scaled to window size
@@ -171,21 +188,24 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     };
     
     // Special case: RECORD button flash on loop wrap
-    if (recordFlashCounter > 0)
+    if (showButtonOverlays)
     {
-        g.setColour(juce::Colours::red.withAlpha(0.7f));
-        g.fillRect(recordButton.getBounds());
+        if (recordFlashCounter > 0)
+        {
+            g.setColour(juce::Colours::red.withAlpha(0.7f));
+            g.fillRect(recordButton.getBounds());
+        }
+        else
+        {
+            drawHoverOverlay(recordButton, juce::Colours::red);
+        }
+        
+        drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
+        drawHoverOverlay(playButton, juce::Colours::green);
+        drawHoverOverlay(onceButton, juce::Colours::blue);
+        drawHoverOverlay(stackButton, juce::Colours::orange);
+        drawHoverOverlay(reverseButton, juce::Colours::purple);
     }
-    else
-    {
-        drawHoverOverlay(recordButton, juce::Colours::red);
-    }
-    
-    drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
-    drawHoverOverlay(playButton, juce::Colours::green);
-    drawHoverOverlay(onceButton, juce::Colours::blue);
-    drawHoverOverlay(stackButton, juce::Colours::orange);
-    drawHoverOverlay(reverseButton, juce::Colours::purple);
     
     // Volume slider overlay when interacting - small box that follows the slider position
     if (volumeSlider.isMouseOver() || volumeSlider.isMouseButtonDown())

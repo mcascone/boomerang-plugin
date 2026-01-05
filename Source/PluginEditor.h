@@ -23,6 +23,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void timerCallback() override;
+    void mouseDown(const juce::MouseEvent& event) override;
 
 private:
     //==============================================================================
@@ -61,6 +62,8 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;
 
     // Visual state
+    bool showButtonOverlays = false;  // Toggle for button hover/state overlays
+    
     juce::Colour recordColour = juce::Colours::red;
     juce::Colour playColour = juce::Colours::green;
     juce::Colour onceColour = juce::Colours::blue;

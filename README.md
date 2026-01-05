@@ -4,7 +4,18 @@ VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
-# Update Dec-22-2025
+# Update Jan-4-2026
+
+Release `2.0.0-alpha-3` is out, with some big improvements:
+- Image-based UI! Looks like the real thing! Scalable!
+- All functionality works!
+- Lots of bugs fixed via testing with Pluginval and using Claude CoPilot to fix them! Validated with pluginval! ☑️
+- Now ships as an installer package instead of individual binaries! It even de-quarantines the plugin files!
+  - Note: The installer package might need a security bypass to open: right-click and select Open.\
+ 
+Check it out here: https://github.com/mcascone/boomerang-plugin/releases/tag/v2.0.0-alpha-3
+
+## Update Dec-22-2025
 
 Added **MIDI CC mapping and DAW automation support**! All 8 parameters are now exposed for control:
 - **Buttons**: Thru/Mute, Record, Play, Once, Stack, Reverse

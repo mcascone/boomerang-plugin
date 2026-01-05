@@ -53,11 +53,9 @@ Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issue
 
 ## Known Pitfalls (Agent Notes)
 
-- Reverse playback currently bounces mid-loop (issue #32).
-- Once mode reliability in overdub/stack needs work (issue #33).
 - Numerous compiler warnings about missing switch cases and sign conversions (issues #34–#35); cleanups welcome.
 - VST3 signing warnings are benign for local builds; use proper signing for release (issue #36).
-- Current release: v2.0.0-alpha-0 (JUCE port). Alpha quality; known issues above. Builds shipped: VST3, AU (macOS), Standalone app (macOS); Windows/Linux use VST3. Installation paths: `~/Library/Audio/Plug-Ins/Components`, `~/Library/Audio/Plug-Ins/VST3`. Please file new issues for any problems.
+- Current release: v2.0.0-alpha-4 (JUCE port). Alpha quality; known issues above. Builds shipped: VST3, AU (macOS), Standalone app (macOS); Windows/Linux use VST3. Installation paths: `~/Library/Audio/Plug-Ins/Components`, `~/Library/Audio/Plug-Ins/VST3`. Please file new issues for any problems.
 - Release notes style preference: concise Markdown with top-level title like `v2.0.0-alpha-0 (JUCE port)`, explicit “Alpha” warning, sections for What’s new, Installation (macOS and Windows/Linux), Known issues, and How to help (link to new issue form). Tone should be direct and instructional.
 
 # Style Guideslines

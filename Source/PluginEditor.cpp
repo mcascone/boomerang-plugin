@@ -209,15 +209,15 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     // Draw LEDs at top of device (scaled coordinates)
     float scale = getWidth() / 700.0f;
     int ledSize = static_cast<int>(10 * scale);
-    int ledY = static_cast<int>(20 * scale);  // Near top of device
+    int ledY = static_cast<int>(44 * scale);  // Near top of device
     
     // LED positions aligned with buttons below (approximate x positions)
-    drawLED(g, static_cast<int>(235 * scale), ledY, ledSize, juce::Colours::green, recordLED);
-    drawLED(g, static_cast<int>(305 * scale), ledY, ledSize, juce::Colours::green, playLED);
-    drawLED(g, static_cast<int>(375 * scale), ledY, ledSize, juce::Colours::green, onceLED);
-    drawLED(g, static_cast<int>(445 * scale), ledY, ledSize, juce::Colours::green, reverseLED);
-    drawLED(g, static_cast<int>(515 * scale), ledY, ledSize, juce::Colours::green, stackLED);
-    drawLED(g, static_cast<int>(515 * scale), static_cast<int>(35 * scale), ledSize, juce::Colours::orange, slowLED);  // SLOW LED below stack LED
+    drawLED(g, static_cast<int>(208 * scale), ledY, ledSize, juce::Colours::green, recordLED);
+    drawLED(g, static_cast<int>(300 * scale), ledY, ledSize, juce::Colours::green, playLED);
+    drawLED(g, static_cast<int>(393 * scale), ledY, ledSize, juce::Colours::green, onceLED);
+    drawLED(g, static_cast<int>(485 * scale), ledY, ledSize, juce::Colours::green, reverseLED);
+    drawLED(g, static_cast<int>(579 * scale), ledY, ledSize, juce::Colours::green, stackLED);
+    drawLED(g, static_cast<int>(579 * scale), static_cast<int>(27 * scale), ledSize, juce::Colours::orange, slowLED);  // SLOW LED below stack LED
 }
 
 void BoomerangAudioProcessorEditor::resized()

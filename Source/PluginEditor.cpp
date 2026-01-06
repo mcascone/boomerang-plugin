@@ -132,6 +132,23 @@ BoomerangAudioProcessorEditor::~BoomerangAudioProcessorEditor()
 }
 
 //==============================================================================
+void BoomerangAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
+{
+    if (event.mods.isPopupMenu())
+    {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Show Button Overlays", true, showButtonOverlays);
+        
+        menu.showMenuAsync(juce::PopupMenu::Options(), [this](int result) {
+            if (result == 1)
+            {
+                showButtonOverlays = !showButtonOverlays;
+                repaint();
+            }
+        });
+    }
+}
+
 void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // Draw background image scaled to window size
@@ -171,21 +188,24 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     };
     
     // Special case: RECORD button flash on loop wrap
-    if (recordFlashCounter > 0)
+    if (showButtonOverlays)
     {
-        g.setColour(juce::Colours::red.withAlpha(0.7f));
-        g.fillRect(recordButton.getBounds());
+        if (recordFlashCounter > 0)
+        {
+            g.setColour(juce::Colours::red.withAlpha(0.7f));
+            g.fillRect(recordButton.getBounds());
+        }
+        else
+        {
+            drawHoverOverlay(recordButton, juce::Colours::red);
+        }
+        
+        drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
+        drawHoverOverlay(playButton, juce::Colours::green);
+        drawHoverOverlay(onceButton, juce::Colours::blue);
+        drawHoverOverlay(stackButton, juce::Colours::orange);
+        drawHoverOverlay(reverseButton, juce::Colours::purple);
     }
-    else
-    {
-        drawHoverOverlay(recordButton, juce::Colours::red);
-    }
-    
-    drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
-    drawHoverOverlay(playButton, juce::Colours::green);
-    drawHoverOverlay(onceButton, juce::Colours::blue);
-    drawHoverOverlay(stackButton, juce::Colours::orange);
-    drawHoverOverlay(reverseButton, juce::Colours::purple);
     
     // Volume slider overlay when interacting - small box that follows the slider position
     if (volumeSlider.isMouseOver() || volumeSlider.isMouseButtonDown())
@@ -205,6 +225,21 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour(juce::Colours::cyan.withAlpha(volumeSlider.isMouseButtonDown() ? 0.5f : 0.3f));
         g.fillRect(thumbRect);
     }
+    
+    // Draw LEDs at top of device (scaled coordinates)
+    float scale = getWidth() / 700.0f;
+    int ledSize = static_cast<int>(10 * scale);
+    int ledY = static_cast<int>(44 * scale);  // Near top of device
+    
+    // LED positions aligned with buttons below (approximate x positions)
+    // Record LED: flash when loop wraps (like record button overlay), otherwise show normal state
+    bool recordLEDFlashing = (recordFlashCounter > 0);
+    drawLED(g, static_cast<int>(208 * scale), ledY, ledSize, juce::Colours::green, recordLEDFlashing || recordLED);
+    drawLED(g, static_cast<int>(300 * scale), ledY, ledSize, juce::Colours::green, playLED);
+    drawLED(g, static_cast<int>(393 * scale), ledY, ledSize, juce::Colours::green, onceLED);
+    drawLED(g, static_cast<int>(485 * scale), ledY, ledSize, juce::Colours::green, reverseLED);
+    drawLED(g, static_cast<int>(579 * scale), ledY, ledSize, juce::Colours::green, stackLED);
+    drawLED(g, static_cast<int>(579 * scale), static_cast<int>(27 * scale), ledSize, juce::Colours::orange, slowLED);  // SLOW LED below stack LED
 }
 
 void BoomerangAudioProcessorEditor::resized()
@@ -308,12 +343,25 @@ void BoomerangAudioProcessorEditor::timerCallback()
     // Flash record button when loop wraps around
     if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())
     {
-        recordFlashCounter = 10;  // Flash for ~160ms (10 frames at 16ms)
+        recordFlashCounter = 5;  // Flash for ~80ms (5 frames at 16ms)
     }
     else if (recordFlashCounter > 0)
     {
         recordFlashCounter--;
     }
+    
+    // Update LED states
+    recordLED = isRecording;
+    playLED = isPlaying;
+    onceLED = isOnce;
+    reverseLED = isReverse;
+    
+    // Stack LED: on when overdubbing (holding stack while playing)
+    stackLED = (looperState == LooperEngine::LooperState::Overdubbing);
+    
+    // SLOW LED: on when speed mode is slow (half speed)
+    auto speedMode = audioProcessor.getLooperEngine()->getSpeedMode();
+    slowLED = (speedMode == LooperEngine::SpeedMode::Half);
     
     repaint(); // Refresh overlays and flash indicators
 }
@@ -331,6 +379,26 @@ void BoomerangAudioProcessorEditor::setupButton(juce::TextButton& button,
     button.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
     button.setClickingTogglesState(isToggle);
     addAndMakeVisible(button);
+}
+
+void BoomerangAudioProcessorEditor::drawLED(juce::Graphics& g, int x, int y, int size, juce::Colour colour, bool isLit)
+{
+    // Draw LED as a circle
+    if (isLit)
+    {
+        // Glowing effect when lit
+        g.setColour(colour.withAlpha(0.3f));
+        g.fillEllipse(x - size, y - size, size * 2, size * 2);  // Outer glow
+        
+        g.setColour(colour);
+        g.fillEllipse(x - size/2, y - size/2, size, size);  // LED center
+    }
+    else
+    {
+        // Dim when off
+        g.setColour(colour.withAlpha(0.1f));
+        g.fillEllipse(x - size/2, y - size/2, size, size);
+    }
 }
 
 void BoomerangAudioProcessorEditor::updateStatusDisplay()

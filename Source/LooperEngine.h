@@ -3,6 +3,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
 #include <atomic>
+#include <functional>
 
 //==============================================================================
 /**
@@ -114,6 +115,12 @@ public:
         return loopWrapped.exchange(false); 
     }
     
+    // Callback for notifying host of parameter state changes
+    // parameterID: the ID of the parameter that changed
+    // newValue: the new value (0.0 or 1.0 for button parameters)
+    using ParameterNotifyCallback = std::function<void(const juce::String& parameterID, float newValue)>;
+    void setParameterNotifyCallback(ParameterNotifyCallback callback) { parameterNotifyCallback = callback; }
+    
     // Process audio thread requests (called from UI timer - issue #38)
     void processAudioThreadRequests()
     {
@@ -176,6 +183,9 @@ private:
     
     // Thread safety: Prevent concurrent state transitions (issue #39)
     std::atomic<bool> stateTransitionInProgress{false};
+    
+    // Callback for parameter state notifications to host
+    ParameterNotifyCallback parameterNotifyCallback;
 
     //==============================================================================
     void startRecording();

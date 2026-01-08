@@ -1,4 +1,5 @@
 #include "LooperEngine.h"
+#include "PluginProcessor.h"  // For ParameterIDs
 
 //==============================================================================
 LooperEngine::LooperEngine()
@@ -301,6 +302,10 @@ void LooperEngine::startRecording()
         ? static_cast<float>(maxLoopSamples - 1) 
         : 0.0f);
     currentState.store(LooperState::Recording);
+    
+    // Notify host that record button is on
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::record, 1.0f);
 }
 
 void LooperEngine::stopRecording()
@@ -317,6 +322,10 @@ void LooperEngine::stopRecording()
     activeSlot.length.store(finalLength);
     activeSlot.hasContent.store(finalLength > 0);
     currentState.store(LooperState::Stopped);
+    
+    // Notify host that record button is off
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::record, 0.0f);
 }
 
 void LooperEngine::startPlayback()
@@ -330,6 +339,10 @@ void LooperEngine::startPlayback()
             ? static_cast<float>(activeSlot.length.load() - 1)
             : 0.0f);
         currentState.store(LooperState::Playing);
+        
+        // Notify host that play button is on
+        if (parameterNotifyCallback)
+            parameterNotifyCallback(ParameterIDs::play, 1.0f);
     }
 }
 
@@ -339,6 +352,10 @@ void LooperEngine::stopPlayback()
     
     activeSlot.isPlaying.store(false);
     currentState.store(LooperState::Stopped);
+    
+    // Notify host that play button is off
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::play, 0.0f);
 }
 
 void LooperEngine::startOverdubbing()
@@ -351,6 +368,10 @@ void LooperEngine::startOverdubbing()
         activeSlot.isPlaying.store(true);
         currentState.store(LooperState::Overdubbing);
         stackMode.store(StackMode::On);
+        
+        // Notify host of stack mode on
+        if (parameterNotifyCallback)
+            parameterNotifyCallback(ParameterIDs::stack, 1.0f);
     }
 }
 
@@ -361,13 +382,22 @@ void LooperEngine::stopOverdubbing()
     activeSlot.isRecording.store(false);
     currentState.store(LooperState::Playing);
     stackMode.store(StackMode::Off);
+    
+    // Notify host of stack mode off
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::stack, 0.0f);
 }
 
 void LooperEngine::toggleThruMute()
 // do we even need enable/disable functions separately?
 {
     auto current = thruMute.load();
-    thruMute.store((current == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off);
+    auto newState = (current == ThruMuteState::Off) ? ThruMuteState::On : ThruMuteState::Off;
+    thruMute.store(newState);
+    
+    // Notify host of state change
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::thruMute, (newState == ThruMuteState::On) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::toggleDirection()
@@ -375,8 +405,11 @@ void LooperEngine::toggleDirection()
     auto currentDir = currentDirection.load();
     auto currentLoop = loopMode.load();
     
-    currentDirection.store((currentDir == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward);
-    loopMode.store((currentLoop == LoopMode::Normal) ? LoopMode::Reverse : LoopMode::Normal);
+    auto newDir = (currentDir == DirectionMode::Forward) ? DirectionMode::Reverse : DirectionMode::Forward;
+    auto newLoop = (currentLoop == LoopMode::Normal) ? LoopMode::Reverse : LoopMode::Normal;
+    
+    currentDirection.store(newDir);
+    loopMode.store(newLoop);
 
     auto& activeSlot = loopSlots[static_cast<size_t>(activeLoopSlot.load())];
     // Ensure playhead stays within bounds after direction change
@@ -386,17 +419,30 @@ void LooperEngine::toggleDirection()
         activeSlot.playPosition.store(currentPlayPos + static_cast<float>(currentLength));
     else if (currentPlayPos >= static_cast<float>(currentLength) && currentLength > 0)
         activeSlot.playPosition.store(std::fmod(currentPlayPos, static_cast<float>(currentLength)));
+    
+    // Notify host of state change
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::reverse, (newLoop == LoopMode::Reverse) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::toggleOnceMode()
 {
     auto current = onceMode.load();
-    onceMode.store((current == OnceMode::Off) ? OnceMode::On : OnceMode::Off);
+    auto newMode = (current == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
+    onceMode.store(newMode);
+    
+    // Notify host of state change
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::once, (newMode == OnceMode::On) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::setOnceMode(OnceMode mode)
 {
     onceMode.store(mode);
+    
+    // Notify host of state change
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::once, (mode == OnceMode::On) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::toggleStackMode()

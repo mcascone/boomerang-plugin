@@ -6,6 +6,20 @@
 #include "LooperEngine.h"
 
 //==============================================================================
+// Parameter IDs
+namespace ParameterIDs
+{
+    const juce::String thruMute   = "thruMute";
+    const juce::String record     = "record";
+    const juce::String play       = "play";
+    const juce::String once       = "once";
+    const juce::String stack      = "stack";
+    const juce::String reverse    = "reverse";
+    const juce::String volume     = "volume";
+    const juce::String feedback   = "feedback";
+}
+
+//==============================================================================
 /**
     Boomerang+ Looper Plugin Processor
     

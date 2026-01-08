@@ -2,20 +2,6 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-// Parameter IDs
-namespace ParameterIDs
-{
-    const juce::String thruMute   = "thruMute";
-    const juce::String record     = "record";
-    const juce::String play       = "play";
-    const juce::String once       = "once";
-    const juce::String stack      = "stack";
-    const juce::String reverse    = "reverse";
-    const juce::String volume     = "volume";
-    const juce::String feedback   = "feedback";
-}
-
-//==============================================================================
 juce::AudioProcessorValueTreeState::ParameterLayout BoomerangAudioProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
@@ -84,6 +70,17 @@ BoomerangAudioProcessor::BoomerangAudioProcessor()
 {
     // Initialize looper engine
     looperEngine = std::make_unique<LooperEngine>();
+    
+    // Set up callback for looper engine to notify host of internal state changes
+    looperEngine->setParameterNotifyCallback([this](const juce::String& paramID, float value)
+    {
+        if (auto* param = apvts.getParameter(paramID))
+        {
+            // Normalize value to 0-1 range and notify host
+            float normalizedValue = param->convertTo0to1(value);
+            param->setValueNotifyingHost(normalizedValue);
+        }
+    });
     
     // Add parameter listeners for MIDI/automation support
     apvts.addParameterListener(ParameterIDs::thruMute, this);

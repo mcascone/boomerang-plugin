@@ -345,10 +345,29 @@ void BoomerangAudioProcessorEditor::timerCallback()
     if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())
     {
         recordFlashCounter = 5;  // Flash for ~80ms (5 frames at 16ms)
+        
+        // Pulse loopCycle parameter for external host/controller REC blink
+        if (auto* param = audioProcessor.getAPVTS().getParameter(ParameterIDs::loopCycle))
+        {
+            param->beginChangeGesture();
+            param->setValueNotifyingHost(1.0f);
+            param->endChangeGesture();
+        }
     }
     else if (recordFlashCounter > 0)
     {
         recordFlashCounter--;
+        
+        // Reset loopCycle parameter when flash ends
+        if (recordFlashCounter == 0)
+        {
+            if (auto* param = audioProcessor.getAPVTS().getParameter(ParameterIDs::loopCycle))
+            {
+                param->beginChangeGesture();
+                param->setValueNotifyingHost(0.0f);
+                param->endChangeGesture();
+            }
+        }
     }
     
     // Update LED states

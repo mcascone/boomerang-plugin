@@ -17,6 +17,7 @@ namespace ParameterIDs
     const juce::String reverse    = "reverse";
     const juce::String volume     = "volume";
     const juce::String feedback   = "feedback";
+    const juce::String loopCycle  = "loopCycle";  // Pulses when loop wraps (for REC blink)
 }
 
 //==============================================================================

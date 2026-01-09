@@ -38,6 +38,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout BoomerangAudioProcessor::cre
         "Reverse",
         false));  // toggle button
 
+    // Loop cycle indicator - pulses briefly when loop wraps (for external REC blink)
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::loopCycle, 1),
+        "Loop Cycle",
+        false));  // read-only pulse indicator
+
     // Continuous parameters
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID(ParameterIDs::volume, 1),

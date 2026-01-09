@@ -4,7 +4,16 @@
 
 set -e
 
-VERSION="2.0.0-alpha-4"
+# Extract version from CMakeLists.txt (single source of truth)
+CMAKE_VERSION=$(grep "^project" CMakeLists.txt | grep -oE '[0-9]+(\.[0-9]+)+')
+if [ -z "$CMAKE_VERSION" ]; then
+    echo "Error: Could not extract version from CMakeLists.txt"
+    exit 1
+fi
+
+# Convert CMake version (2.0.0.5) to release version (2.0.0-alpha-5)
+# Format: MAJOR.MINOR.PATCH.BUILD -> MAJOR.MINOR.PATCH-alpha-BUILD
+VERSION=$(echo "$CMAKE_VERSION" | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\)\.\([0-9]*\)/\1-alpha-\2/')
 IDENTIFIER="com.MCMusicWorkshop.Boomerang"
 BUILD_DIR="build/Boomerang_artefacts"
 OUTPUT_DIR="build/installer"

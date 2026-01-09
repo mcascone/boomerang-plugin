@@ -1,3 +1,3 @@
 #!/bin/bash
 
-# sudo xattr -r -d com.apple.quarantine /path/to/directory_or_file
+# xattr -cr /path/to/directory_or_file

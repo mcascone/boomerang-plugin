@@ -431,18 +431,18 @@ void LooperEngine::toggleOnceMode()
     auto newMode = (current == OnceMode::Off) ? OnceMode::On : OnceMode::Off;
     onceMode.store(newMode);
     
-    // Notify host of state change
+    // Notify host of state change (use onceState output param, not once input)
     if (parameterNotifyCallback)
-        parameterNotifyCallback(ParameterIDs::once, (newMode == OnceMode::On) ? 1.0f : 0.0f);
+        parameterNotifyCallback(ParameterIDs::onceState, (newMode == OnceMode::On) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::setOnceMode(OnceMode mode)
 {
     onceMode.store(mode);
     
-    // Notify host of state change
+    // Notify host of state change (use onceState output param, not once input)
     if (parameterNotifyCallback)
-        parameterNotifyCallback(ParameterIDs::once, (mode == OnceMode::On) ? 1.0f : 0.0f);
+        parameterNotifyCallback(ParameterIDs::onceState, (mode == OnceMode::On) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::toggleStackMode()

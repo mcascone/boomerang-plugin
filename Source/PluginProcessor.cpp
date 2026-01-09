@@ -50,6 +50,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout BoomerangAudioProcessor::cre
         "Slow Mode",
         false));  // read-only state indicator
 
+    // Once state indicator - on when Once mode is active (for external ONCE LED)
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::onceState, 1),
+        "Once State",
+        false));  // read-only state indicator
+
     // Continuous parameters
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID(ParameterIDs::volume, 1),

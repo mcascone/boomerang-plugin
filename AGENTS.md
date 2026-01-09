@@ -7,6 +7,8 @@ Read the README.md first for an overview of the project, including detailed beha
 
 Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issues in the codebase. The JUCE implementation is now on the main branch.
 
+Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging techniques, and common pitfalls.
+
 ## Project Structure & Module Organization
 
 - `Source/`: core C++ code (PluginProcessor, PluginEditor, LooperEngine).

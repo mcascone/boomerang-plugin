@@ -58,6 +58,13 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.5f));
     addAndMakeVisible(versionLabel);
 
+    // Setup settings button (gear icon)
+    settingsButton.setButtonText(juce::String::fromUTF8("\xe2\x9a\x99"));  // Unicode gear ⚙
+    settingsButton.setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+    settingsButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.7f));
+    settingsButton.onClick = [this]() { showSettingsMenu(); };
+    addAndMakeVisible(settingsButton);
+
     // Setup progress bar
     // addAndMakeVisible(progressBar);  // Hidden for now
 
@@ -135,19 +142,8 @@ BoomerangAudioProcessorEditor::~BoomerangAudioProcessorEditor()
 //==============================================================================
 void BoomerangAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
-    if (event.mods.isPopupMenu())
-    {
-        juce::PopupMenu menu;
-        menu.addItem(1, "Show Button Overlays", true, showButtonOverlays);
-        
-        menu.showMenuAsync(juce::PopupMenu::Options(), [this](int result) {
-            if (result == 1)
-            {
-                showButtonOverlays = !showButtonOverlays;
-                repaint();
-            }
-        });
-    }
+    // Right-click no longer used - settings are in the gear menu
+    juce::AudioProcessorEditor::mouseDown(event);
 }
 
 void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
@@ -155,13 +151,15 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     // Draw background image scaled to window size
     if (backgroundImage.isValid())
     {
-        // Calculate scaled image height (proportional to window width)
-        float scale = getWidth() / 700.0f;
-        int scaledImageHeight = static_cast<int>(200 * scale);
+        // When footer is hidden, image fills entire window
+        // When footer is shown, image fills top portion (200/240 of height)
+        int destHeight = showFooterBar 
+            ? static_cast<int>(getHeight() * (200.0 / 240.0))
+            : getHeight();
         
         // drawImage(image, destX, destY, destW, destH, srcX, srcY, srcW, srcH)
         g.drawImage(backgroundImage, 
-                   0, 0, getWidth(), scaledImageHeight,
+                   0, 0, getWidth(), destHeight,
                    0, 0, backgroundImage.getWidth(), backgroundImage.getHeight(),
                    false);
     }
@@ -284,6 +282,16 @@ void BoomerangAudioProcessorEditor::resized()
     reverseButton.setBounds(scaleRect(baseStartX + baseSpacing * 3, baseButtonY, baseButtonWidth, baseButtonHeight));
     stackButton.setBounds(scaleRect(baseStartX + baseSpacing * 4, baseButtonY, baseButtonWidth, baseButtonHeight));
     
+    // Settings button (gear icon) - top right corner of the device image
+    int gearSize = static_cast<int>(24 * scale);
+    settingsButton.setBounds(
+        getWidth() - gearSize - static_cast<int>(8 * scale),
+        static_cast<int>(8 * scale),
+        gearSize,
+        gearSize
+    );
+    settingsButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.7f));
+    
     // Controls area below the image (base: skip 210px for image, then 30px for controls)
     auto controlsArea = bounds;
     controlsArea.removeFromTop(static_cast<int>(210 * scale));
@@ -292,11 +300,12 @@ void BoomerangAudioProcessorEditor::resized()
         static_cast<int>(5 * scale)
     );
     
-    // Status label
+    // Status label - visible only when footer bar is shown
     statusLabel.setBounds(controlsArea);
     statusLabel.setFont(juce::Font(juce::FontOptions(12.0f * scale)));
+    statusLabel.setVisible(showFooterBar);
     
-    // Version label (bottom right, scaled)
+    // Version label (bottom right, scaled) - visible only when footer bar is shown
     versionLabel.setBounds(
         getWidth() - static_cast<int>(150 * scale),
         getHeight() - static_cast<int>(20 * scale),
@@ -304,6 +313,7 @@ void BoomerangAudioProcessorEditor::resized()
         static_cast<int>(15 * scale)
     );
     versionLabel.setFont(juce::Font(juce::FontOptions(10.0f * scale)));
+    versionLabel.setVisible(showFooterBar);
 }
 
 void BoomerangAudioProcessorEditor::timerCallback()
@@ -472,4 +482,48 @@ void BoomerangAudioProcessorEditor::updateStatusDisplay()
         statusText += " [Thru Mute]";
     
     statusLabel.setText(statusText, juce::dontSendNotification);
+}
+void BoomerangAudioProcessorEditor::showSettingsMenu()
+{
+    juce::PopupMenu menu;
+    
+    menu.addItem(1, "Show Button Overlays", true, showButtonOverlays);
+    menu.addItem(2, "Show Footer Bar",      true, showFooterBar);
+    
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&settingsButton),
+        [this](int result) {
+            switch (result)
+            {
+                case 1:
+                    showButtonOverlays = !showButtonOverlays;
+                    repaint();
+                    break;
+                case 2:
+                {
+                    showFooterBar = !showFooterBar;
+                    
+                    // Update aspect ratio constraint and resize window
+                    int currentWidth = getWidth();
+                    if (showFooterBar)
+                    {
+                        // Footer visible: 700x240 aspect ratio
+                        getConstrainer()->setFixedAspectRatio(700.0 / 240.0);
+                        setResizeLimits(350, 120, 1400, 480);
+                        int newHeight = static_cast<int>(currentWidth * (240.0 / 700.0));
+                        setSize(currentWidth, newHeight);
+                    }
+                    else
+                    {
+                        // Footer hidden: 700x200 aspect ratio (image only)
+                        getConstrainer()->setFixedAspectRatio(700.0 / 200.0);
+                        setResizeLimits(350, 100, 1400, 400);
+                        int newHeight = static_cast<int>(currentWidth * (200.0 / 700.0));
+                        setSize(currentWidth, newHeight);
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        });
 }

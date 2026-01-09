@@ -42,6 +42,8 @@ private:
     juce::Label titleLabel;
     juce::Label statusLabel;
     juce::Label versionLabel;
+    
+    juce::TextButton settingsButton;  // Gear icon for settings menu
 
     // Progress indicator
     juce::ProgressBar progressBar;
@@ -61,8 +63,9 @@ private:
     // Parameter Attachments - only for continuous controls
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> volumeAttachment;
 
-    // Visual state
+    // Visual state / settings
     bool showButtonOverlays = false;  // Toggle for button hover/state overlays
+    bool showFooterBar      = true;   // Toggle for footer bar with status messages
     
     juce::Colour recordColour = juce::Colours::red;
     juce::Colour playColour = juce::Colours::green;
@@ -78,6 +81,7 @@ private:
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour, bool isToggle = false);
     void updateStatusDisplay();
     void drawLED(juce::Graphics& g, int x, int y, int size, juce::Colour colour, bool isLit);
+    void showSettingsMenu();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BoomerangAudioProcessorEditor)
 };

@@ -74,18 +74,27 @@ BoomerangAudioProcessor::BoomerangAudioProcessor()
     // Set up callback for looper engine to notify host of internal state changes
     looperEngine->setParameterNotifyCallback([this](const juce::String& paramID, float value)
     {
-        if (auto* param = apvts.getParameter(paramID))
+        // Capture parameter ID and value to pass to message thread
+        // Don't capture raw parameter pointer - look it up in the async call
+        juce::MessageManager::callAsync([this, paramID, value]()
         {
-            // Set flag to prevent parameterChanged from being called
-            updatingFromInternalState.store(true);
-            
-            // Normalize value to 0-1 range and notify host
-            float normalizedValue = param->convertTo0to1(value);
-            param->setValueNotifyingHost(normalizedValue);
-            
-            // Clear flag
-            updatingFromInternalState.store(false);
-        }
+            if (auto* param = apvts.getParameter(paramID))
+            {
+                // Normalize value to 0-1 range
+                float normalizedValue = param->convertTo0to1(value);
+                
+                // Set flag to prevent parameterChanged from being called
+                updatingFromInternalState.store(true);
+                
+                // Use gesture for proper host notification
+                param->beginChangeGesture();
+                param->setValueNotifyingHost(normalizedValue);
+                param->endChangeGesture();
+                
+                // Clear flag
+                updatingFromInternalState.store(false);
+            }
+        });
     });
     
     // Add parameter listeners for MIDI/automation support

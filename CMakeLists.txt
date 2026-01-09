@@ -2,32 +2,41 @@ cmake_minimum_required(VERSION 3.22)
 
 project(Boomerang VERSION 2.0.0.4)
 
-# Generate compile_commands.json for IDE support
+# ==============================================================================
+# Build Configuration
+# ==============================================================================
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Build universal binary for both Intel and Apple Silicon
+# Path variables
+set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
+set(CMAKE_DIR "${CMAKE_SOURCE_DIR}/cmake")
+
+# macOS: Universal binary for Intel + Apple Silicon
 if(APPLE)
     set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for macOS")
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
 endif()
 
-# Get git commit hash at BUILD time (not configure time)
-# This generates git_version.h only when the hash actually changes,
-# so only PluginEditor.cpp (which uses it) needs to recompile.
+# ==============================================================================
+# Git Version Tracking
+# ==============================================================================
+# Generates git_version.h at BUILD time (not configure time).
+# Only PluginEditor.cpp recompiles when the hash changes.
+
+file(MAKE_DIRECTORY "${GENERATED_DIR}")
+
 add_custom_target(UpdateGitVersion
     COMMAND ${CMAKE_COMMAND}
         -DGIT_WORKING_DIR="${CMAKE_SOURCE_DIR}"
-        -DINPUT_FILE="${CMAKE_SOURCE_DIR}/cmake/git_version.h.in"
-        -DOUTPUT_FILE="${CMAKE_BINARY_DIR}/generated/git_version.h"
-        -P "${CMAKE_SOURCE_DIR}/cmake/UpdateGitVersion.cmake"
-    BYPRODUCTS "${CMAKE_BINARY_DIR}/generated/git_version.h"
+        -DINPUT_FILE="${CMAKE_DIR}/git_version.h.in"
+        -DOUTPUT_FILE="${GENERATED_DIR}/git_version.h"
+        -P "${CMAKE_DIR}/UpdateGitVersion.cmake"
+    BYPRODUCTS "${GENERATED_DIR}/git_version.h"
     COMMENT "Checking git version..."
 )
 
-# Ensure the generated directory exists
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated")
-
-# Generate initial git_version.h at configure time (for first build)
+# Initial git_version.h at configure time (for first build)
 execute_process(
     COMMAND git rev-parse --short HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -38,13 +47,14 @@ execute_process(
 if(NOT GIT_HASH)
     set(GIT_HASH "unknown")
 endif()
-configure_file("${CMAKE_SOURCE_DIR}/cmake/git_version.h.in" 
-               "${CMAKE_BINARY_DIR}/generated/git_version.h" @ONLY)
+configure_file("${CMAKE_DIR}/git_version.h.in" "${GENERATED_DIR}/git_version.h" @ONLY)
 
-# Add JUCE as a subdirectory (you'll need to clone JUCE)
+# ==============================================================================
+# JUCE Plugin Definition
+# ==============================================================================
+
 add_subdirectory(JUCE)
 
-# Plugin configuration
 juce_add_plugin(Boomerang
     COMPANY_NAME "MC Music Workshop"
     BUNDLE_ID com.MCMusicWorkshop.Boomerang
@@ -59,153 +69,87 @@ juce_add_plugin(Boomerang
     PLUGIN_CODE BOOM
     FORMATS Standalone VST3 AU
     PRODUCT_NAME "Boomerang+"
-    # Skip automatic install to avoid signing warnings (issue #36)
-    COPY_PLUGIN_AFTER_BUILD TRUE)
+    COPY_PLUGIN_AFTER_BUILD TRUE
+)
 
 # ==============================================================================
-# Code Signing Configuration (issue #36)
+# Source Files & Dependencies
 # ==============================================================================
 
-# Optional: Enable official Apple Developer code signing for distribution
-option(ENABLE_CODESIGNING "Enable official code signing for distribution" OFF)
-
-# if(APPLE AND ENABLE_CODESIGNING)
-#     # TODO: Replace with your actual certificate name and Team ID
-#     # Find certificate: security find-identity -v -p codesigning
-#     # Find Team ID: developer.apple.com > Account > Membership
-#     set(CODESIGN_IDENTITY "Developer ID Application: Your Name (TEAMID)" CACHE STRING "Code signing identity")
-#     set(DEVELOPMENT_TEAM "TEAMID" CACHE STRING "Apple Developer Team ID")
-    
-#     message(STATUS "Code signing enabled with identity: ${CODESIGN_IDENTITY}")
-    
-#     # Apply to plugin targets
-#     set_target_properties(Boomerang_AU Boomerang_VST3 PROPERTIES
-#         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${CODESIGN_IDENTITY}"
-#         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
-#         XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED YES
-#     )
-# else()
-#     message(STATUS "Using ad-hoc code signing for local development")
-#     message(STATUS "To enable distribution signing: cmake -DENABLE_CODESIGNING=ON")
-# endif()
-
-# Post-build: Ad-hoc sign and install bundles cleanly (macOS only, issue #36)
-# if(APPLE)
-#     if(ENABLE_CODESIGNING)
-#         # Use official signing identity
-#         set(SIGN_COMMAND codesign --force --deep --sign "${CODESIGN_IDENTITY}" --timestamp)
-#     else()
-#         # Use ad-hoc signing for local development
-#         set(SIGN_COMMAND codesign --force --deep --sign -)
-#     endif()
-    
-#     # Sign AU
-#     add_custom_command(TARGET Boomerang_AU POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources"
-#         COMMAND ${CMAKE_COMMAND} -E touch "$<TARGET_BUNDLE_DIR:Boomerang_AU>/Contents/Resources/.keep"
-#         COMMAND ${SIGN_COMMAND} "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
-#         COMMAND ${CMAKE_COMMAND} -E copy_directory 
-#                 "$<TARGET_BUNDLE_DIR:Boomerang_AU>"
-#                 "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Boomerang+.component"
-#         COMMENT "Signing and installing AU plugin"
-#         VERBATIM
-#     )
-    
-#     # Sign VST3 - moduleinfo.json creates Resources folder, just sign it
-#     add_custom_command(TARGET Boomerang_VST3 POST_BUILD
-#         COMMAND ${SIGN_COMMAND} "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
-#         COMMAND ${CMAKE_COMMAND} -E copy_directory 
-#                 "$<TARGET_BUNDLE_DIR:Boomerang_VST3>"
-#                 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Boomerang+.vst3"
-#         COMMENT "Signing and installing VST3 plugin"
-#         VERBATIM
-#     )
-# endif()
-
-# Source files
 target_sources(Boomerang
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
-        Source/LooperEngine.cpp)
+        Source/LooperEngine.cpp
+)
 
-# Add binary resources (embeds image in binary)
 juce_add_binary_data(BoomerangBinaryData
     SOURCES
-        img/boomerang.jpg)
+        img/boomerang.jpg
+)
 
-# Link binary data to plugin
-target_link_libraries(Boomerang
-    PRIVATE
-        BoomerangBinaryData)
-
-# Include directory for generated git_version.h
-target_include_directories(Boomerang PRIVATE "${CMAKE_BINARY_DIR}/generated")
-
-# Ensure git version is checked before building
+target_include_directories(Boomerang PRIVATE "${GENERATED_DIR}")
 add_dependencies(Boomerang UpdateGitVersion)
 
-# Compile definitions
 target_compile_definitions(Boomerang
     PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_SILENCE_DUPLICATE_AUDIO_PERMISSION_REQUESTS=1
-        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}")
+        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}"
+)
 
-# Required JUCE modules
 target_link_libraries(Boomerang
     PRIVATE
+        BoomerangBinaryData
         juce::juce_audio_utils
         juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
-        juce::juce_recommended_warning_flags)
-
-# Warning suppressions removed - code is now warning-clean (issues #34-35 resolved)
+        juce::juce_recommended_warning_flags
+)
 
 # ==============================================================================
-# Validation Targets (issue #38)
+# Optional: ThreadSanitizer for Race Detection
 # ==============================================================================
 
-# Option to enable ThreadSanitizer
 option(ENABLE_TSAN "Enable ThreadSanitizer for race detection" OFF)
 
 if(ENABLE_TSAN)
     message(STATUS "ThreadSanitizer enabled")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -g")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -g")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=thread")
+    add_compile_options(-fsanitize=thread -g)
+    add_link_options(-fsanitize=thread)
     
-    # Find the TSan runtime library explicitly
-    execute_process(
-        COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.tsan_osx_dynamic.dylib
-        OUTPUT_VARIABLE TSAN_LIBRARY
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(EXISTS "${TSAN_LIBRARY}")
-        message(STATUS "Found TSan library: ${TSAN_LIBRARY}")
-        link_libraries(${TSAN_LIBRARY})
-    else()
-        message(WARNING "TSan library not found, linking may fail")
+    # Find TSan runtime library (macOS)
+    if(APPLE)
+        execute_process(
+            COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libclang_rt.tsan_osx_dynamic.dylib
+            OUTPUT_VARIABLE TSAN_LIBRARY
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(EXISTS "${TSAN_LIBRARY}")
+            message(STATUS "Found TSan library: ${TSAN_LIBRARY}")
+            link_libraries(${TSAN_LIBRARY})
+        endif()
     endif()
 endif()
 
-# Custom target for strict warnings build
+# ==============================================================================
+# Validation Targets
+# ==============================================================================
+
+# Strict warnings build
 add_custom_target(check-warnings
     COMMAND ${CMAKE_COMMAND} -E echo "Building with warnings as errors..."
     COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${CMAKE_BINARY_DIR}/warnings-build
             -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror" -DCMAKE_BUILD_TYPE=Debug
     COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/warnings-build -j4
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Building with -Werror to catch all warnings"
 )
 
-# Custom target to run pluginval (if installed)
+# pluginval validation (if installed)
 find_program(PLUGINVAL pluginval PATHS 
     /Applications/pluginval.app/Contents/MacOS
     ~/Applications/pluginval.app/Contents/MacOS
@@ -215,14 +159,13 @@ find_program(PLUGINVAL pluginval PATHS
 if(PLUGINVAL)
     message(STATUS "Found pluginval: ${PLUGINVAL}")
     add_custom_target(validate
-        COMMAND ${CMAKE_COMMAND} -E echo "Running pluginval on VST3..."
         COMMAND ${PLUGINVAL} --validate-in-process --verbose
                 ${CMAKE_BINARY_DIR}/Boomerang_artefacts/VST3/Boomerang.vst3
         DEPENDS Boomerang
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Validating plugin with pluginval"
     )
 else()
-    message(STATUS "pluginval not found - 'make validate' target will not be available")
-    message(STATUS "Download from: https://github.com/Tracktion/pluginval/releases")
+    message(STATUS "pluginval not found - 'make validate' target unavailable")
+    message(STATUS "Download: https://github.com/Tracktion/pluginval/releases")
 endif()
+

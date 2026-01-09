@@ -87,6 +87,57 @@ Group commits into these categories:
 - [ ] Known issues reference current open GitHub issues
 - [ ] Changelog link uses correct tag names
 
+## Building the Installer
+
+After release notes are ready and version numbers updated:
+
+1. **Build the plugin** (if not already built):
+   ```bash
+   ./build.sh
+   ```
+
+2. **Build the installer package**:
+   ```bash
+   ./build-installer.sh
+   ```
+   This creates `build/installer/Boomerang-{VERSION}.pkg`
+
+3. **Verify the output**:
+   ```bash
+   ls -la build/installer/Boomerang-*.pkg
+   ```
+
+## Creating GitHub Release & Uploading Assets
+
+After user confirms release notes and build:
+
+1. **Create and push the git tag**:
+   ```bash
+   git tag -a vX.X.X-alpha-N -m "Release vX.X.X-alpha-N"
+   git push origin vX.X.X-alpha-N
+   ```
+
+2. **Create GitHub release with asset**:
+   ```bash
+   gh release create vX.X.X-alpha-N \
+     --title "vX.X.X-alpha-N (JUCE port)" \
+     --notes-file releases/vX.X.X-alpha-N/release-notes.md \
+     build/installer/Boomerang-X.X.X-alpha-N.pkg
+   ```
+
+   Or create release and upload separately:
+   ```bash
+   gh release create vX.X.X-alpha-N --title "..." --notes-file ...
+   gh release upload vX.X.X-alpha-N build/installer/Boomerang-*.pkg
+   ```
+
+3. **Optionally create a zip of raw artifacts**:
+   ```bash
+   cd build/Boomerang_artefacts
+   zip -r ../../releases/vX.X.X-alpha-N/Boomerang-vX.X.X-alpha-N-macOS.zip VST3 AU Standalone
+   gh release upload vX.X.X-alpha-N releases/vX.X.X-alpha-N/Boomerang-vX.X.X-alpha-N-macOS.zip
+   ```
+
 ## Requires User Confirmation
 
 **Never automatically:**

@@ -9,6 +9,15 @@ Based on the code review findings, here are the recommended GitHub issues to cre
 - ✅ **#35** - Sign-conversion and shadow warnings in LooperEngine (OPEN)
 - ✅ **#36** - VST3 ad-hoc signing / missing resources warning during install (OPEN)
 
+## TODO from Parameter Notification Work 📝
+
+### Build Script
+- Git hash message appears in middle of build output, should be at bottom after "Build complete!"
+
+### GP Panel Integration
+- **REC widget doesn't blink on loop cycle** - UI LED blinks when loop wraps, but no corresponding parameter update sent to host. Need to add brief parameter pulse or expose loop progress.
+- **SLOW mode indicator needed** - Speed mode (Half/Normal) visible in UI LED but no parameter exposed for GP panel. Need to add read-only parameter for speed mode state.
+
 ## New Issues to Create 📝
 
 ### Priority 1: Critical Issues

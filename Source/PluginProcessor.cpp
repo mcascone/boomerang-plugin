@@ -132,15 +132,16 @@ void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, 
     {
         looperEngine->onReverseButtonPressed();
     }
-    // Action buttons - also call on every change since ButtonAttachment toggles
-    // The engine methods handle the state logic internally
+    // Momentary action buttons - only trigger on button press (rising edge), not release
     else if (parameterID == ParameterIDs::record)
     {
-        looperEngine->onRecordButtonPressed();
+        if (buttonPressed)
+            looperEngine->onRecordButtonPressed();
     }
     else if (parameterID == ParameterIDs::play)
     {
-        looperEngine->onPlayButtonPressed();
+        if (buttonPressed)
+            looperEngine->onPlayButtonPressed();
     }
     else if (parameterID == ParameterIDs::once)
     {

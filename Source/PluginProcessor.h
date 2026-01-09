@@ -92,6 +92,9 @@ private:
     // Track previous button states to detect edges (press/release)
     std::atomic<bool> prevStackValue { false };
     
+    // Flag to prevent circular notifications when internal state changes update parameters
+    std::atomic<bool> updatingFromInternalState { false };
+    
     // Helper function to create parameter layout
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 

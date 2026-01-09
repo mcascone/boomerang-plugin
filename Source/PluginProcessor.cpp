@@ -76,9 +76,15 @@ BoomerangAudioProcessor::BoomerangAudioProcessor()
     {
         if (auto* param = apvts.getParameter(paramID))
         {
+            // Set flag to prevent parameterChanged from being called
+            updatingFromInternalState.store(true);
+            
             // Normalize value to 0-1 range and notify host
             float normalizedValue = param->convertTo0to1(value);
             param->setValueNotifyingHost(normalizedValue);
+            
+            // Clear flag
+            updatingFromInternalState.store(false);
         }
     });
     
@@ -106,6 +112,10 @@ BoomerangAudioProcessor::~BoomerangAudioProcessor()
 // Parameter change listener - handles MIDI CC and DAW automation
 void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
 {
+    // Ignore parameter changes that originated from internal state changes
+    if (updatingFromInternalState.load())
+        return;
+    
     // Safety check - ensure looperEngine exists
     if (looperEngine == nullptr)
         return;

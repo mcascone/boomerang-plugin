@@ -58,10 +58,10 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
     versionLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.5f));
     addAndMakeVisible(versionLabel);
 
-    // Setup settings button (gear icon)
-    settingsButton.setButtonText(juce::String::fromUTF8("\xe2\x9a\x99"));  // Unicode gear ⚙
+    // Setup settings button (invisible, gear drawn in paint())
+    settingsButton.setButtonText("");
     settingsButton.setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-    settingsButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.7f));
+    settingsButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::transparentBlack);
     settingsButton.onClick = [this]() { showSettingsMenu(); };
     addAndMakeVisible(settingsButton);
 
@@ -239,6 +239,46 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
     drawLED(g, static_cast<int>(485 * scale), ledY, ledSize, juce::Colours::green, reverseLED);
     drawLED(g, static_cast<int>(579 * scale), ledY, ledSize, juce::Colours::green, stackLED);
     drawLED(g, static_cast<int>(579 * scale), static_cast<int>(27 * scale), ledSize, juce::Colours::orange, slowLED);  // SLOW LED below stack LED
+    
+    // Draw gear icon for settings button
+    {
+        auto gearBounds = settingsButton.getBounds().toFloat();
+        float gearRadius = gearBounds.getWidth() * 0.35f;
+        float centerX = gearBounds.getCentreX();
+        float centerY = gearBounds.getCentreY();
+        
+        // Gear color - brighter on hover
+        float alpha = settingsButton.isMouseOver() ? 0.95f : 0.75f;
+        g.setColour(juce::Colours::white.withAlpha(alpha));
+        
+        // Draw gear teeth using a path
+        juce::Path gearPath;
+        int numTeeth = 8;
+        float toothDepth = gearRadius * 0.3f;
+        float innerRadius = gearRadius - toothDepth;
+        
+        for (int i = 0; i < numTeeth * 2; ++i)
+        {
+            float angle = (float)i * juce::MathConstants<float>::pi / numTeeth;
+            float r = (i % 2 == 0) ? gearRadius : innerRadius;
+            float x = centerX + std::cos(angle) * r;
+            float y = centerY + std::sin(angle) * r;
+            
+            if (i == 0)
+                gearPath.startNewSubPath(x, y);
+            else
+                gearPath.lineTo(x, y);
+        }
+        gearPath.closeSubPath();
+        
+        // Cut out center hole
+        float holeRadius = innerRadius * 0.45f;
+        gearPath.addEllipse(centerX - holeRadius, centerY - holeRadius, 
+                           holeRadius * 2, holeRadius * 2);
+        gearPath.setUsingNonZeroWinding(false);
+        
+        g.fillPath(gearPath);
+    }
 }
 
 void BoomerangAudioProcessorEditor::resized()
@@ -283,14 +323,13 @@ void BoomerangAudioProcessorEditor::resized()
     stackButton.setBounds(scaleRect(baseStartX + baseSpacing * 4, baseButtonY, baseButtonWidth, baseButtonHeight));
     
     // Settings button (gear icon) - top right corner of the device image
-    int gearSize = static_cast<int>(24 * scale);
+    int gearSize = static_cast<int>(28 * scale);
     settingsButton.setBounds(
-        getWidth() - gearSize - static_cast<int>(8 * scale),
-        static_cast<int>(8 * scale),
+        getWidth() - gearSize - static_cast<int>(6 * scale),
+        static_cast<int>(6 * scale),
         gearSize,
         gearSize
     );
-    settingsButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.7f));
     
     // Controls area below the image (base: skip 210px for image, then 30px for controls)
     auto controlsArea = bounds;

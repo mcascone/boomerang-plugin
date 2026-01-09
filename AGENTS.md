@@ -41,6 +41,8 @@ Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging tec
 - check where you are before running location-dependent commands; or use full path when appropriate.
 - check paths and filenames for typos and existence before running commands that depend on them.
 - don't do that thing where you run a command and then immediately run another command that depends on the first command having completed successfully; instead, check the exit status of the first command before proceeding.
+- When asked to "quit and restart GP" or similar, run: `osascript -e 'quit app "GigPerformer5"' && sleep 2 && open -a "GigPerformer5"`
+- When asked to "restart standalone" or similar, run: `osascript -e 'quit app "Boomerang+"' && sleep 2 && open -a "Boomerang+"`
 
 ## Testing Guidelines
 

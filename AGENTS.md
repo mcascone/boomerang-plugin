@@ -17,9 +17,11 @@ Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issue
 
 ## Build, Test, and Development Commands
 
-- Configure/build from repo root: `cmake -S . -B build && cmake --build build -j8`.
-- Or from build dir: `cd build && make -j8` (reuses generated Makefile).
-- Install VST3 locally (macOS): `cmake --build build --target install` (writes to `~/Library/Audio/Plug-Ins/VST3`).
+- Full build: `./build.sh` (cleans, configures, and builds; installs via COPY_PLUGIN_AFTER_BUILD).
+- Quick reconfigure after git commit: `cd build && cmake . && make -j8` (updates git hash and rebuilds).
+- Incremental build from build dir: `cd build && make -j8` (builds and auto-installs changed targets).
+- Manual reconfigure: `cmake -S . -B build` (updates git hash without clean).
+- Note: Plugins auto-install to system directories when rebuilt via COPY_PLUGIN_AFTER_BUILD.
 - Tests: use pluginval to run VST3 compliance tests on built plugin.
 
 ## Coding Style & Naming Conventions

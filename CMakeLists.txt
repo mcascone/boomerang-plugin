@@ -11,7 +11,8 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
 endif()
 
-# Get git commit hash
+# Get git commit hash (captured at CMake configure time)
+# To update after a commit: cd build && cmake . && make -j8
 execute_process(
     COMMAND git rev-parse --short HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

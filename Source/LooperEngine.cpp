@@ -42,6 +42,7 @@ void LooperEngine::reset()
     stackMode = StackMode::Off;
     onceMode = OnceMode::Off;
     thruMute = ThruMuteState::Off;
+    speedMode = SpeedMode::Normal;
     activeLoopSlot = 0;
     recordingStartDelay = 0;
 

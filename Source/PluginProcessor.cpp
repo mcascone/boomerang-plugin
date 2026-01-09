@@ -368,6 +368,18 @@ void BoomerangAudioProcessor::setStateInformation (const void* data, int sizeInB
     if (xmlState.get() != nullptr)
         if (xmlState->hasTagName(apvts.state.getType()))
             apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
+    
+    // Reset read-only indicator parameters AND engine state to defaults
+    // These are state indicators, not persistent settings
+    if (auto* slowParam = apvts.getParameter(ParameterIDs::slowMode))
+        slowParam->setValueNotifyingHost(0.0f);  // Normal speed
+    if (auto* onceParam = apvts.getParameter(ParameterIDs::onceState))
+        onceParam->setValueNotifyingHost(0.0f);  // Once off
+    if (auto* cycleParam = apvts.getParameter(ParameterIDs::loopCycle))
+        cycleParam->setValueNotifyingHost(0.0f);  // No pulse
+    
+    // Reset engine to default state (Normal speed, Once off, etc.)
+    looperEngine->resetTransientState();
 }
 
 //==============================================================================

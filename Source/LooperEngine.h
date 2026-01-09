@@ -130,6 +130,14 @@ public:
             toggleOnceMode();
         }
     }
+    
+    // Reset transient state to defaults (called on state restoration)
+    // This resets modes that shouldn't persist across sessions
+    void resetTransientState()
+    {
+        speedMode.store(SpeedMode::Normal);
+        onceMode.store(OnceMode::Off);
+    }
 
 private:
     //==============================================================================

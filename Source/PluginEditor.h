@@ -77,6 +77,20 @@ private:
     
     int recordFlashCounter = 0;  // For loop wrap flash indicator
     std::atomic<bool> stackButtonWasDown { false };  // Track STACK button state for proper press/release
+    
+    // Button press animation state
+    int thruMuteFlashCounter  = 0;
+    int recordBtnFlashCounter = 0;
+    int playFlashCounter      = 0;
+    int onceFlashCounter      = 0;
+    int stackFlashCounter     = 0;
+    int reverseFlashCounter   = 0;
+    bool prevThruMuteDown  = false;
+    bool prevRecordDown    = false;
+    bool prevPlayDown      = false;
+    bool prevOnceDown      = false;
+    bool prevStackDown     = false;
+    bool prevReverseDown   = false;
 
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour colour, bool isToggle = false);
     void updateStatusDisplay();

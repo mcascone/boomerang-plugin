@@ -171,35 +171,70 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
         g.drawText("Background image not found", getLocalBounds(), juce::Justification::centred);
     }
     
-    // Draw button hover overlays (when mouse is over)
-    // This provides visual feedback since buttons are transparent
-    auto drawHoverOverlay = [&](juce::TextButton& button, juce::Colour colour) {
-        if (button.isMouseOver())
+    // Button press effects - always visible (simulates physical button feel)
+    // Press-down: dark overlay when held
+    // Release flash: bright pulse on release
+    auto drawButtonPressEffect = [&](juce::TextButton& button, juce::Colour colour, int flashCounter) {
+        auto bounds = button.getBounds();
+        
+        // Press-down darkening when button is held
+        if (button.isDown())
         {
-            g.setColour(colour.withAlpha(0.3f));
-            g.fillRect(button.getBounds());
+            g.setColour(juce::Colours::black.withAlpha(0.35f));
+            g.fillRect(bounds);
         }
-        if (button.getToggleState())
+        // Release flash - bright pulse that fades
+        else if (flashCounter > 0)
         {
-            g.setColour(colour.withAlpha(0.5f));
-            g.fillRect(button.getBounds());
+            float alpha = flashCounter / 5.0f * 0.5f;  // Fade from 0.5 to 0
+            g.setColour(colour.withAlpha(alpha));
+            g.fillRect(bounds);
         }
     };
     
-    // Special case: RECORD button flash on loop wrap
+    // Draw press effects for all buttons (always active)
+    drawButtonPressEffect(thruMuteButton, juce::Colours::yellow, thruMuteFlashCounter);
+    drawButtonPressEffect(playButton, juce::Colours::green, playFlashCounter);
+    drawButtonPressEffect(onceButton, juce::Colours::blue, onceFlashCounter);
+    drawButtonPressEffect(stackButton, juce::Colours::orange, stackFlashCounter);
+    drawButtonPressEffect(reverseButton, juce::Colours::purple, reverseFlashCounter);
+    
+    // Record button: combine press effect with loop wrap flash
+    if (recordButton.isDown())
+    {
+        g.setColour(juce::Colours::black.withAlpha(0.35f));
+        g.fillRect(recordButton.getBounds());
+    }
+    else if (showButtonOverlays && recordFlashCounter > 0)  // Loop wrap flash (only when overlays enabled)
+    {
+        g.setColour(juce::Colours::red.withAlpha(0.7f));
+        g.fillRect(recordButton.getBounds());
+    }
+    else if (recordBtnFlashCounter > 0)  // Release flash
+    {
+        float alpha = recordBtnFlashCounter / 5.0f * 0.5f;
+        g.setColour(juce::Colours::red.withAlpha(alpha));
+        g.fillRect(recordButton.getBounds());
+    }
+    
+    // Optional hover/toggle overlays (when enabled in settings)
     if (showButtonOverlays)
     {
-        if (recordFlashCounter > 0)
-        {
-            g.setColour(juce::Colours::red.withAlpha(0.7f));
-            g.fillRect(recordButton.getBounds());
-        }
-        else
-        {
-            drawHoverOverlay(recordButton, juce::Colours::red);
-        }
+        auto drawHoverOverlay = [&](juce::TextButton& button, juce::Colour colour) {
+            if (button.isMouseOver() && !button.isDown())
+            {
+                g.setColour(colour.withAlpha(0.2f));
+                g.fillRect(button.getBounds());
+            }
+            if (button.getToggleState())
+            {
+                g.setColour(colour.withAlpha(0.4f));
+                g.fillRect(button.getBounds());
+            }
+        };
         
         drawHoverOverlay(thruMuteButton, juce::Colours::yellow);
+        drawHoverOverlay(recordButton, juce::Colours::red);
         drawHoverOverlay(playButton, juce::Colours::green);
         drawHoverOverlay(onceButton, juce::Colours::blue);
         drawHoverOverlay(stackButton, juce::Colours::orange);
@@ -431,6 +466,23 @@ void BoomerangAudioProcessorEditor::timerCallback()
     // SLOW LED: on when speed mode is slow (half speed)
     auto speedMode = audioProcessor.getLooperEngine()->getSpeedMode();
     slowLED = (speedMode == LooperEngine::SpeedMode::Half);
+    
+    // Button press animation - detect releases and trigger flash
+    auto updateButtonFlash = [](juce::TextButton& button, bool& prevDown, int& flashCounter) {
+        bool currentlyDown = button.isDown();
+        if (prevDown && !currentlyDown)  // Just released
+            flashCounter = 5;  // Start flash (~80ms)
+        else if (flashCounter > 0)
+            flashCounter--;
+        prevDown = currentlyDown;
+    };
+    
+    updateButtonFlash(thruMuteButton, prevThruMuteDown, thruMuteFlashCounter);
+    updateButtonFlash(recordButton, prevRecordDown, recordBtnFlashCounter);
+    updateButtonFlash(playButton, prevPlayDown, playFlashCounter);
+    updateButtonFlash(onceButton, prevOnceDown, onceFlashCounter);
+    updateButtonFlash(stackButton, prevStackDown, stackFlashCounter);
+    updateButtonFlash(reverseButton, prevReverseDown, reverseFlashCounter);
     
     repaint(); // Refresh overlays and flash indicators
 }

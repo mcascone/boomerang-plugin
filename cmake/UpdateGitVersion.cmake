@@ -14,6 +14,19 @@ if(NOT GIT_HASH)
     set(GIT_HASH "unknown")
 endif()
 
+# Check for uncommitted changes
+execute_process(
+    COMMAND git status --porcelain
+    WORKING_DIRECTORY "${GIT_WORKING_DIR}"
+    OUTPUT_VARIABLE GIT_STATUS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+
+if(GIT_STATUS)
+    message(WARNING "Uncommitted changes detected! Build will use hash ${GIT_HASH} but code may differ.")
+endif()
+
 # Only update the file if the hash changed (avoids unnecessary rebuilds)
 if(EXISTS "${OUTPUT_FILE}")
     file(READ "${OUTPUT_FILE}" EXISTING_CONTENT)

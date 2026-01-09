@@ -13,10 +13,15 @@ cmake -S . -B build \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
 
 echo "Building with 8 parallel jobs..."
-cmake --build build -j8
+cmake --build build -j8 2>&1 | grep -v "Git hash"
 
 echo ""
 echo "Build complete!"
+
+# Show git hash at the end
+GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+echo "Git hash: ${GIT_HASH}"
+
 echo "Artifacts location: build/Boomerang_artefacts/"
 echo ""
 echo "Verifying architectures:"

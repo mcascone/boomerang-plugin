@@ -171,55 +171,96 @@ void BoomerangAudioProcessorEditor::paint (juce::Graphics& g)
         g.drawText("Background image not found", getLocalBounds(), juce::Justification::centred);
     }
     
-    // Button press effects - always visible (simulates physical button feel)
-    // Press-down: dark overlay when held
-    // Release flash: bright pulse on release
-    auto drawButtonPressEffect = [&](juce::TextButton& button, juce::Colour colour, int flashCounter) {
-        auto bounds = button.getBounds();
-        
-        // Press-down darkening when button is held
+    // Draw inset shadow effect when buttons are pressed (always active)
+    // This creates a "pushed in" look by drawing shadows at top/left edges
+    auto drawPressedInsetShadow = [&](juce::TextButton& button) {
         if (button.isDown())
         {
-            g.setColour(juce::Colours::black.withAlpha(0.35f));
-            g.fillRect(bounds);
-        }
-        // Release flash - bright pulse that fades
-        else if (flashCounter > 0)
-        {
-            float alpha = flashCounter / 5.0f * 0.5f;  // Fade from 0.5 to 0
-            g.setColour(colour.withAlpha(alpha));
+            auto bounds = button.getBounds();
+            float shadowDepth = 4.0f;  // How "deep" the button appears pressed
+            
+            // Dark shadow on top edge (light coming from above)
+            g.setGradientFill(juce::ColourGradient(
+                juce::Colours::black.withAlpha(0.6f), 
+                bounds.getX(), bounds.getY(),
+                juce::Colours::transparentBlack,
+                bounds.getX(), bounds.getY() + shadowDepth * 2,
+                false));
+            g.fillRect(bounds.getX(), bounds.getY(), bounds.getWidth(), (int)(shadowDepth * 2));
+            
+            // Dark shadow on left edge
+            g.setGradientFill(juce::ColourGradient(
+                juce::Colours::black.withAlpha(0.5f),
+                bounds.getX(), bounds.getY(),
+                juce::Colours::transparentBlack,
+                bounds.getX() + shadowDepth * 2, bounds.getY(),
+                false));
+            g.fillRect(bounds.getX(), bounds.getY(), (int)(shadowDepth * 2), bounds.getHeight());
+            
+            // Subtle highlight on bottom edge (recessed surface catching light)
+            g.setGradientFill(juce::ColourGradient(
+                juce::Colours::transparentWhite,
+                bounds.getX(), bounds.getBottom() - shadowDepth,
+                juce::Colours::white.withAlpha(0.15f),
+                bounds.getX(), bounds.getBottom(),
+                false));
+            g.fillRect(bounds.getX(), bounds.getBottom() - (int)shadowDepth, bounds.getWidth(), (int)shadowDepth);
+            
+            // Overall darkening to simulate being in shadow
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
             g.fillRect(bounds);
         }
     };
     
-    // Draw press effects for all buttons (always active)
-    drawButtonPressEffect(thruMuteButton, juce::Colours::yellow, thruMuteFlashCounter);
-    drawButtonPressEffect(playButton, juce::Colours::green, playFlashCounter);
-    drawButtonPressEffect(onceButton, juce::Colours::blue, onceFlashCounter);
-    drawButtonPressEffect(stackButton, juce::Colours::orange, stackFlashCounter);
-    drawButtonPressEffect(reverseButton, juce::Colours::purple, reverseFlashCounter);
+    // Apply inset shadow to all buttons when pressed
+    drawPressedInsetShadow(thruMuteButton);
+    drawPressedInsetShadow(recordButton);
+    drawPressedInsetShadow(playButton);
+    drawPressedInsetShadow(onceButton);
+    drawPressedInsetShadow(stackButton);
+    drawPressedInsetShadow(reverseButton);
     
-    // Record button: combine press effect with loop wrap flash
-    if (recordButton.isDown())
-    {
-        g.setColour(juce::Colours::black.withAlpha(0.35f));
-        g.fillRect(recordButton.getBounds());
-    }
-    else if (showButtonOverlays && recordFlashCounter > 0)  // Loop wrap flash (only when overlays enabled)
-    {
-        g.setColour(juce::Colours::red.withAlpha(0.7f));
-        g.fillRect(recordButton.getBounds());
-    }
-    else if (recordBtnFlashCounter > 0)  // Release flash
-    {
-        float alpha = recordBtnFlashCounter / 5.0f * 0.5f;
-        g.setColour(juce::Colours::red.withAlpha(alpha));
-        g.fillRect(recordButton.getBounds());
-    }
-    
-    // Optional hover/toggle overlays (when enabled in settings)
+    // Additional overlay effects - only when overlays enabled
     if (showButtonOverlays)
     {
+        auto drawButtonPressEffect = [&](juce::TextButton& button, juce::Colour colour, int flashCounter) {
+            auto bounds = button.getBounds();
+            
+            // Release flash - bright pulse that fades
+            if (!button.isDown() && flashCounter > 0)
+            {
+                float alpha = flashCounter / 5.0f * 0.5f;  // Fade from 0.5 to 0
+                g.setColour(colour.withAlpha(alpha));
+                g.fillRect(bounds);
+            }
+        };
+        
+        // Draw release flash effects for all buttons
+        drawButtonPressEffect(thruMuteButton, juce::Colours::yellow, thruMuteFlashCounter);
+        drawButtonPressEffect(playButton, juce::Colours::green, playFlashCounter);
+        drawButtonPressEffect(onceButton, juce::Colours::blue, onceFlashCounter);
+        drawButtonPressEffect(stackButton, juce::Colours::orange, stackFlashCounter);
+        drawButtonPressEffect(reverseButton, juce::Colours::purple, reverseFlashCounter);
+        
+        // Record button: combine press effect with loop wrap flash
+        if (recordButton.isDown())
+        {
+            g.setColour(juce::Colours::black.withAlpha(0.35f));
+            g.fillRect(recordButton.getBounds());
+        }
+        else if (recordFlashCounter > 0)  // Loop wrap flash
+        {
+            g.setColour(juce::Colours::red.withAlpha(0.7f));
+            g.fillRect(recordButton.getBounds());
+        }
+        else if (recordBtnFlashCounter > 0)  // Release flash
+        {
+            float alpha = recordBtnFlashCounter / 5.0f * 0.5f;
+            g.setColour(juce::Colours::red.withAlpha(alpha));
+            g.fillRect(recordButton.getBounds());
+        }
+        
+        // Hover/toggle overlays
         auto drawHoverOverlay = [&](juce::TextButton& button, juce::Colour colour) {
             if (button.isMouseOver() && !button.isDown())
             {
@@ -344,12 +385,11 @@ void BoomerangAudioProcessorEditor::resized()
     volumeSlider.setBounds(scaleRect(70, 60, 120, 90));
     
     // Main foot switches (centered horizontally)
-    // Base positions: startX=175, spacing=95, buttonY=120, width=60, height=60
-    int baseStartX = 175;
-    int baseSpacing = 95;
-    int baseButtonY = 120;
-    int baseButtonWidth = 60;
-    int baseButtonHeight = 60;
+    int baseStartX = 190;
+    int baseSpacing = 94;
+    int baseButtonY = 155;
+    int baseButtonWidth = 30;
+    int baseButtonHeight = 23;
     
     recordButton.setBounds(scaleRect(baseStartX, baseButtonY, baseButtonWidth, baseButtonHeight));
     playButton.setBounds(scaleRect(baseStartX + baseSpacing, baseButtonY, baseButtonWidth, baseButtonHeight));
@@ -467,13 +507,15 @@ void BoomerangAudioProcessorEditor::timerCallback()
     auto speedMode = audioProcessor.getLooperEngine()->getSpeedMode();
     slowLED = (speedMode == LooperEngine::SpeedMode::Half);
     
-    // Button press animation - detect releases and trigger flash
+    // Button release flash animation - track state changes
     auto updateButtonFlash = [](juce::TextButton& button, bool& prevDown, int& flashCounter) {
         bool currentlyDown = button.isDown();
+        
         if (prevDown && !currentlyDown)  // Just released
             flashCounter = 5;  // Start flash (~80ms)
         else if (flashCounter > 0)
             flashCounter--;
+        
         prevDown = currentlyDown;
     };
     

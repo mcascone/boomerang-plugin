@@ -56,4 +56,4 @@ _codeql_detected_source_root
 
 # Archived legacy code
 Logs/
-Export/
+.session-log.md

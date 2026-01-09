@@ -5,6 +5,8 @@ This document outlines the structure, build process, coding style, testing, and 
 
 Read the README.md first for an overview of the project, including detailed behavioral requirements, then refer to this document for development-specific information.
 
+**Also read `.session-log.md` for recent session progress and open items.**
+
 Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issues in the codebase. The JUCE implementation is now on the main branch.
 
 Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging techniques, and common pitfalls.

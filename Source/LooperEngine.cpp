@@ -44,7 +44,6 @@ void LooperEngine::reset()
     thruMute = ThruMuteState::Off;
     speedMode = SpeedMode::Normal;
     activeLoopSlot = 0;
-    recordingStartDelay = 0;
 
     for (auto& slot : loopSlots)
     {

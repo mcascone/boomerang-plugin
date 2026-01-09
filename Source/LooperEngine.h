@@ -157,7 +157,6 @@ private:
     //==============================================================================
     static constexpr int maxLoopSlots = 4;
     static constexpr int maxLoopLengthSeconds = 240; // 4 minutes
-    static constexpr int crossfadeSamples = 1024;
 
     std::array<LoopSlot, maxLoopSlots> loopSlots;
     std::atomic<int> activeLoopSlot{0};
@@ -182,7 +181,6 @@ private:
     std::atomic<float> feedbackAmount { 0.5f };
 
     // Timing and synchronization
-    int recordingStartDelay = 0;
     std::atomic<bool> loopWrapped{false};  // Set when loop cycles to position 0
     
     // Request flags for audio→UI thread communication (issue #38)

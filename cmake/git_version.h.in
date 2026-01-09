@@ -1,0 +1,5 @@
+// Auto-generated file - do not edit
+// Generated at build time by CMake
+#pragma once
+
+#define BOOMERANG_GIT_HASH "@GIT_HASH@"

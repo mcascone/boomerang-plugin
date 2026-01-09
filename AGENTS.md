@@ -18,9 +18,8 @@ Also review the CODE_REVIEW_FINDINGS.md for a summary and details on known issue
 ## Build, Test, and Development Commands
 
 - Full build: `./build.sh` (cleans, configures, and builds; installs via COPY_PLUGIN_AFTER_BUILD).
-- Quick reconfigure after git commit: `cd build && cmake . && make -j8` (updates git hash and rebuilds).
 - Incremental build from build dir: `cd build && make -j8` (builds and auto-installs changed targets).
-- Manual reconfigure: `cmake -S . -B build` (updates git hash without clean).
+- After committing: `cd build && make -j8` (git hash updates automatically at build time; only PluginEditor.cpp recompiles).
 - Note: Plugins auto-install to system directories when rebuilt via COPY_PLUGIN_AFTER_BUILD.
 - Tests: use pluginval to run VST3 compliance tests on built plugin.
 

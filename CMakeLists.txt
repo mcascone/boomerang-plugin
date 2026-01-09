@@ -11,8 +11,23 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
 endif()
 
-# Get git commit hash (captured at CMake configure time)
-# To update after a commit: cd build && cmake . && make -j8
+# Get git commit hash at BUILD time (not configure time)
+# This generates git_version.h only when the hash actually changes,
+# so only PluginEditor.cpp (which uses it) needs to recompile.
+add_custom_target(UpdateGitVersion
+    COMMAND ${CMAKE_COMMAND}
+        -DGIT_WORKING_DIR="${CMAKE_SOURCE_DIR}"
+        -DINPUT_FILE="${CMAKE_SOURCE_DIR}/cmake/git_version.h.in"
+        -DOUTPUT_FILE="${CMAKE_BINARY_DIR}/generated/git_version.h"
+        -P "${CMAKE_SOURCE_DIR}/cmake/UpdateGitVersion.cmake"
+    BYPRODUCTS "${CMAKE_BINARY_DIR}/generated/git_version.h"
+    COMMENT "Checking git version..."
+)
+
+# Ensure the generated directory exists
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated")
+
+# Generate initial git_version.h at configure time (for first build)
 execute_process(
     COMMAND git rev-parse --short HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -20,11 +35,11 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
 )
-
-# If git command fails, set a default value
 if(NOT GIT_HASH)
     set(GIT_HASH "unknown")
 endif()
+configure_file("${CMAKE_SOURCE_DIR}/cmake/git_version.h.in" 
+               "${CMAKE_BINARY_DIR}/generated/git_version.h" @ONLY)
 
 # Add JUCE as a subdirectory (you'll need to clone JUCE)
 add_subdirectory(JUCE)
@@ -124,6 +139,12 @@ target_link_libraries(Boomerang
     PRIVATE
         BoomerangBinaryData)
 
+# Include directory for generated git_version.h
+target_include_directories(Boomerang PRIVATE "${CMAKE_BINARY_DIR}/generated")
+
+# Ensure git version is checked before building
+add_dependencies(Boomerang UpdateGitVersion)
+
 # Compile definitions
 target_compile_definitions(Boomerang
     PUBLIC
@@ -131,8 +152,7 @@ target_compile_definitions(Boomerang
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_SILENCE_DUPLICATE_AUDIO_PERMISSION_REQUESTS=1
-        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}"
-        BOOMERANG_GIT_HASH="${GIT_HASH}")
+        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}")
 
 # Required JUCE modules
 target_link_libraries(Boomerang

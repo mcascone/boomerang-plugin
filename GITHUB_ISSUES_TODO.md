@@ -17,6 +17,7 @@ Based on the code review findings, here are the recommended GitHub issues to cre
 ### GP Panel Integration
 - **REC widget doesn't blink on loop cycle** - UI LED blinks when loop wraps, but no corresponding parameter update sent to host. Need to add brief parameter pulse or expose loop progress.
 - **SLOW mode indicator needed** - Speed mode (Half/Normal) visible in UI LED but no parameter exposed for GP panel. Need to add read-only parameter for speed mode state.
+- **Once button toggle widget desync** - When Once is ON and you press Once (to restart), the toggle widget briefly shows OFF while state stays ON. This is because Once has context-dependent behavior (restart vs toggle). Will also affect bidirectional MIDI - controller LEDs will desync. Solutions: GP scripting with dual widgets/overlays, or proper MIDI state feedback implementation. Not blocking; document for future MIDI work.
 
 ## New Issues to Create 📝
 

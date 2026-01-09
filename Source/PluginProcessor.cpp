@@ -44,6 +44,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout BoomerangAudioProcessor::cre
         "Loop Cycle",
         false));  // read-only pulse indicator
 
+    // Slow mode indicator - on when speed is half (for external SLOW LED)
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID(ParameterIDs::slowMode, 1),
+        "Slow Mode",
+        false));  // read-only state indicator
+
     // Continuous parameters
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID(ParameterIDs::volume, 1),

@@ -18,6 +18,7 @@ namespace ParameterIDs
     const juce::String volume     = "volume";
     const juce::String feedback   = "feedback";
     const juce::String loopCycle  = "loopCycle";  // Pulses when loop wraps (for REC blink)
+    const juce::String slowMode   = "slowMode";   // On when speed is half (SLOW LED)
 }
 
 //==============================================================================

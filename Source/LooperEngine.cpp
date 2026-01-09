@@ -459,12 +459,21 @@ void LooperEngine::setStackMode(StackMode mode)
 void LooperEngine::toggleSpeedMode()
 {
     auto current = speedMode.load();
-    speedMode.store((current == SpeedMode::Normal) ? SpeedMode::Half : SpeedMode::Normal);
+    auto newMode = (current == SpeedMode::Normal) ? SpeedMode::Half : SpeedMode::Normal;
+    speedMode.store(newMode);
+    
+    // Notify host of speed mode change
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::slowMode, (newMode == SpeedMode::Half) ? 1.0f : 0.0f);
 }
 
 void LooperEngine::setSpeedMode(SpeedMode mode)
 {
     speedMode.store(mode);
+    
+    // Notify host of speed mode change
+    if (parameterNotifyCallback)
+        parameterNotifyCallback(ParameterIDs::slowMode, (mode == SpeedMode::Half) ? 1.0f : 0.0f);
 }
 
 //==============================================================================

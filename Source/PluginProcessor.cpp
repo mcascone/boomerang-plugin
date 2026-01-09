@@ -132,16 +132,15 @@ void BoomerangAudioProcessor::parameterChanged(const juce::String& parameterID, 
     {
         looperEngine->onReverseButtonPressed();
     }
-    // Momentary action buttons - only trigger on button press (rising edge), not release
+    // Action buttons - trigger on every toggle edge since GP uses toggle widgets
+    // The updatingFromInternalState flag prevents circular calls
     else if (parameterID == ParameterIDs::record)
     {
-        if (buttonPressed)
-            looperEngine->onRecordButtonPressed();
+        looperEngine->onRecordButtonPressed();
     }
     else if (parameterID == ParameterIDs::play)
     {
-        if (buttonPressed)
-            looperEngine->onPlayButtonPressed();
+        looperEngine->onPlayButtonPressed();
     }
     else if (parameterID == ParameterIDs::once)
     {

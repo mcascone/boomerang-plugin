@@ -65,7 +65,7 @@ private:
 
     // Visual state / settings
     bool showButtonOverlays = false;  // Toggle for button hover/state overlays
-    bool showFooterBar      = true;   // Toggle for footer bar with status messages
+    bool showFooterBar      = false;   // Toggle for footer bar with status messages
     
     juce::Colour recordColour = juce::Colours::red;
     juce::Colour playColour = juce::Colours::green;

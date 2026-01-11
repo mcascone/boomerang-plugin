@@ -12,11 +12,22 @@ BoomerangAudioProcessorEditor::BoomerangAudioProcessorEditor (BoomerangAudioProc
                                                       BinaryData::boomerang_jpgSize);
     
     // Set default size and make resizable with aspect ratio constraint
-    // Base size: 700x240, default at 1.5x scale (1050x360)
-    setSize (1050, 360);
+    // Aspect ratio depends on footer visibility: 700x240 (with footer) or 700x200 (without)
     setResizable(true, true);
-    setResizeLimits(350, 120, 1400, 480);  // 0.5x to 2x scale
-    getConstrainer()->setFixedAspectRatio(700.0 / 240.0);
+    if (showFooterBar)
+    {
+        // Footer visible: 700x240 aspect ratio, default at 1.5x scale (1050x360)
+        setSize(1050, 360);
+        setResizeLimits(350, 120, 1400, 480);  // 0.5x to 2x scale
+        getConstrainer()->setFixedAspectRatio(700.0 / 240.0);
+    }
+    else
+    {
+        // Footer hidden: 700x200 aspect ratio (image only), default at 1.5x scale (1050x300)
+        setSize(1050, 300);
+        setResizeLimits(350, 100, 1400, 400);  // 0.5x to 2x scale
+        getConstrainer()->setFixedAspectRatio(700.0 / 200.0);
+    }
 
     // Setup buttons as transparent overlays
     // Position them over the foot switches in the image

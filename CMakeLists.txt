@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Boomerang VERSION 2.0.0.5)
+project(Boomerang VERSION 2.0.0)
+set(BOOMERANG_VERSION_SUFFIX "beta-1")
+set(BOOMERANG_FULL_VERSION "${PROJECT_VERSION}-${BOOMERANG_VERSION_SUFFIX}")
 
 # ==============================================================================
 # Build Configuration

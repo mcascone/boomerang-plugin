@@ -11,9 +11,15 @@ if [ -z "$CMAKE_VERSION" ]; then
     exit 1
 fi
 
-# Convert CMake version (2.0.0.5) to release version (2.0.0-alpha-5)
-# Format: MAJOR.MINOR.PATCH.BUILD -> MAJOR.MINOR.PATCH-alpha-BUILD
-VERSION=$(echo "$CMAKE_VERSION" | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\)\.\([0-9]*\)/\1-alpha-\2/')
+# Extract version suffix from CMakeLists.txt (e.g., "beta-1", "alpha-5", "rc-1")
+VERSION_SUFFIX=$(grep "^set(BOOMERANG_VERSION_SUFFIX" CMakeLists.txt | grep -oE '"[^"]+"' | tr -d '"')
+if [ -z "$VERSION_SUFFIX" ]; then
+    echo "Error: Could not extract BOOMERANG_VERSION_SUFFIX from CMakeLists.txt"
+    exit 1
+fi
+
+# Combine version and suffix (e.g., 2.0.0-beta-1)
+VERSION="${CMAKE_VERSION}-${VERSION_SUFFIX}"
 IDENTIFIER="com.MCMusicWorkshop.Boomerang"
 BUILD_DIR="build/Boomerang_artefacts"
 OUTPUT_DIR="build/installer"

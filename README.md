@@ -52,23 +52,35 @@ I would love to have someone help out with the UI refresh - let me know if you'r
 
 I highly recommend checking GP out, and stay tuned here for functionality and feature updates!
 
+> **NOTE**: updating this on Jan-15-2026 to say that the UI is now in its rightful form, of the original image of the hardware. I may improve/replace the image with a better one at some point, but it's there. I might crop the background out of the current picture. Suggestions? I also have an idea for a modern re-imagining of the UI as an option.
+
 # Background
 
-Way back when, I had an original Boomerang+ Phrase Sampler. Before it was cool; chiefly inspired by Trey Anastasio's use of one.
-
-There aren't any close emulations in plugin-land. So I had to create my own.
+Way back when, I had an original ***Boomerang+ Phrase Sampler***. Before looping was cool; chiefly inspired by Trey Anastasio's use of one.
 
 The Boomerang is a special device because it is, in my opinion, the perfect combination of simple and powerful.
 
-It epitomizes the way of "Perfect is not when there is nothing more to add; rather, it is when there is nothing more to take away."
+It epitomizes The Way of "Perfect is not when there is nothing more to add; rather, it is when there is nothing more to take away." 
 
-Every other looper plugin on the market is too complicated.
+There aren't any close emulations in plugin-land. Every other looper plugin on the market is too complicated. So I had to create my own.
 
-So to that end I set about to figure out how to make a plugin that perfectly emulates the unique layout and behavior of this singular piece of gear.
+So to that end I set about to figure out how to make a plugin that perfectly emulates the unique layout and behavior of this singular piece of gear. I'm a software developer by day so i had a head start, but this is a completely different kind of coding than I do, with real-time processing constraints and audio minutiae to consider. Now that I think about it, my early career did involve some mission-critical audio handling, so the concepts aren't alien to me. Still: not easy.
 
-It's done with love and reverence for the creators and keepers of the original device, and I have reached out to them for approval/partnership. 
+After many false starts, plugin framework changes, and frustrating bugs, I've finally gotten it to a point where I'm ready to call it a beta and give it a good push out to the world. All functionality works, including:
 
-However, this is me stating clearly that **this has no affiliation with Boomerang** (yet).
+- MIDI
+- stack (overdub)
+- reverse
+- half speed
+- through mute
+
+I haven't figured out the live-reverse special mode yet. And there are a few bugs that I need to fix before taking it out of beta. 
+
+But it's ready.
+
+I've done this with love and reverence for the creators and keepers of the original device, and I have reached out to them for approval/partnership. 
+
+However, this is me stating clearly that **this project has no official affiliation with Boomerang**.
 
 ### Design Approach
 

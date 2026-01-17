@@ -91,9 +91,7 @@ void LooperEngine::processBlock(juce::AudioBuffer<float>& buffer)
             // No processing defined yet
             break;
     }
-
-    // Apply output volume (thread-safe atomic load)
-    buffer.applyGain(outputVolume.load());
+    // Note: Volume is applied to loop signal only in processPlayback/processOverdubbing (issue #44)
 }
 
 //==============================================================================
@@ -538,6 +536,7 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
     auto thruMuteState = thruMute.load();
     auto once = onceMode.load();
     int slotLength = slot.length.load();
+    float volume = outputVolume.load();  // Apply volume to loop signal only (issue #44)
     
     for (int sampleNum = 0; sampleNum < numSamples; ++sampleNum)
     {
@@ -565,15 +564,18 @@ void LooperEngine::processPlayback(juce::AudioBuffer<float>& buffer, LoopSlot& s
                 loopSample = sample1 + frac * (sample2 - sample1);
             }
             
+            // Apply volume to loop signal only, not input (issue #44)
+            float scaledLoopSample = loopSample * volume;
+            
             // Thru mute handling: when ON, only play loop; when OFF, mix input with loop
             if (thruMuteState == ThruMuteState::On)
             {
-                buffer.setSample(channel, sampleNum, loopSample);
+                buffer.setSample(channel, sampleNum, scaledLoopSample);
             }
             else
             {
                 float inputSample = buffer.getSample(channel, sampleNum);
-                buffer.setSample(channel, sampleNum, loopSample + inputSample);
+                buffer.setSample(channel, sampleNum, scaledLoopSample + inputSample);
             }
         }
         
@@ -606,6 +608,7 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
     auto thruMuteState = thruMute.load();
     auto once = onceMode.load();
     int slotLength = slot.length.load();
+    float volume = outputVolume.load();  // Apply volume to loop output only (issue #44)
     
     for (int sample = 0; sample < numSamples; ++sample)
     {
@@ -626,14 +629,17 @@ void LooperEngine::processOverdubbing(juce::AudioBuffer<float>& buffer, LoopSlot
             float overdubSample = attenuatedLoop + (inputSample * feedbackAmount.load());
             slot.buffer.setSample(channel, pos, overdubSample);
             
+            // Apply volume to loop output only, not input (issue #44)
+            float scaledLoopOutput = overdubSample * volume;
+            
             // Thru mute handling: when ON, only output loop; when OFF, mix with input
             if (thruMuteState == ThruMuteState::On)
             {
-                buffer.setSample(channel, sample, overdubSample);
+                buffer.setSample(channel, sample, scaledLoopOutput);
             }
             else
             {
-                buffer.setSample(channel, sample, overdubSample + inputSample);
+                buffer.setSample(channel, sample, scaledLoopOutput + inputSample);
             }
         }
         

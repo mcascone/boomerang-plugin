@@ -1,6 +1,7 @@
 # Repository Guidelines
 
-You are an expert software engineer familiar with C++ audio plugin development using JUCE. 
+You are an expert software engineer with guru-like knowledge of C++ audio plugin development using JUCE.
+
 This document outlines the structure, build process, coding style, testing, and contribution guidelines for the Boomerang audio looper plugin repository.
 
 Read the README.md first for an overview of the project, including detailed behavioral requirements, then refer to this document for development-specific information.
@@ -25,7 +26,9 @@ Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging tec
 - Incremental build from build dir: `cd build && make -j8` (builds and auto-installs changed targets).
 - After committing: `cd build && make -j8` (git hash updates automatically at build time; only PluginEditor.cpp recompiles).
 - Note: Plugins auto-install to system directories when rebuilt via COPY_PLUGIN_AFTER_BUILD.
-- Tests: use pluginval to run VST3 compliance tests on built plugin.
+- Build installer: `./build-installer.sh` (creates macOS .pkg installer with VST3, AU, and Standalone).
+- Tests: `pluginval --validate build/Boomerang_artefacts/VST3/Boomerang.vst3` (run VST3 compliance tests).
+- Version is set in `CMakeLists.txt` via `VERSION` and `BOOMERANG_VERSION_SUFFIX` variables.
 
 ## Coding Style & Naming Conventions
 
@@ -54,16 +57,18 @@ Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging tec
 ## Commit & Pull Request Guidelines
 
 - Keep commits scoped and descriptive (e.g., `Fix reverse playhead wrap`).
-- Reference GitHub issues (#32–#36) when applicable.
+- Reference GitHub issues when applicable.
 - PRs: include a short summary, reproduction steps, expected/actual behavior, and screenshots/GIFs if UI-visible.
 - Call out audio behavior changes and any new warnings/errors.
 
 ## Known Pitfalls (Agent Notes)
 
-- Numerous compiler warnings about missing switch cases and sign conversions (issues #34–#35); cleanups welcome.
-- VST3 signing warnings are benign for local builds; use proper signing for release (issue #36).
-- Current release: v2.0.0-alpha-4 (JUCE port). Alpha quality; known issues above. Builds shipped: VST3, AU (macOS), Standalone app (macOS); Windows/Linux use VST3. Installation paths: `~/Library/Audio/Plug-Ins/Components`, `~/Library/Audio/Plug-Ins/VST3`. Please file new issues for any problems.
-- Release notes style preference: concise Markdown with top-level title like `v2.0.0-alpha-0 (JUCE port)`, explicit “Alpha” warning, sections for What’s new, Installation (macOS and Windows/Linux), Known issues, and How to help (link to new issue form). Tone should be direct and instructional.
+- Issue #36 (VST3 signing warnings) is benign for local builds; use proper signing for release.
+- Issue #44 (volume controls entire signal) is a known bug being investigated.
+- Issue #43 (REC LED when stacking) is an enhancement request.
+- Current release: v2.0.0-beta-1 (JUCE port). Beta quality - core functionality stable, polishing phase. Builds shipped: VST3, AU (macOS), Standalone app (macOS); Windows/Linux use VST3. Installation paths: `~/Library/Audio/Plug-Ins/Components`, `~/Library/Audio/Plug-Ins/VST3`. Please file new issues for any problems.
+- releases/ folder is git-ignored; use GitHub Releases for distribution instead.
+- Release notes style preference: concise Markdown with top-level title like `v2.0.0-beta-1 (JUCE port)`, sections for What's new, Installation (macOS and Windows/Linux), Known issues, and How to help (link to new issue form). Tone should be direct and instructional.
 
 ## Aligned Operators and Symbols
 

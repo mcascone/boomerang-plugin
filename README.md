@@ -1,8 +1,23 @@
-# Boomerang+ Emulator
+# Boomerang
 
-VST/AU plugin emulator of the Boomerang+ Phrase Sampler.
+Boomerang is a live looping and time-based audio effect built for instant capture, stutter, overdub, and reverse playback.
+
+It allows you to capture loops of any length from any incoming audio stream, replay them immediately, and manipulate them in real time without stopping audio or committing to edits. Loops can be played once, repeated, overdubbed, reversed, or used as momentary stutters.
+
+Boomerang is designed for performance-oriented use on drums, guitars, synths, and full mixes where timing, immediacy, and control matter more than grid-locked precision.
+
+
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
+
+
+# Update Jan-16-2026
+
+## v2.0.0 beta 1 is out!
+
+Mac only at the moment, athough i haven't actually tried it on other os's. 
+
+Please Enjoy! https://github.com/mcascone/boomerang-plugin/releases/tag/v2.0.0-beta-1
 
 # Update Jan-4-2026
 

@@ -85,7 +85,8 @@ jobs:
           mkdir -p dist
           # Create zip with all formats (artifacts are in Release/ for multi-config builds)
           cd build/Boomerang_artefacts/Release
-          zip -r ../../../dist/Boomerang-macOS.zip VST3 AU Standalone
+          cp ../../../README.md .
+          zip -r ../../../dist/Boomerang-macOS.zip VST3 AU Standalone README.md
           cd ../../..
           # Also run the installer script if we're doing a release
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -100,7 +101,8 @@ jobs:
         run: |
           mkdir -p dist
           cd build/Boomerang_artefacts/Release
-          7z a ../../../dist/Boomerang-Windows.zip VST3 Standalone
+          cp ../../../README.md .
+          7z a ../../../dist/Boomerang-Windows.zip VST3 Standalone README.md
           cd ../../..
 
       # Package - Linux
@@ -109,7 +111,8 @@ jobs:
         run: |
           mkdir -p dist
           cd build/Boomerang_artefacts/Release
-          tar -czvf ../../../dist/Boomerang-Linux.tar.gz VST3 Standalone
+          cp ../../../README.md .
+          tar -czvf ../../../dist/Boomerang-Linux.tar.gz VST3 Standalone README.md
           cd ../../..
 
       # Upload artifacts

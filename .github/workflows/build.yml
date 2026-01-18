@@ -120,7 +120,7 @@ jobs:
           path: dist/*
           retention-days: 14
 
-  # Validate plugins with pluginval
+  # Validate plugins with pluginval (downloads artifacts from build job - no rebuild)
   validate:
     name: Validate ${{ matrix.os }}
     needs: build
@@ -130,49 +130,46 @@ jobs:
         include:
           - os: macos-latest
             pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
-            vst3_path: build/Boomerang_artefacts/VST3/Boomerang+.vst3
+            artifact_name: boomerang-macos
+            archive_name: Boomerang-macOS.zip
           - os: windows-latest
             pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip
-            vst3_path: build/Boomerang_artefacts/VST3/Boomerang+.vst3
+            artifact_name: boomerang-windows
+            archive_name: Boomerang-Windows.zip
           - os: ubuntu-latest
             pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Linux.zip
-            vst3_path: build/Boomerang_artefacts/VST3/Boomerang+.vst3
+            artifact_name: boomerang-linux
+            archive_name: Boomerang-Linux.tar.gz
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      # Download build artifacts (no checkout/rebuild needed)
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v6
         with:
-          submodules: recursive
+          name: ${{ matrix.artifact_name }}
+          path: dist
 
-      # Linux dependencies for build
-      - name: Install Linux Dependencies
+      # Extract VST3 from the build archive
+      - name: Extract VST3 (macOS/Windows)
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          mkdir -p extracted
+          cd dist
+          unzip "${{ matrix.archive_name }}" -d ../extracted
+          echo "=== Extracted contents ==="
+          ls -la ../extracted/
+
+      - name: Extract VST3 (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2-dev \
-            libjack-jackd2-dev \
-            ladspa-sdk \
-            libfreetype6-dev \
-            libx11-dev \
-            libxcomposite-dev \
-            libxcursor-dev \
-            libxext-dev \
-            libxinerama-dev \
-            libxrandr-dev \
-            libxrender-dev \
-            libwebkit2gtk-4.1-dev \
-            libglu1-mesa-dev \
-            mesa-common-dev
-
-      # Rebuild for validation (artifacts don't include raw VST3)
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
-      - name: Build
-        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+          mkdir -p extracted
+          cd dist
+          tar -xzvf "${{ matrix.archive_name }}" -C ../extracted
+          echo "=== Extracted contents ==="
+          ls -la ../extracted/
 
       # Download pluginval
       - name: Download pluginval
@@ -181,18 +178,20 @@ jobs:
           curl -L -o pluginval.zip ${{ matrix.pluginval_url }}
           unzip pluginval.zip -d pluginval
 
-      # Run pluginval
+      # Run pluginval against extracted VST3
       - name: Run pluginval
         shell: bash
         run: |
+          VST3_PATH="extracted/VST3/Boomerang+.vst3"
+          echo "Validating: $VST3_PATH"
           if [[ "$RUNNER_OS" == "macOS" ]]; then
-            ./pluginval/pluginval.app/Contents/MacOS/pluginval --validate "${{ matrix.vst3_path }}" --strictness-level 5
+            ./pluginval/pluginval.app/Contents/MacOS/pluginval --validate "$VST3_PATH" --strictness-level 5
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            ./pluginval/pluginval.exe --validate "${{ matrix.vst3_path }}" --strictness-level 5
+            ./pluginval/pluginval.exe --validate "$VST3_PATH" --strictness-level 5
           else
             # Linux needs Xvfb for headless GUI
             sudo apt-get install -y xvfb
-            xvfb-run ./pluginval/pluginval --validate "${{ matrix.vst3_path }}" --strictness-level 5
+            xvfb-run ./pluginval/pluginval --validate "$VST3_PATH" --strictness-level 5
           fi
 
   # Create GitHub Release on tag push

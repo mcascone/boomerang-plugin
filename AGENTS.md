@@ -49,6 +49,11 @@ Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging tec
 - When asked to "quit and restart GP" or similar, run: `osascript -e 'quit app "GigPerformer5"' && sleep 2 && open -a "GigPerformer5"`
 - When asked to "restart standalone" or similar, run: `osascript -e 'quit app "Boomerang+"' && sleep 2 && open -a $BOOM_STANDALONE_PATH` (the env var is exported in my `.alias` file).
 
+## GitHub Actions Best Practices
+
+- Always use the latest major version tag for GitHub Actions (e.g., `actions/checkout@v6`, not `@v4`) unless pinned for a specific reason.
+- Check action repos for current versions before adding new actions to workflows.
+
 ## Testing Guidelines
 
 - No automated test suite; validate via plugin host or JUCE Standalone build (`Boomerang_artefacts/Standalone`).

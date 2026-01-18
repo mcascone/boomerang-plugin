@@ -1,0 +1,225 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            cmake_flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+            artifact_name: boomerang-macos
+          - os: windows-latest
+            cmake_flags: ""
+            artifact_name: boomerang-windows
+          - os: ubuntu-latest
+            cmake_flags: ""
+            artifact_name: boomerang-linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0  # Full history for git version
+
+      # Linux: Install ALSA and other audio dependencies
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libjack-jackd2-dev \
+            ladspa-sdk \
+            libfreetype6-dev \
+            libx11-dev \
+            libxcomposite-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libxrender-dev \
+            libwebkit2gtk-4.0-dev \
+            libglu1-mesa-dev \
+            mesa-common-dev
+
+      # Configure CMake
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ${{ matrix.cmake_flags }}
+
+      # Build
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+      # List build artifacts for debugging
+      - name: List Artifacts
+        shell: bash
+        run: |
+          echo "=== Build Artifacts ==="
+          find build -name "*.vst3" -o -name "*.component" -o -name "*.app" -o -name "*.exe" 2>/dev/null || true
+          ls -la build/Boomerang_artefacts/ || true
+
+      # Package - macOS
+      - name: Package macOS
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          # Create zip with all formats
+          cd build/Boomerang_artefacts
+          zip -r ../../dist/Boomerang-macOS.zip VST3 AU Standalone
+          cd ../..
+          # Also run the installer script if we're doing a release
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            ./build-installer.sh
+            cp build/installer/*.pkg dist/ 2>/dev/null || true
+          fi
+
+      # Package - Windows
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cd build/Boomerang_artefacts
+          7z a ../../dist/Boomerang-Windows.zip VST3 Standalone
+          cd ../..
+
+      # Package - Linux
+      - name: Package Linux
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist
+          cd build/Boomerang_artefacts
+          tar -czvf ../../dist/Boomerang-Linux.tar.gz VST3 Standalone
+          cd ../..
+
+      # Upload artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/*
+          retention-days: 14
+
+  # Validate plugins with pluginval
+  validate:
+    name: Validate ${{ matrix.os }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+            vst3_path: build/Boomerang_artefacts/VST3/Boomerang+.vst3
+          - os: windows-latest
+            pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip
+            vst3_path: build/Boomerang_artefacts/VST3/Boomerang+.vst3
+          - os: ubuntu-latest
+            pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Linux.zip
+            vst3_path: build/Boomerang_artefacts/VST3/Boomerang+.vst3
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      # Linux dependencies for build
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libjack-jackd2-dev \
+            ladspa-sdk \
+            libfreetype6-dev \
+            libx11-dev \
+            libxcomposite-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libxrender-dev \
+            libwebkit2gtk-4.0-dev \
+            libglu1-mesa-dev \
+            mesa-common-dev
+
+      # Rebuild for validation (artifacts don't include raw VST3)
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+      # Download pluginval
+      - name: Download pluginval
+        shell: bash
+        run: |
+          curl -L -o pluginval.zip ${{ matrix.pluginval_url }}
+          unzip pluginval.zip -d pluginval
+
+      # Run pluginval
+      - name: Run pluginval
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            ./pluginval/pluginval.app/Contents/MacOS/pluginval --validate "${{ matrix.vst3_path }}" --strictness-level 5
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            ./pluginval/pluginval.exe --validate "${{ matrix.vst3_path }}" --strictness-level 5
+          else
+            # Linux needs Xvfb for headless GUI
+            sudo apt-get install -y xvfb
+            xvfb-run ./pluginval/pluginval --validate "${{ matrix.vst3_path }}" --strictness-level 5
+          fi
+
+  # Create GitHub Release on tag push
+  release:
+    name: Create Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, validate]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/boomerang-macos/*
+            artifacts/boomerang-windows/*
+            artifacts/boomerang-linux/*
+          generate_release_notes: true
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

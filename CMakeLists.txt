@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(Boomerang VERSION 2.0.0)
-set(BOOMERANG_VERSION_SUFFIX "beta-1")
+set(BOOMERANG_VERSION_SUFFIX "beta-2")
 set(BOOMERANG_FULL_VERSION "${PROJECT_VERSION}-${BOOMERANG_VERSION_SUFFIX}")
 
 # ==============================================================================
@@ -99,7 +99,7 @@ target_compile_definitions(Boomerang
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_SILENCE_DUPLICATE_AUDIO_PERMISSION_REQUESTS=1
-        BOOMERANG_VERSION="${CMAKE_PROJECT_VERSION}"
+        BOOMERANG_VERSION="${BOOMERANG_FULL_VERSION}"
 )
 
 target_link_libraries(Boomerang

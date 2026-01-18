@@ -43,9 +43,10 @@ Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging tec
 
 ## Agent Best Practices
 
-- check where you are before running location-dependent commands; or use full path when appropriate.
-- check paths and filenames for typos and existence before running commands that depend on them.
-- don't do that thing where you run a command and then immediately run another command that depends on the first command having completed successfully; instead, check the exit status of the first command before proceeding.
+- **Always use absolute paths** in terminal commands (e.g., `/Users/maximiliancascone/github/boomerang-plugin/CMakeLists.txt` not `CMakeLists.txt`). Terminal sessions may be in unexpected directories like `build/`.
+- When running `git add`, use full paths or `cd` to repo root first: `cd /Users/maximiliancascone/github/boomerang-plugin && git add file.txt`
+- Check paths and filenames for typos and existence before running commands that depend on them.
+- Don't chain commands that depend on each other without checking exit status of the first command.
 - When asked to "quit and restart GP" or similar, run: `osascript -e 'quit app "GigPerformer5"' && sleep 2 && open -a "GigPerformer5"`
 - When asked to "restart standalone" or similar, run: `osascript -e 'quit app "Boomerang+"' && sleep 2 && open -a $BOOM_STANDALONE_PATH` (the env var is exported in my `.alias` file).
 

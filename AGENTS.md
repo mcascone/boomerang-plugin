@@ -54,6 +54,26 @@ Refer to JUCE_TIPS_AND_TRICKS.md for JUCE-specific best practices, debugging tec
 - Always use the latest major version tag for GitHub Actions (e.g., `actions/checkout@v6`, not `@v4`) unless pinned for a specific reason.
 - Check action repos for current versions before adding new actions to workflows.
 
+## CI/CD & Release Process
+
+The repository uses GitHub Actions for CI/CD (`.github/workflows/build.yml`):
+
+1. **Build job** (runs on push/PR): Builds for macOS (universal), Windows, and Linux in parallel. Uploads packaged artifacts (zip/tarball).
+2. **Validate job** (runs after build): Downloads build artifacts, extracts VST3, runs `pluginval` for compliance testing. Does NOT rebuild.
+3. **Release job** (runs on `v*` tags only): Downloads all artifacts, creates a draft GitHub Release with attached binaries.
+
+To create a release:
+1. Update version in `CMakeLists.txt` (`VERSION` and `BOOMERANG_VERSION_SUFFIX`).
+2. Commit and push to main.
+3. Tag the commit: `git tag v2.0.0-beta-2 && git push --tags`
+4. CI builds, validates, and creates a draft release at https://github.com/mcascone/boomerang-plugin/releases
+5. Edit the draft release notes, then publish.
+
+Local testing with `act` (requires Docker):
+- `act -l` — list available jobs
+- `act -n push` — dry run the workflow
+- `act -n push --matrix os:ubuntu-latest` — dry run specific matrix entry
+
 ## Testing Guidelines
 
 - No automated test suite; validate via plugin host or JUCE Standalone build (`Boomerang_artefacts/Standalone`).

@@ -34,6 +34,18 @@ if [ ! -d "$BUILD_DIR" ]; then
     exit 1
 fi
 
+# Detect artifact subdirectory (Release/ for multi-config, empty for single-config)
+if [ -d "$BUILD_DIR/Release/VST3" ]; then
+    ARTIFACT_SUBDIR="Release/"
+    echo "Detected multi-config build (Release subdirectory)"
+elif [ -d "$BUILD_DIR/VST3" ]; then
+    ARTIFACT_SUBDIR=""
+    echo "Detected single-config build"
+else
+    echo "Error: Could not find VST3 artifacts in $BUILD_DIR"
+    exit 1
+fi
+
 # Clean and create directories
 echo "Setting up installer directories..."
 rm -rf "$OUTPUT_DIR"
@@ -45,7 +57,7 @@ VST3_ROOT="$OUTPUT_DIR/vst3-root"
 VST3_SCRIPTS="$OUTPUT_DIR/vst3-scripts"
 mkdir -p "$VST3_ROOT/Library/Audio/Plug-Ins/VST3"
 mkdir -p "$VST3_SCRIPTS"
-cp -R "$BUILD_DIR/VST3/Boomerang+.vst3" "$VST3_ROOT/Library/Audio/Plug-Ins/VST3/"
+cp -R "$BUILD_DIR/${ARTIFACT_SUBDIR}VST3/Boomerang+.vst3" "$VST3_ROOT/Library/Audio/Plug-Ins/VST3/"
 
 cat > "$VST3_SCRIPTS/postinstall" << 'EOF'
 #!/bin/bash
@@ -67,7 +79,7 @@ AU_ROOT="$OUTPUT_DIR/au-root"
 AU_SCRIPTS="$OUTPUT_DIR/au-scripts"
 mkdir -p "$AU_ROOT/Library/Audio/Plug-Ins/Components"
 mkdir -p "$AU_SCRIPTS"
-cp -R "$BUILD_DIR/AU/Boomerang+.component" "$AU_ROOT/Library/Audio/Plug-Ins/Components/"
+cp -R "$BUILD_DIR/${ARTIFACT_SUBDIR}AU/Boomerang+.component" "$AU_ROOT/Library/Audio/Plug-Ins/Components/"
 
 cat > "$AU_SCRIPTS/postinstall" << 'EOF'
 #!/bin/bash
@@ -89,7 +101,7 @@ STANDALONE_ROOT="$OUTPUT_DIR/standalone-root"
 STANDALONE_SCRIPTS="$OUTPUT_DIR/standalone-scripts"
 mkdir -p "$STANDALONE_ROOT/Applications"
 mkdir -p "$STANDALONE_SCRIPTS"
-cp -R "$BUILD_DIR/Standalone/Boomerang+.app" "$STANDALONE_ROOT/Applications/"
+cp -R "$BUILD_DIR/${ARTIFACT_SUBDIR}Standalone/Boomerang+.app" "$STANDALONE_ROOT/Applications/"
 cp uninstall.sh "$STANDALONE_ROOT/Applications/Uninstall Boomerang+.command"
 chmod +x "$STANDALONE_ROOT/Applications/Uninstall Boomerang+.command"
 

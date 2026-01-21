@@ -85,25 +85,42 @@ jobs:
           echo "Re-signing bundles to fix 'sealed resource' issues..."
           BUILD_DIR="build/Boomerang_artefacts/${{ env.BUILD_TYPE }}"
           
+          if [ ! -d "${BUILD_DIR}" ]; then
+            echo "Error: Build directory ${BUILD_DIR} not found"
+            exit 1
+          fi
+          
           # Remove and re-sign VST3
           if [ -d "${BUILD_DIR}/VST3/Boomerang+.vst3" ]; then
             codesign --remove-signature "${BUILD_DIR}/VST3/Boomerang+.vst3" || true
-            codesign --force --deep --sign - "${BUILD_DIR}/VST3/Boomerang+.vst3"
-            echo "✓ VST3 re-signed"
+            if codesign --force --deep --sign - "${BUILD_DIR}/VST3/Boomerang+.vst3"; then
+              echo "✓ VST3 re-signed"
+            else
+              echo "✗ VST3 signing failed"
+              exit 1
+            fi
           fi
           
           # Remove and re-sign AU
           if [ -d "${BUILD_DIR}/AU/Boomerang+.component" ]; then
             codesign --remove-signature "${BUILD_DIR}/AU/Boomerang+.component" || true
-            codesign --force --deep --sign - "${BUILD_DIR}/AU/Boomerang+.component"
-            echo "✓ AU re-signed"
+            if codesign --force --deep --sign - "${BUILD_DIR}/AU/Boomerang+.component"; then
+              echo "✓ AU re-signed"
+            else
+              echo "✗ AU signing failed"
+              exit 1
+            fi
           fi
           
           # Remove and re-sign Standalone
           if [ -d "${BUILD_DIR}/Standalone/Boomerang+.app" ]; then
             codesign --remove-signature "${BUILD_DIR}/Standalone/Boomerang+.app" || true
-            codesign --force --deep --sign - "${BUILD_DIR}/Standalone/Boomerang+.app"
-            echo "✓ Standalone re-signed"
+            if codesign --force --deep --sign - "${BUILD_DIR}/Standalone/Boomerang+.app"; then
+              echo "✓ Standalone re-signed"
+            else
+              echo "✗ Standalone signing failed"
+              exit 1
+            fi
           fi
           
           echo "Re-signing complete"

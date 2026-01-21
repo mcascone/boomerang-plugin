@@ -10,10 +10,17 @@ Boomerang is designed for performance-oriented use on drums, guitars, synths, an
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
+# Update Jan-20-2026
 
-# Update Jan-16-2026
+## v2.0.0 beta 2 is out! 
 
-## v2.0.0 beta 1 is out!
+This one has packages for Windows and Linux as well as Mac.
+
+- Fixes [#44](https://github.com/mcascone/boomerang-plugin/issues/44) - volume control bug
+
+## Update Jan-16-2026
+
+**v2.0.0 beta 1** is out!
 
 Mac only at the moment, athough i haven't actually tried it on other os's. 
 

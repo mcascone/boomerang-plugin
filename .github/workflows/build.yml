@@ -83,15 +83,29 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo "Re-signing bundles to fix 'sealed resource' issues..."
+          BUILD_DIR="build/Boomerang_artefacts/${{ env.BUILD_TYPE }}"
+          
           # Remove and re-sign VST3
-          codesign --remove-signature "build/Boomerang_artefacts/Release/VST3/Boomerang+.vst3" || true
-          codesign --force --deep --sign - "build/Boomerang_artefacts/Release/VST3/Boomerang+.vst3"
+          if [ -d "${BUILD_DIR}/VST3/Boomerang+.vst3" ]; then
+            codesign --remove-signature "${BUILD_DIR}/VST3/Boomerang+.vst3" || true
+            codesign --force --deep --sign - "${BUILD_DIR}/VST3/Boomerang+.vst3"
+            echo "✓ VST3 re-signed"
+          fi
+          
           # Remove and re-sign AU
-          codesign --remove-signature "build/Boomerang_artefacts/Release/AU/Boomerang+.component" || true
-          codesign --force --deep --sign - "build/Boomerang_artefacts/Release/AU/Boomerang+.component"
+          if [ -d "${BUILD_DIR}/AU/Boomerang+.component" ]; then
+            codesign --remove-signature "${BUILD_DIR}/AU/Boomerang+.component" || true
+            codesign --force --deep --sign - "${BUILD_DIR}/AU/Boomerang+.component"
+            echo "✓ AU re-signed"
+          fi
+          
           # Remove and re-sign Standalone
-          codesign --remove-signature "build/Boomerang_artefacts/Release/Standalone/Boomerang+.app" || true
-          codesign --force --deep --sign - "build/Boomerang_artefacts/Release/Standalone/Boomerang+.app"
+          if [ -d "${BUILD_DIR}/Standalone/Boomerang+.app" ]; then
+            codesign --remove-signature "${BUILD_DIR}/Standalone/Boomerang+.app" || true
+            codesign --force --deep --sign - "${BUILD_DIR}/Standalone/Boomerang+.app"
+            echo "✓ Standalone re-signed"
+          fi
+          
           echo "Re-signing complete"
 
       # Package - macOS
@@ -99,8 +113,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist
-          # Create zip with all formats (artifacts are in Release/ for multi-config builds)
-          cd build/Boomerang_artefacts/Release
+          # Create zip with all formats (artifacts are in BUILD_TYPE/ for multi-config builds)
+          cd build/Boomerang_artefacts/${{ env.BUILD_TYPE }}
           cp ../../../README.md .
           zip -r ../../../dist/Boomerang-macOS.zip VST3 AU Standalone README.md
           cd ../../..

@@ -78,6 +78,22 @@ jobs:
           find build -name "*.vst3" -o -name "*.component" -o -name "*.app" -o -name "*.exe" 2>/dev/null || true
           ls -la build/Boomerang_artefacts/ || true
 
+      # Fix code signing for macOS (resolves "sealed resource" issues)
+      - name: Re-sign macOS Bundles
+        if: runner.os == 'macOS'
+        run: |
+          echo "Re-signing bundles to fix 'sealed resource' issues..."
+          # Remove and re-sign VST3
+          codesign --remove-signature "build/Boomerang_artefacts/Release/VST3/Boomerang+.vst3" || true
+          codesign --force --deep --sign - "build/Boomerang_artefacts/Release/VST3/Boomerang+.vst3"
+          # Remove and re-sign AU
+          codesign --remove-signature "build/Boomerang_artefacts/Release/AU/Boomerang+.component" || true
+          codesign --force --deep --sign - "build/Boomerang_artefacts/Release/AU/Boomerang+.component"
+          # Remove and re-sign Standalone
+          codesign --remove-signature "build/Boomerang_artefacts/Release/Standalone/Boomerang+.app" || true
+          codesign --force --deep --sign - "build/Boomerang_artefacts/Release/Standalone/Boomerang+.app"
+          echo "Re-signing complete"
+
       # Package - macOS
       - name: Package macOS
         if: runner.os == 'macOS'

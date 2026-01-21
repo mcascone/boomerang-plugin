@@ -3,27 +3,31 @@ cmake_minimum_required(VERSION 3.22)
 project(Boomerang VERSION 2.0.0)
 
 # ==============================================================================
-# Version from Git Tag (Single Source of Truth)
+# Version from Git (Single Source of Truth)
 # ==============================================================================
-# Extracts version from the latest git tag (e.g., v2.0.0-beta-3 -> 2.0.0-beta-3)
-# Falls back to "dev" if no tags exist.
+# At a tag:      v2.0.0-beta-3 -> 2.0.0-beta-3
+# After a tag:   v2.0.0-beta-3-5-g1234abc -> 2.0.0-beta-3+5.g1234abc
+# No tags:       -> 2.0.0-dev
 
 execute_process(
-    COMMAND git describe --tags --abbrev=0
+    COMMAND git describe --tags --always
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_VARIABLE GIT_DESCRIBE
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
-    RESULT_VARIABLE GIT_TAG_RESULT
+    RESULT_VARIABLE GIT_RESULT
 )
 
-if(GIT_TAG_RESULT EQUAL 0 AND GIT_TAG)
-    # Strip 'v' prefix if present (v2.0.0-beta-3 -> 2.0.0-beta-3)
-    string(REGEX REPLACE "^v" "" BOOMERANG_FULL_VERSION "${GIT_TAG}")
-    message(STATUS "Version from git tag: ${BOOMERANG_FULL_VERSION}")
+if(GIT_RESULT EQUAL 0 AND GIT_DESCRIBE)
+    # Strip 'v' prefix if present
+    string(REGEX REPLACE "^v" "" VERSION_STRING "${GIT_DESCRIBE}")
+    # Convert git describe format (2.0.0-beta-3-5-g1234abc) to semver metadata format (2.0.0-beta-3+5.g1234abc)
+    # Match: base-N-gHASH and replace with base+N.gHASH
+    string(REGEX REPLACE "^(.+)-([0-9]+)-(g[0-9a-f]+)$" "\\1+\\2.\\3" BOOMERANG_FULL_VERSION "${VERSION_STRING}")
+    message(STATUS "Version from git: ${BOOMERANG_FULL_VERSION}")
 else()
     set(BOOMERANG_FULL_VERSION "${PROJECT_VERSION}-dev")
-    message(STATUS "No git tag found, using fallback: ${BOOMERANG_FULL_VERSION}")
+    message(STATUS "No git info found, using fallback: ${BOOMERANG_FULL_VERSION}")
 endif()
 
 # ==============================================================================

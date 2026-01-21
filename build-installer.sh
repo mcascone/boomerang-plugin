@@ -4,21 +4,25 @@
 
 set -e
 
-# Get version from git tag (single source of truth)
+# Get version from git (single source of truth)
 # Check if version was passed via environment variable (from CI)
 if [ -n "$BOOMERANG_VERSION" ]; then
     VERSION="$BOOMERANG_VERSION"
     echo "Using version from environment: $VERSION"
 else
-    # Extract version from latest git tag
-    GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-    if [ -n "$GIT_TAG" ]; then
+    # Extract version from git describe
+    # At a tag:    v2.0.0-beta-3 -> 2.0.0-beta-3
+    # After a tag: v2.0.0-beta-3-5-g1234abc -> 2.0.0-beta-3+5.g1234abc
+    GIT_DESCRIBE=$(git describe --tags --always 2>/dev/null || echo "")
+    if [ -n "$GIT_DESCRIBE" ]; then
         # Strip 'v' prefix if present
-        VERSION="${GIT_TAG#v}"
-        echo "Using version from git tag: $VERSION"
+        VERSION="${GIT_DESCRIBE#v}"
+        # Convert git format (tag-N-gHASH) to semver metadata (tag+N.gHASH)
+        VERSION=$(echo "$VERSION" | sed -E 's/^(.+)-([0-9]+)-(g[0-9a-f]+)$/\1+\2.\3/')
+        echo "Using version from git: $VERSION"
     else
         VERSION="dev"
-        echo "Warning: No git tag found, using fallback: $VERSION"
+        echo "Warning: No git info found, using fallback: $VERSION"
     fi
 fi
 IDENTIFIER="com.MCMusicWorkshop.Boomerang"

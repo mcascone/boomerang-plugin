@@ -41,6 +41,23 @@ jobs:
           submodules: recursive
           fetch-depth: 0  # Full history for git version
 
+      # Extract version from tag or CMakeLists.txt
+      - name: Extract Version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Use tag name without 'v' prefix for tagged releases
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            # Use CMakeLists.txt version for non-tagged builds
+            CMAKE_VERSION=$(grep "^project" CMakeLists.txt | grep -oE '[0-9]+(\.[0-9]+)+')
+            VERSION_SUFFIX=$(grep "^set(BOOMERANG_VERSION_SUFFIX" CMakeLists.txt | grep -oE '"[^"]+"' | tr -d '"')
+            VERSION="${CMAKE_VERSION}-${VERSION_SUFFIX}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
       # Linux: Install ALSA and other audio dependencies
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
@@ -129,15 +146,16 @@ jobs:
       - name: Package macOS
         if: runner.os == 'macOS'
         run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
           mkdir -p dist
           # Create zip with all formats (artifacts are in BUILD_TYPE/ for multi-config builds)
           cd build/Boomerang_artefacts/${{ env.BUILD_TYPE }}
           cp ../../../README.md .
-          zip -r ../../../dist/Boomerang-macOS.zip VST3 AU Standalone README.md
+          zip -r ../../../dist/Boomerang-${VERSION}-macOS.zip VST3 AU Standalone README.md
           cd ../../..
           # Also run the installer script if we're doing a release
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            ./build-installer.sh
+            BOOMERANG_VERSION="$VERSION" ./build-installer.sh
             cp build/installer/*.pkg dist/ 2>/dev/null || true
           fi
 
@@ -146,20 +164,22 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
           mkdir -p dist
           cd build/Boomerang_artefacts/Release
           cp ../../../README.md .
-          7z a ../../../dist/Boomerang-Windows.zip VST3 Standalone README.md
+          7z a ../../../dist/Boomerang-${VERSION}-Windows.zip VST3 Standalone README.md
           cd ../../..
 
       # Package - Linux
       - name: Package Linux
         if: runner.os == 'Linux'
         run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
           mkdir -p dist
           cd build/Boomerang_artefacts/Release
           cp ../../../README.md .
-          tar -czvf ../../../dist/Boomerang-Linux.tar.gz VST3 Standalone README.md
+          tar -czvf ../../../dist/Boomerang-${VERSION}-Linux.tar.gz VST3 Standalone README.md
           cd ../../..
 
       # Upload artifacts
@@ -181,15 +201,15 @@ jobs:
           - os: macos-latest
             pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
             artifact_name: boomerang-macos
-            archive_name: Boomerang-macOS.zip
+            archive_pattern: "Boomerang-*-macOS.zip"
           - os: windows-latest
             pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip
             artifact_name: boomerang-windows
-            archive_name: Boomerang-Windows.zip
+            archive_pattern: "Boomerang-*-Windows.zip"
           - os: ubuntu-latest
             pluginval_url: https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Linux.zip
             artifact_name: boomerang-linux
-            archive_name: Boomerang-Linux.tar.gz
+            archive_pattern: "Boomerang-*-Linux.tar.gz"
 
     runs-on: ${{ matrix.os }}
 
@@ -201,6 +221,21 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: dist
 
+      # Find the archive file (name includes version)
+      - name: Find Archive
+        id: find_archive
+        shell: bash
+        run: |
+          cd dist
+          ARCHIVE=$(ls ${{ matrix.archive_pattern }} 2>/dev/null | head -1)
+          if [ -z "$ARCHIVE" ]; then
+            echo "Error: No archive matching ${{ matrix.archive_pattern }} found"
+            ls -la
+            exit 1
+          fi
+          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_OUTPUT
+          echo "Found archive: $ARCHIVE"
+
       # Extract VST3 from the build archive
       - name: Extract VST3 (macOS/Windows)
         if: runner.os != 'Linux'
@@ -208,7 +243,7 @@ jobs:
         run: |
           mkdir -p extracted
           cd dist
-          unzip "${{ matrix.archive_name }}" -d ../extracted
+          unzip "${{ steps.find_archive.outputs.ARCHIVE }}" -d ../extracted
           echo "=== Extracted contents ==="
           ls -la ../extracted/
 
@@ -217,7 +252,7 @@ jobs:
         run: |
           mkdir -p extracted
           cd dist
-          tar -xzvf "${{ matrix.archive_name }}" -C ../extracted
+          tar -xzvf "${{ steps.find_archive.outputs.ARCHIVE }}" -C ../extracted
           echo "=== Extracted contents ==="
           ls -la ../extracted/
 

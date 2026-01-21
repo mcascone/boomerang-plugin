@@ -4,22 +4,28 @@
 
 set -e
 
-# Extract version from CMakeLists.txt (single source of truth)
-CMAKE_VERSION=$(grep "^project" CMakeLists.txt | grep -oE '[0-9]+(\.[0-9]+)+')
-if [ -z "$CMAKE_VERSION" ]; then
-    echo "Error: Could not extract version from CMakeLists.txt"
-    exit 1
-fi
+# Check if version was passed via environment variable (from CI)
+if [ -n "$BOOMERANG_VERSION" ]; then
+    VERSION="$BOOMERANG_VERSION"
+    echo "Using version from environment: $VERSION"
+else
+    # Extract version from CMakeLists.txt (single source of truth for local builds)
+    CMAKE_VERSION=$(grep "^project" CMakeLists.txt | grep -oE '[0-9]+(\.[0-9]+)+')
+    if [ -z "$CMAKE_VERSION" ]; then
+        echo "Error: Could not extract version from CMakeLists.txt"
+        exit 1
+    fi
 
-# Extract version suffix from CMakeLists.txt (e.g., "beta-1", "alpha-5", "rc-1")
-VERSION_SUFFIX=$(grep "^set(BOOMERANG_VERSION_SUFFIX" CMakeLists.txt | grep -oE '"[^"]+"' | tr -d '"')
-if [ -z "$VERSION_SUFFIX" ]; then
-    echo "Error: Could not extract BOOMERANG_VERSION_SUFFIX from CMakeLists.txt"
-    exit 1
-fi
+    # Extract version suffix from CMakeLists.txt (e.g., "beta-1", "alpha-5", "rc-1")
+    VERSION_SUFFIX=$(grep "^set(BOOMERANG_VERSION_SUFFIX" CMakeLists.txt | grep -oE '"[^"]+"' | tr -d '"')
+    if [ -z "$VERSION_SUFFIX" ]; then
+        echo "Error: Could not extract BOOMERANG_VERSION_SUFFIX from CMakeLists.txt"
+        exit 1
+    fi
 
-# Combine version and suffix (e.g., 2.0.0-beta-1)
-VERSION="${CMAKE_VERSION}-${VERSION_SUFFIX}"
+    # Combine version and suffix (e.g., 2.0.0-beta-1)
+    VERSION="${CMAKE_VERSION}-${VERSION_SUFFIX}"
+fi
 IDENTIFIER="com.MCMusicWorkshop.Boomerang"
 BUILD_DIR="build/Boomerang_artefacts"
 OUTPUT_DIR="build/installer"

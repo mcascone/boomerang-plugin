@@ -1,9 +1,8 @@
-name: Build and Release
+name: Build
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: ['**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -152,11 +151,9 @@ jobs:
           cp ../../../README.md .
           zip -r ../../../dist/Boomerang-${VERSION}-macOS.zip VST3 AU Standalone README.md
           cd ../../..
-          # Also run the installer script if we're doing a release
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            BOOMERANG_VERSION="$VERSION" ./build-installer.sh
-            cp build/installer/*.pkg dist/ 2>/dev/null || true
-          fi
+          # Build the installer package
+          BOOMERANG_VERSION="$VERSION" ./build-installer.sh
+          cp build/installer/*.pkg dist/ 2>/dev/null || true
 
       # Package - Windows
       - name: Package Windows
@@ -277,36 +274,3 @@ jobs:
             sudo apt-get install -y xvfb
             xvfb-run ./pluginval/pluginval --validate "$VST3_PATH" --strictness-level 5
           fi
-
-  # Create GitHub Release on tag push
-  release:
-    name: Create Release
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build, validate]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v6
-        with:
-          path: artifacts
-
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            artifacts/boomerang-macos/*
-            artifacts/boomerang-windows/*
-            artifacts/boomerang-linux/*
-          generate_release_notes: true
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

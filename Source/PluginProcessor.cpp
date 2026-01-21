@@ -339,6 +339,10 @@ void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (totalNumInputChannels == 1 && totalNumOutputChannels >= 2)
         buffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
     
+    // Process audio thread requests (issue #51 - ensures Once mode updates even when UI closed)
+    // This handles shouldDisableOnce flag set by audio thread when loop wraps in Once mode
+    looperEngine->processAudioThreadRequests();
+    
     // Pulse loopCycle parameter when loop wraps (issue #51)
     // This runs in processBlock so it works even when UI is closed
     // Use peek (load) to check without clearing - the UI may also want to flash

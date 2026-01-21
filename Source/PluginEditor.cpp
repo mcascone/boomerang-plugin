@@ -443,8 +443,8 @@ void BoomerangAudioProcessorEditor::resized()
 
 void BoomerangAudioProcessorEditor::timerCallback()
 {
-    // Process audio thread requests (issue #38) - UI thread only
-    audioProcessor.getLooperEngine()->processAudioThreadRequests();
+    // Note: processAudioThreadRequests() is now called from processBlock (issue #51)
+    // to ensure Once mode updates even when UI is closed
     
     updateStatusDisplay();
     

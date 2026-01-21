@@ -8,6 +8,14 @@ Based on the code review findings, here are the recommended GitHub issues to cre
 - ✅ **#34** - Missing switch cases for LooperState (CLOSED)
 - ✅ **#35** - Sign-conversion and shadow warnings in LooperEngine (CLOSED)
 - ❌ **#36** - VST3 ad-hoc signing / missing resources warning during install (OPEN)
+- ✅ **#38** - Fix thread safety violations between UI and audio threads (CLOSED)
+- ✅ **#39** - Migrate to AudioProcessorValueTreeState (APVTS) (CLOSED)
+- ❌ **#40** - Feature: Adjustable feedback (OPEN)
+- ❌ **#43** - Activate Rec LED when stacking (OPEN)
+- ❌ **#44** - Boomerang output controls entire signal, not just loop level (OPEN - needs testing)
+- ❌ **#45** - Implement code signing for macOS, Windows, and Linux releases (OPEN)
+- ❌ **#46** - Set up CI/CD pipeline for multi-platform builds and automated releases (OPEN)
+- ❌ **#47** - CI: Separate release workflow to avoid duplicate builds on tag push (OPEN)
 
 ## TODO from Parameter Notification Work 📝
 
@@ -21,15 +29,25 @@ Based on the code review findings, here are the recommended GitHub issues to cre
 
 ## New Issues to Create 📝
 
+### CI/CD Enhancements
+
+#### Automate Gumroad Release Updates
+**Labels:** `enhancement`, `ci-cd`  
+**Description:** Investigate automating Gumroad product updates when new releases are published. Options:
+- Gumroad API integration to upload new downloadable files
+- Add step to GitHub Actions release workflow to push artifacts to Gumroad
+- API docs: https://app.gumroad.com/api
+- Could be added to **#46** (CI/CD pipeline) as Phase 5 enhancement
+
 ### Priority 1: Critical Issues
 
-#### ✅ ~~1. Thread Safety Violations Between UI and Audio Threads~~ - FIXED: All state variables now use `std::atomic<>`
+#### ✅ ~~1. Thread Safety Violations Between UI and Audio Threads~~ - FIXED via **#38** (CLOSED)
 
 #### ✅ ~~2. Missing Host Automation for Button Parameters~~ - FIXED: All buttons exposed via APVTS (thruMute, record, play, once, stack, reverse + indicator params loopCycle, slowMode, onceState)
 
 ### Priority 2: Architecture Improvements
 
-#### ✅ ~~3. Migrate to AudioProcessorValueTreeState (APVTS)~~ - DONE: All parameters use APVTS with createParameterLayout(), SliderAttachment for volume
+#### ✅ ~~3. Migrate to AudioProcessorValueTreeState (APVTS)~~ - DONE via **#39** (CLOSED)
 
 #### 🔮 ~~4. Incomplete State Persistence~~ - AS DESIGNED: Original hardware doesn't persist loop content or mode state on power cycle. Future enhancement to optionally save/restore loop buffers.
 
@@ -116,18 +134,26 @@ void LooperEngine::processBlock(...) {
 ## Issue Creation Order
 
 **Completed:**
-- ✅ 1. Thread Safety Violations - FIXED
+- ✅ 1. Thread Safety Violations - **#38** (CLOSED)
 - ✅ 2. Missing Host Automation - FIXED
-- ✅ 3. Migrate to APVTS - DONE
+- ✅ 3. Migrate to APVTS - **#39** (CLOSED)
 - 🔮 4. Incomplete State Persistence - AS DESIGNED
 - ✅ 5. Remove Dead Code - PARTIAL
 
-**Future:**
+**Open GitHub Issues:**
+- ❌ **#36** - VST3 signing warnings (superseded by #45)
+- ❌ **#40** - Adjustable feedback
+- ❌ **#43** - REC LED when stacking
+- ❌ **#45** - Code signing for all platforms
+- ❌ **#46** - CI/CD pipeline setup
+- ❌ **#47** - Separate release workflow
+
+**Future (not yet filed):**
 - 6. Inconsistent Naming
 - 7. Add Unit Tests
 - 8. Add Debug Assertions
 
 ## Notes
-- Issues #32-35 are resolved (closed)
-- Issue #36 (VST3 signing) still open
-- All new issues reference CODE_REVIEW_FINDINGS.md for details
+- Issues #32-35, #38, #39, #44 are resolved (closed)
+- CI/CD infrastructure issues #45-47 are new and in progress
+- Gumroad automation could be added to #46 as an enhancement

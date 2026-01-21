@@ -98,6 +98,12 @@ private:
     // Flag to prevent circular notifications when internal state changes update parameters
     std::atomic<bool> updatingFromInternalState { false };
     
+    // Loop cycle pulse tracking (issue #51)
+    // Tracks loop wrap state to pulse loopCycle parameter from processBlock
+    std::atomic<bool> loopCyclePulseActive { false };
+    std::atomic<int> loopCyclePulseCounter { 0 };
+    static constexpr int loopCyclePulseDurationFrames = 5;  // ~80ms at 60Hz callback rate
+    
     // Helper function to create parameter layout
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 

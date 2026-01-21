@@ -476,32 +476,19 @@ void BoomerangAudioProcessorEditor::timerCallback()
     bool isThruMuted = (thruMuteState == LooperEngine::ThruMuteState::On);
     thruMuteButton.setToggleState(isThruMuted, juce::dontSendNotification);
     
-    // Flash record button when loop wraps around
-    if (audioProcessor.getLooperEngine()->checkAndClearLoopWrapped())
+    // Flash record button when loopCycle parameter is pulsed (issue #51)
+    // The Processor now handles detecting loop wraps and pulsing loopCycle
+    // We just read the parameter value to sync our visual flash
+    if (auto* loopCycleParam = audioProcessor.getAPVTS().getRawParameterValue(ParameterIDs::loopCycle))
     {
-        recordFlashCounter = 5;  // Flash for ~80ms (5 frames at 16ms)
-        
-        // Pulse loopCycle parameter for external host/controller REC blink
-        if (auto* param = audioProcessor.getAPVTS().getParameter(ParameterIDs::loopCycle))
+        bool loopCycleActive = loopCycleParam->load() >= 0.5f;
+        if (loopCycleActive && recordFlashCounter == 0)
         {
-            param->beginChangeGesture();
-            param->setValueNotifyingHost(1.0f);
-            param->endChangeGesture();
+            recordFlashCounter = 5;  // Start flash for ~80ms (5 frames at 16ms)
         }
-    }
-    else if (recordFlashCounter > 0)
-    {
-        recordFlashCounter--;
-        
-        // Reset loopCycle parameter when flash ends
-        if (recordFlashCounter == 0)
+        else if (!loopCycleActive && recordFlashCounter > 0)
         {
-            if (auto* param = audioProcessor.getAPVTS().getParameter(ParameterIDs::loopCycle))
-            {
-                param->beginChangeGesture();
-                param->setValueNotifyingHost(0.0f);
-                param->endChangeGesture();
-            }
+            recordFlashCounter--;
         }
     }
     

@@ -338,6 +338,54 @@ void BoomerangAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // Upmix mono input to stereo output so users with a single mic still hear both channels
     if (totalNumInputChannels == 1 && totalNumOutputChannels >= 2)
         buffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
+    
+    // Pulse loopCycle parameter when loop wraps (issue #51)
+    // This runs in processBlock so it works even when UI is closed
+    // Use peek (load) to check without clearing - the UI may also want to flash
+    if (looperEngine->checkAndClearLoopWrapped())
+    {
+        // Start the pulse
+        if (!loopCyclePulseActive.load())
+        {
+            loopCyclePulseActive.store(true);
+            loopCyclePulseCounter.store(loopCyclePulseDurationFrames);
+            
+            // Set parameter to 1.0 (on) using async call to avoid audio thread blocking
+            juce::MessageManager::callAsync([this]()
+            {
+                if (auto* param = apvts.getParameter(ParameterIDs::loopCycle))
+                {
+                    param->beginChangeGesture();
+                    param->setValueNotifyingHost(1.0f);
+                    param->endChangeGesture();
+                }
+            });
+        }
+    }
+    else if (loopCyclePulseActive.load())
+    {
+        // Decrement pulse counter
+        int count = loopCyclePulseCounter.load();
+        if (count > 0)
+        {
+            loopCyclePulseCounter.store(count - 1);
+        }
+        else
+        {
+            // Pulse complete - reset to 0
+            loopCyclePulseActive.store(false);
+            
+            juce::MessageManager::callAsync([this]()
+            {
+                if (auto* param = apvts.getParameter(ParameterIDs::loopCycle))
+                {
+                    param->beginChangeGesture();
+                    param->setValueNotifyingHost(0.0f);
+                    param->endChangeGesture();
+                }
+            });
+        }
+    }
 }
 
 //==============================================================================

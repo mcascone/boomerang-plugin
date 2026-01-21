@@ -1,8 +1,30 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(Boomerang VERSION 2.0.0)
-set(BOOMERANG_VERSION_SUFFIX "beta-2")
-set(BOOMERANG_FULL_VERSION "${PROJECT_VERSION}-${BOOMERANG_VERSION_SUFFIX}")
+
+# ==============================================================================
+# Version from Git Tag (Single Source of Truth)
+# ==============================================================================
+# Extracts version from the latest git tag (e.g., v2.0.0-beta-3 -> 2.0.0-beta-3)
+# Falls back to "dev" if no tags exist.
+
+execute_process(
+    COMMAND git describe --tags --abbrev=0
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE GIT_TAG_RESULT
+)
+
+if(GIT_TAG_RESULT EQUAL 0 AND GIT_TAG)
+    # Strip 'v' prefix if present (v2.0.0-beta-3 -> 2.0.0-beta-3)
+    string(REGEX REPLACE "^v" "" BOOMERANG_FULL_VERSION "${GIT_TAG}")
+    message(STATUS "Version from git tag: ${BOOMERANG_FULL_VERSION}")
+else()
+    set(BOOMERANG_FULL_VERSION "${PROJECT_VERSION}-dev")
+    message(STATUS "No git tag found, using fallback: ${BOOMERANG_FULL_VERSION}")
+endif()
 
 # ==============================================================================
 # Build Configuration

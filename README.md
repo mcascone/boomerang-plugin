@@ -10,9 +10,15 @@ Boomerang is designed for performance-oriented use on drums, guitars, synths, an
 
 ![theRang_large](https://github.com/mcascone/Boomerang-project/assets/8335079/24804087-7e4d-49fd-bff8-4ba93347222e)
 
-# Update Jan-20-2026
+# Update Jan-22-2026
 
-## v2.0.0 beta 2 is out! 
+## v2.0.0-beta-4 is out!
+
+This is the one: universal binary works on Intel and M1, all major bugs addressed. I'll probably tag this as `v2.0.0` soon!
+
+## Update Jan-20-2026
+
+**v2.0.0 beta 2** is out!
 
 This one has packages for Windows and Linux as well as Mac.
 

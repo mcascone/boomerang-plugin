@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            cmake_flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+            cmake_flags: -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
             artifact_name: boomerang-macos
           - os: windows-latest
             cmake_flags: ""

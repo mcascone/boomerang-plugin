@@ -11,9 +11,9 @@ on:
         type: string
 
 jobs:
-  # Wait for the build workflow to complete on main
-  wait-for-build:
-    name: Wait for Build
+  # Find the build workflow to complete on main
+  find-build:
+    name: Find Build
     runs-on: ubuntu-latest
     outputs:
       run_id: ${{ steps.find_run.outputs.run_id }}
@@ -78,7 +78,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: wait-for-build
+    needs: find-build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -94,7 +94,7 @@ jobs:
           name: boomerang-macos
           path: artifacts/boomerang-macos
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ needs.wait-for-build.outputs.run_id }}
+          run-id: ${{ needs.find-build.outputs.run_id }}
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v6
@@ -102,7 +102,7 @@ jobs:
           name: boomerang-windows
           path: artifacts/boomerang-windows
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ needs.wait-for-build.outputs.run_id }}
+          run-id: ${{ needs.find-build.outputs.run_id }}
 
       - name: Download Linux artifacts
         uses: actions/download-artifact@v6
@@ -110,7 +110,7 @@ jobs:
           name: boomerang-linux
           path: artifacts/boomerang-linux
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ needs.wait-for-build.outputs.run_id }}
+          run-id: ${{ needs.find-build.outputs.run_id }}
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
@@ -125,6 +125,7 @@ jobs:
           fi
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_tag.outputs.TAG }}
@@ -136,3 +137,16 @@ jobs:
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Show In Summary
+        env:
+          RELEASE_URL: ${{ steps.create_release.outputs.url }}
+          RELEASE_TAG: ${{ steps.get_tag.outputs.TAG }}
+        run: |
+          {
+            echo "## Release Created"
+            echo ""
+            echo "- Release tag: $RELEASE_TAG"
+            echo "- [Release Link]($RELEASE_URL)"
+          } >> $GITHUB_STEP_SUMMARY
+

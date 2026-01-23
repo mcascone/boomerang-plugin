@@ -138,32 +138,6 @@ This project is very much in flux and there are a lot of little bugs/features in
 
 You can also [view a list of Milestones](https://github.com/mcascone/boomerang-plugin/milestones) to get a broader sense of my future plans for this project.
 
-Here is what the GUI looks like now:
-
-![plugin-ui](img/Screenshot_2024-06-10.png)
-
-## Building
-
-The script is auto-reloadable in the UI.
-
-Exporting is also done in the UI, so there's no build process to manage that I'm aware of.
-
-### Prerequisites
-
-- [Blue Cat Audio Plugin SDK](https://www.bluecataudio.com/Doc/Product_PlugNScript/)
-
-### Source Code Attribution
-
-As a starting point, I am using the `looper.cxx` script that comes with the PNS software download. So the architecture of the code is not mine.
-
-I have modified the code to add and remove features and behaviors that are not needed for the emulation of the original device.
-
-As time allows I plan to refactor the code to make it more readable and reuseable.
-
-### Source Code
-
-You can view and download the source code at <https://github.com/mcascone/boomerang-plugin.git>
-
 # The Controls
 
 The original manual has the best description of each control, so I am copying here verbatim. The following text is 100% copied from the manual, and only formatted by me.

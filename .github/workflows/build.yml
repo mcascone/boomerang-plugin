@@ -80,9 +80,31 @@ jobs:
             libglu1-mesa-dev \
             mesa-common-dev
 
+      # Cache JUCE build artifacts — JUCE rarely changes, so cache based on submodule commit
+      - name: Get JUCE commit hash
+        id: juce-hash
+        shell: bash
+        run: echo "hash=$(git -C JUCE rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Cache JUCE build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/JUCE
+            build/_deps
+          key: juce-${{ runner.os }}-${{ steps.juce-hash.outputs.hash }}
+          restore-keys: |
+            juce-${{ runner.os }}-
+
+      # Setup ccache for faster compilation
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: ${{ runner.os }}-ccache
+
       # Configure CMake
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ${{ matrix.cmake_flags }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ${{ matrix.cmake_flags }}
 
       # Build
       - name: Build

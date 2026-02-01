@@ -130,64 +130,34 @@ mkdir -p "$COMPONENT_PKGS"
 # Build VST3 component package
 echo "Building VST3 component..."
 VST3_ROOT="$OUTPUT_DIR/vst3-root"
-VST3_SCRIPTS="$OUTPUT_DIR/vst3-scripts"
 mkdir -p "$VST3_ROOT/Library/Audio/Plug-Ins/VST3"
-mkdir -p "$VST3_SCRIPTS"
 cp -R "$BUILD_DIR/${ARTIFACT_SUBDIR}VST3/Boomerang+.vst3" "$VST3_ROOT/Library/Audio/Plug-Ins/VST3/"
-
-cat > "$VST3_SCRIPTS/postinstall" << 'EOF'
-#!/bin/bash
-xattr -cr "/Library/Audio/Plug-Ins/VST3/Boomerang+.vst3" 2>/dev/null || true
-exit 0
-EOF
-chmod +x "$VST3_SCRIPTS/postinstall"
 
 pkgbuild --root "$VST3_ROOT" \
          --identifier "${IDENTIFIER}.vst3" \
          --version "$VERSION" \
-         --scripts "$VST3_SCRIPTS" \
          --install-location "/" \
          "$COMPONENT_PKGS/VST3.pkg"
 
 # Build AU component package
 echo "Building AU component..."
 AU_ROOT="$OUTPUT_DIR/au-root"
-AU_SCRIPTS="$OUTPUT_DIR/au-scripts"
 mkdir -p "$AU_ROOT/Library/Audio/Plug-Ins/Components"
-mkdir -p "$AU_SCRIPTS"
 cp -R "$BUILD_DIR/${ARTIFACT_SUBDIR}AU/Boomerang+.component" "$AU_ROOT/Library/Audio/Plug-Ins/Components/"
-
-cat > "$AU_SCRIPTS/postinstall" << 'EOF'
-#!/bin/bash
-xattr -cr "/Library/Audio/Plug-Ins/Components/Boomerang+.component" 2>/dev/null || true
-exit 0
-EOF
-chmod +x "$AU_SCRIPTS/postinstall"
 
 pkgbuild --root "$AU_ROOT" \
          --identifier "${IDENTIFIER}.au" \
          --version "$VERSION" \
-         --scripts "$AU_SCRIPTS" \
          --install-location "/" \
          "$COMPONENT_PKGS/AU.pkg"
 
 # Build Standalone component package
 echo "Building Standalone component..."
 STANDALONE_ROOT="$OUTPUT_DIR/standalone-root"
-STANDALONE_SCRIPTS="$OUTPUT_DIR/standalone-scripts"
 mkdir -p "$STANDALONE_ROOT/Applications"
-mkdir -p "$STANDALONE_SCRIPTS"
 cp -R "$BUILD_DIR/${ARTIFACT_SUBDIR}Standalone/Boomerang+.app" "$STANDALONE_ROOT/Applications/"
 cp uninstall.sh "$STANDALONE_ROOT/Applications/Uninstall Boomerang+.command"
 chmod +x "$STANDALONE_ROOT/Applications/Uninstall Boomerang+.command"
-
-cat > "$STANDALONE_SCRIPTS/postinstall" << 'EOF'
-#!/bin/bash
-xattr -cr "/Applications/Boomerang+.app" 2>/dev/null || true
-xattr -cr "/Applications/Uninstall Boomerang+.command" 2>/dev/null || true
-exit 0
-EOF
-chmod +x "$STANDALONE_SCRIPTS/postinstall"
 
 # Create component plist to prevent bundle relocation
 COMP_PLIST="$OUTPUT_DIR/component.plist"
@@ -213,7 +183,6 @@ EOF
 pkgbuild --root "$STANDALONE_ROOT" \
          --identifier "${IDENTIFIER}.standalone" \
          --version "$VERSION" \
-         --scripts "$STANDALONE_SCRIPTS" \
          --install-location "/" \
          --component-plist "$COMP_PLIST" \
          "$COMPONENT_PKGS/Standalone.pkg"

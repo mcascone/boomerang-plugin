@@ -20,6 +20,7 @@ concurrency:
 jobs:
   build:
     name: Build ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -57,7 +58,7 @@ jobs:
           # Convert git format (tag-N-gHASH) to semver metadata (tag+N.gHASH)
           VERSION=$(echo "$VERSION" | sed -E 's/^(.+)-([0-9]+)-(g[0-9a-f]+)$/\1+\2.\3/')
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected version: $VERSION"
+          echo "Building version: \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
 
       # Linux: Install ALSA and other audio dependencies
       - name: Install Linux Dependencies
@@ -181,6 +182,7 @@ jobs:
           # Build the installer package
           BOOMERANG_VERSION="$VERSION" ./build-installer.sh
           cp build/installer/*.pkg dist/ 2>/dev/null || true
+          echo "Created macOS artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
 
       # Package - Windows
       - name: Package Windows
@@ -193,6 +195,7 @@ jobs:
           cp ../../../README.md .
           7z a ../../../dist/Boomerang-${VERSION}-Windows.zip VST3 Standalone README.md
           cd ../../..
+          echo "Created Windows artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
 
       # Package - Linux
       - name: Package Linux
@@ -204,6 +207,7 @@ jobs:
           cp ../../../README.md .
           tar -czvf ../../../dist/Boomerang-${VERSION}-Linux.tar.gz VST3 Standalone README.md
           cd ../../..
+          echo "Created Linux artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
 
       # Upload artifacts
       - name: Upload Artifacts
@@ -211,12 +215,13 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: dist/*
-          retention-days: 14
+          retention-days: 90
 
   # Validate plugins with pluginval (downloads artifacts from build job - no rebuild)
   validate:
     name: Validate ${{ matrix.os }}
     needs: build
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

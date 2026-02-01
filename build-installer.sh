@@ -68,6 +68,7 @@ IDENTIFIER="com.MCMusicWorkshop.Boomerang"
 BUILD_DIR="build/Boomerang_artefacts"
 OUTPUT_DIR="build/installer"
 COMPONENT_PKGS="$OUTPUT_DIR/components"
+RESOURCES_DIR="$(dirname "$0")/installer-resources"
 
 echo "Building Boomerang+ Installer v${VERSION}"
 echo "============================================"
@@ -160,25 +161,8 @@ cp uninstall.sh "$STANDALONE_ROOT/Applications/Uninstall Boomerang+.command"
 chmod +x "$STANDALONE_ROOT/Applications/Uninstall Boomerang+.command"
 
 # Create component plist to prevent bundle relocation
+cp "$RESOURCES_DIR/component.plist" "$OUTPUT_DIR/component.plist"
 COMP_PLIST="$OUTPUT_DIR/component.plist"
-cat > "$COMP_PLIST" << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<array>
-    <dict>
-        <key>BundleIsRelocatable</key>
-        <false/>
-        <key>BundleIsVersionChecked</key>
-        <false/>
-        <key>BundleHasStrictIdentifier</key>
-        <false/>
-        <key>RootRelativeBundlePath</key>
-        <string>Applications/Boomerang+.app</string>
-    </dict>
-</array>
-</plist>
-EOF
 
 pkgbuild --root "$STANDALONE_ROOT" \
          --identifier "${IDENTIFIER}.standalone" \
@@ -189,65 +173,12 @@ pkgbuild --root "$STANDALONE_ROOT" \
 
 # Create distribution XML for custom installer
 echo "Creating distribution definition..."
-cat > "$OUTPUT_DIR/distribution.xml" << EOF
-<?xml version="1.0" encoding="utf-8"?>
-<installer-gui-script minSpecVersion="1">
-    <title>Boomerang+ ${VERSION}</title>
-    <organization>com.MCMusicWorkshop</organization>
-    <domains enable_localSystem="true"/>
-    <options customize="always" require-scripts="false" rootVolumeOnly="true" />
-    
-    <welcome file="welcome.html" mime-type="text/html" />
-    
-    <choices-outline>
-        <line choice="vst3.choice"/>
-        <line choice="au.choice"/>
-        <line choice="standalone.choice"/>
-    </choices-outline>
-    
-    <choice id="vst3.choice" title="VST3 Plugin" description="Install VST3 plugin for DAW use" start_selected="true">
-        <pkg-ref id="${IDENTIFIER}.vst3"/>
-    </choice>
-    
-    <choice id="au.choice" title="Audio Unit Plugin" description="Install AU plugin for Logic Pro, GarageBand, and other AU hosts" start_selected="true">
-        <pkg-ref id="${IDENTIFIER}.au"/>
-    </choice>
-    
-    <choice id="standalone.choice" title="Standalone Application" description="Install standalone app that runs independently (includes uninstaller)" start_selected="true">
-        <pkg-ref id="${IDENTIFIER}.standalone"/>
-    </choice>
-    
-    <pkg-ref id="${IDENTIFIER}.vst3" version="${VERSION}" auth="root">components/VST3.pkg</pkg-ref>
-    <pkg-ref id="${IDENTIFIER}.au" version="${VERSION}" auth="root">components/AU.pkg</pkg-ref>
-    <pkg-ref id="${IDENTIFIER}.standalone" version="${VERSION}" auth="root">components/Standalone.pkg</pkg-ref>
-</installer-gui-script>
-EOF
+sed -e "s/{{VERSION}}/$VERSION/g" -e "s/{{IDENTIFIER}}/$IDENTIFIER/g" \
+    "$RESOURCES_DIR/distribution.xml.template" > "$OUTPUT_DIR/distribution.xml"
 
 # Create welcome HTML
-cat > "$OUTPUT_DIR/welcome.html" << EOF
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
-        h1 { font-size: 24px; margin-bottom: 10px; }
-        p { font-size: 14px; line-height: 1.5; }
-    </style>
-</head>
-<body>
-    <h1>Boomerang+ Audio Looper</h1>
-    <p>Version ${VERSION}</p>
-    <p>This installer will guide you through installing Boomerang+ on your Mac.</p>
-    <p>You can customize which components to install on the next screen.</p>
-    <p><strong>Installation locations:</strong></p>
-    <ul>
-        <li>VST3: /Library/Audio/Plug-Ins/VST3/</li>
-        <li>AU: /Library/Audio/Plug-Ins/Components/</li>
-        <li>Standalone: /Applications/</li>
-    </ul>
-</body>
-</html>
-EOF
+sed "s/{{VERSION}}/$VERSION/g" \
+    "$RESOURCES_DIR/welcome.html.template" > "$OUTPUT_DIR/welcome.html"
 
 # Build the product package
 echo "Building product installer..."

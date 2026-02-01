@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Boomerang+ {{VERSION}}</title>
+    <organization>com.MCMusicWorkshop</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="always" require-scripts="false" rootVolumeOnly="true" />
+    
+    <welcome file="welcome.html" mime-type="text/html" />
+    
+    <choices-outline>
+        <line choice="vst3.choice"/>
+        <line choice="au.choice"/>
+        <line choice="standalone.choice"/>
+    </choices-outline>
+    
+    <choice id="vst3.choice" title="VST3 Plugin" description="Install VST3 plugin for DAW use" start_selected="true">
+        <pkg-ref id="{{IDENTIFIER}}.vst3"/>
+    </choice>
+    
+    <choice id="au.choice" title="Audio Unit Plugin" description="Install AU plugin for Logic Pro, GarageBand, and other AU hosts" start_selected="true">
+        <pkg-ref id="{{IDENTIFIER}}.au"/>
+    </choice>
+    
+    <choice id="standalone.choice" title="Standalone Application" description="Install standalone app that runs independently (includes uninstaller)" start_selected="true">
+        <pkg-ref id="{{IDENTIFIER}}.standalone"/>
+    </choice>
+    
+    <pkg-ref id="{{IDENTIFIER}}.vst3" version="{{VERSION}}" auth="root">components/VST3.pkg</pkg-ref>
+    <pkg-ref id="{{IDENTIFIER}}.au" version="{{VERSION}}" auth="root">components/AU.pkg</pkg-ref>
+    <pkg-ref id="{{IDENTIFIER}}.standalone" version="{{VERSION}}" auth="root">components/Standalone.pkg</pkg-ref>
+</installer-gui-script>

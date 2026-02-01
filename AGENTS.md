@@ -100,6 +100,24 @@ Local testing with `act` (requires Docker):
 
 - **Reusable signing action**: The macOS code signing + notarization logic is duplicated between `boomerang-plugin` and `midi-captain-max`. Extract into a reusable composite action or shared workflow. See `midi-captain-max/.github/workflows/ci.yml` for the canonical pattern. Priority: medium (pay this down before adding a third repo).
 
+## Template Substitution
+
+**Principle: Always do the simple thing until you can't.**
+
+For installer templates (`installer-resources/*.template`), we use `sed` for variable substitution:
+
+```bash
+sed -e "s/{{VERSION}}/$VERSION/g" -e "s/{{IDENTIFIER}}/$IDENTIFIER/g" template.xml > output.xml
+```
+
+| Tool | When to use |
+|------|-------------|
+| `sed` | Simple cases, 2-3 variables, values have no special chars |
+| `envsubst` | Complex templates, many variables, or values with regex metacharacters. Requires `brew install gettext` (macOS) or `apt-get install gettext-base` (CI). Uses `${VAR}` syntax. |
+| `perl -pe` | When `sed` escaping becomes painful |
+
+Upgrade to `envsubst` if templates grow complex or substitution values contain `/`, `&`, or other sed metacharacters.
+
 ## Aligned Operators and Symbols
 
 I prefer code to be aligned like this:

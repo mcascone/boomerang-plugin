@@ -96,56 +96,58 @@ jobs:
           find build -name "*.vst3" -o -name "*.component" -o -name "*.app" -o -name "*.exe" 2>/dev/null || true
           ls -la build/Boomerang_artefacts/ || true
 
-      # Fix code signing for macOS (resolves "sealed resource" issues)
-      - name: Re-sign macOS Bundles
+      # Import signing certificates (macOS only)
+      - name: Import Signing Certificates
         if: runner.os == 'macOS'
+        env:
+          MACOS_INSTALLER_CERT: ${{ secrets.MACOS_INSTALLER_CERT }}
+          MACOS_INSTALLER_CERT_PWD: ${{ secrets.MACOS_INSTALLER_CERT_PWD }}
+          MACOS_APPLICATION_CERT: ${{ secrets.MACOS_APPLICATION_CERT }}
+          MACOS_APPLICATION_CERT_PWD: ${{ secrets.MACOS_APPLICATION_CERT_PWD }}
         run: |
-          echo "Re-signing bundles to fix 'sealed resource' issues..."
-          BUILD_DIR="build/Boomerang_artefacts/${{ env.BUILD_TYPE }}"
-          
-          if [ ! -d "${BUILD_DIR}" ]; then
-            echo "Error: Build directory ${BUILD_DIR} not found"
-            exit 1
+          # Skip if no certificates configured
+          if [ -z "$MACOS_INSTALLER_CERT" ]; then
+            echo "::warning::No signing certificates configured — installer will not be signed or notarized"
+            exit 0
           fi
           
-          # Remove and re-sign VST3
-          if [ -d "${BUILD_DIR}/VST3/Boomerang+.vst3" ]; then
-            codesign --remove-signature "${BUILD_DIR}/VST3/Boomerang+.vst3" || true
-            if codesign --force --deep --sign - "${BUILD_DIR}/VST3/Boomerang+.vst3"; then
-              echo "✓ VST3 re-signed"
-            else
-              echo "✗ VST3 signing failed"
-              exit 1
-            fi
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PWD=$(openssl rand -base64 32)
+          
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          
+          # Import Developer ID Installer certificate
+          echo "$MACOS_INSTALLER_CERT" | base64 --decode > $RUNNER_TEMP/installer_cert.p12
+          if ! security import $RUNNER_TEMP/installer_cert.p12 -k "$KEYCHAIN_PATH" \
+            -P "$MACOS_INSTALLER_CERT_PWD" -T /usr/bin/productsign -T /usr/bin/pkgbuild -T /usr/bin/productbuild; then
+            echo "::warning::Failed to import Installer certificate"
+            exit 0
           fi
           
-          # Remove and re-sign AU
-          if [ -d "${BUILD_DIR}/AU/Boomerang+.component" ]; then
-            codesign --remove-signature "${BUILD_DIR}/AU/Boomerang+.component" || true
-            if codesign --force --deep --sign - "${BUILD_DIR}/AU/Boomerang+.component"; then
-              echo "✓ AU re-signed"
-            else
-              echo "✗ AU signing failed"
-              exit 1
-            fi
+          # Import Developer ID Application certificate
+          echo "$MACOS_APPLICATION_CERT" | base64 --decode > $RUNNER_TEMP/app_cert.p12
+          if ! security import $RUNNER_TEMP/app_cert.p12 -k "$KEYCHAIN_PATH" \
+            -P "$MACOS_APPLICATION_CERT_PWD" -T /usr/bin/codesign; then
+            echo "::warning::Failed to import Application certificate"
+            exit 0
           fi
           
-          # Remove and re-sign Standalone
-          if [ -d "${BUILD_DIR}/Standalone/Boomerang+.app" ]; then
-            codesign --remove-signature "${BUILD_DIR}/Standalone/Boomerang+.app" || true
-            if codesign --force --deep --sign - "${BUILD_DIR}/Standalone/Boomerang+.app"; then
-              echo "✓ Standalone re-signed"
-            else
-              echo "✗ Standalone signing failed"
-              exit 1
-            fi
-          fi
+          # Set keychain for signing
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
           
-          echo "Re-signing complete"
+          echo "✓ Certificates imported"
 
       # Package - macOS
       - name: Package macOS
         if: runner.os == 'macOS'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           mkdir -p dist

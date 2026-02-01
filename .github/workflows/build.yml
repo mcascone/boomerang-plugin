@@ -85,9 +85,13 @@ jobs:
       - name: Get JUCE commit hash
         id: juce-hash
         shell: bash
-        run: echo "hash=$(git -C JUCE rev-parse HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          JUCE_HASH=$(git -C JUCE rev-parse HEAD)
+          echo "hash=$JUCE_HASH" >> $GITHUB_OUTPUT
+          echo "JUCE submodule: $JUCE_HASH"
 
       - name: Cache JUCE build
+        id: cache-juce
         uses: actions/cache@v4
         with:
           path: |
@@ -97,11 +101,21 @@ jobs:
           restore-keys: |
             juce-${{ runner.os }}-
 
+      - name: Cache status
+        shell: bash
+        run: |
+          if [ "${{ steps.cache-juce.outputs.cache-hit }}" == "true" ]; then
+            echo "✓ JUCE cache HIT" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✗ JUCE cache MISS (will rebuild)" >> $GITHUB_STEP_SUMMARY
+          fi
+
       # Setup ccache for faster compilation
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: ${{ runner.os }}-ccache
+          verbose: 2
 
       # Configure CMake
       - name: Configure CMake
@@ -192,11 +206,28 @@ jobs:
           # Build the installer package
           BOOMERANG_VERSION="$VERSION" ./build-installer.sh
           cp build/installer/*.pkg dist/ 2>/dev/null || true
-          echo "Created macOS artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
-          # Warn if package is unsigned
-          if [ "${{ steps.import-certs.outputs.can_sign }}" != "true" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **Warning:** macOS package is **unsigned** — Gatekeeper will block installation. Not suitable for release." >> $GITHUB_STEP_SUMMARY
+          
+          # Report actual signing status
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### macOS Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Created artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          PKG_FILE=$(ls build/installer/*.pkg 2>/dev/null | head -1)
+          if [ -n "$PKG_FILE" ]; then
+            if pkgutil --check-signature "$PKG_FILE" 2>/dev/null | grep -q "Developer ID Installer"; then
+              echo "✅ Package is **signed** with Developer ID" >> $GITHUB_STEP_SUMMARY
+              # Check if notarization ticket is stapled
+              if xcrun stapler validate "$PKG_FILE" 2>/dev/null; then
+                echo "✅ Package is **notarized** and stapled" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "⚠️ Package is signed but **not notarized** — Gatekeeper may require internet verification" >> $GITHUB_STEP_SUMMARY
+              fi
+            else
+              echo "⚠️ **Warning:** Package is **unsigned** — Gatekeeper will block installation. Not suitable for release." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ **Warning:** No .pkg installer was created" >> $GITHUB_STEP_SUMMARY
           fi
 
       # Package - Windows

@@ -96,6 +96,10 @@ Local testing with `act` (requires Docker):
 - releases/ folder is git-ignored; use GitHub Releases for distribution instead.
 - Release notes style preference: concise Markdown with top-level title like `v2.0.0-beta-1 (JUCE port)`, sections for What's new, Installation (macOS and Windows/Linux), Known issues, and How to help (link to new issue form). Tone should be direct and instructional.
 
+## Tech Debt
+
+- **Reusable signing action**: The macOS code signing + notarization logic is duplicated between `boomerang-plugin` and `midi-captain-max`. Extract into a reusable composite action or shared workflow. See `midi-captain-max/.github/workflows/ci.yml` for the canonical pattern. Priority: medium (pay this down before adding a third repo).
+
 ## Aligned Operators and Symbols
 
 I prefer code to be aligned like this:

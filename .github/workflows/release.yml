@@ -114,6 +114,47 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
+      - name: Create "latest" artifacts for Gumroad
+        run: |
+          mkdir -p dist
+          
+          # Find and copy each platform's zip/tarball with "latest" name for stable Gumroad URL
+          MACOS_ZIP=$(find artifacts/boomerang-macos -name "*.zip" | head -1)
+          if [ -n "$MACOS_ZIP" ]; then
+            cp "$MACOS_ZIP" dist/Boomerang-latest-macOS.zip
+            echo "✓ Created: Boomerang-latest-macOS.zip" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          WINDOWS_ZIP=$(find artifacts/boomerang-windows -name "*.zip" | head -1)
+          if [ -n "$WINDOWS_ZIP" ]; then
+            cp "$WINDOWS_ZIP" dist/Boomerang-latest-Windows.zip
+            echo "✓ Created: Boomerang-latest-Windows.zip" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          LINUX_TAR=$(find artifacts/boomerang-linux -name "*.tar.gz" | head -1)
+          if [ -n "$LINUX_TAR" ]; then
+            cp "$LINUX_TAR" dist/Boomerang-latest-Linux.tar.gz
+            echo "✓ Created: Boomerang-latest-Linux.tar.gz" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Copy macOS installer with "latest" name
+          MACOS_PKG=$(find artifacts/boomerang-macos -name "*.pkg" | head -1)
+          if [ -n "$MACOS_PKG" ]; then
+            cp "$MACOS_PKG" dist/Boomerang-latest-macOS.pkg
+            echo "✓ Created: Boomerang-latest-macOS.pkg" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Stable Gumroad URLs:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.zip" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.pkg" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-Windows.zip" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-Linux.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+          ls -la dist/
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -123,6 +164,7 @@ jobs:
             artifacts/boomerang-macos/*
             artifacts/boomerang-windows/*
             artifacts/boomerang-linux/*
+            dist/*
           generate_release_notes: true
           draft: true
         env:

@@ -132,6 +132,7 @@ jobs:
           # Skip if no certificates configured
           if [ -z "$MACOS_INSTALLER_CERT" ]; then
             echo "::warning::No signing certificates configured — installer will not be signed or notarized"
+            echo "can_sign=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -141,6 +142,7 @@ jobs:
           
           if ! security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"; then
             echo "::warning::Failed to create keychain — installer will not be signed"
+            echo "can_sign=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -152,6 +154,7 @@ jobs:
           if ! security import $RUNNER_TEMP/installer_cert.p12 -k "$KEYCHAIN_PATH" \
             -P "$MACOS_INSTALLER_CERT_PWD" -T /usr/bin/productsign -T /usr/bin/pkgbuild -T /usr/bin/productbuild; then
             echo "::warning::Failed to import Installer certificate — installer will not be signed"
+            echo "can_sign=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -160,6 +163,7 @@ jobs:
           if ! security import $RUNNER_TEMP/app_cert.p12 -k "$KEYCHAIN_PATH" \
             -P "$MACOS_APPLICATION_CERT_PWD" -T /usr/bin/codesign; then
             echo "::warning::Failed to import Application certificate — app will not be signed with hardened runtime"
+            echo "can_sign=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -168,6 +172,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
           
           echo "✓ Certificates imported"
+          echo "can_sign=true" >> $GITHUB_OUTPUT
 
       # Package - macOS
       - name: Package macOS
@@ -188,6 +193,11 @@ jobs:
           BOOMERANG_VERSION="$VERSION" ./build-installer.sh
           cp build/installer/*.pkg dist/ 2>/dev/null || true
           echo "Created macOS artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+          # Warn if package is unsigned
+          if [ "${{ steps.import-certs.outputs.can_sign }}" != "true" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Warning:** macOS package is **unsigned** — Gatekeeper will block installation. Not suitable for release." >> $GITHUB_STEP_SUMMARY
+          fi
 
       # Package - Windows
       - name: Package Windows

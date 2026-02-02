@@ -89,7 +89,8 @@ Local testing with `act` (requires Docker):
 
 ## Known Pitfalls (Agent Notes)
 
-- Issue #36 (VST3 signing warnings) is benign for local builds; use proper signing for release.
+- Issue #36 (VST3 signing warnings): macOS code signing + notarization now works in CI. Secrets are org-level (MC-Music-Workshop). Local builds are unsigned.
+- Issue #55 (Windows Authenticode signing): Tracked but low priority. Windows SmartScreen warnings expected for unsigned builds.
 - Issue #44 (volume controls entire signal) is a known bug being investigated.
 - Issue #43 (REC LED when stacking) is an enhancement request.
 - Current release: v2.0.0-beta-1 (JUCE port). Beta quality - core functionality stable, polishing phase. Builds shipped: VST3, AU (macOS), Standalone app (macOS); Windows/Linux use VST3. Installation paths: `~/Library/Audio/Plug-Ins/Components`, `~/Library/Audio/Plug-Ins/VST3`. Please file new issues for any problems.

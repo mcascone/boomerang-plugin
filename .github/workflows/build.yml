@@ -123,6 +123,11 @@ jobs:
         if: runner.os == 'Windows'
         uses: mozilla-actions/sccache-action@v0.0.9
 
+      # Enable sccache GitHub Actions cache for Windows
+      - name: Enable sccache GHA cache
+        if: runner.os == 'Windows'
+        run: echo "SCCACHE_GHA_ENABLED=true" >> $env:GITHUB_ENV
+
       # Configure CMake
       - name: Configure CMake
         shell: bash

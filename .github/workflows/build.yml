@@ -17,6 +17,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build ${{ matrix.os }}
@@ -47,7 +51,6 @@ jobs:
       # Extract version from git (single source of truth)
       - name: Extract Version
         id: version
-        shell: bash
         run: |
           # Use git describe for version
           # At a tag:    v2.0.0-beta-3 -> 2.0.0-beta-3
@@ -84,7 +87,6 @@ jobs:
       # Cache JUCE build artifacts — JUCE rarely changes, so cache based on submodule commit
       - name: Get JUCE commit hash
         id: juce-hash
-        shell: bash
         run: |
           JUCE_HASH=$(git -C JUCE rev-parse HEAD)
           echo "hash=$JUCE_HASH" >> $GITHUB_OUTPUT
@@ -103,7 +105,6 @@ jobs:
             juce-${{ runner.os }}${{ runner.os == 'Windows' && '-ninja' || '' }}-
 
       - name: Cache status
-        shell: bash
         run: |
           if [ "${{ steps.cache-juce.outputs.cache-hit }}" == "true" ]; then
             echo "✓ JUCE cache HIT" >> $GITHUB_STEP_SUMMARY
@@ -127,7 +128,7 @@ jobs:
       # Enable sccache GitHub Actions cache for Windows
       - name: Enable sccache GHA cache
         if: runner.os == 'Windows'
-        run: echo "SCCACHE_GHA_ENABLED=true" >> $env:GITHUB_ENV
+        run: echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
 
       # Setup MSVC environment for Ninja on Windows
       - name: Setup MSVC
@@ -138,7 +139,6 @@ jobs:
       # Note: Windows uses Ninja generator because CMAKE_*_COMPILER_LAUNCHER
       # does not work with the Visual Studio generator (MSBuild).
       - name: Configure CMake
-        shell: bash
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
@@ -158,7 +158,6 @@ jobs:
 
       # List build artifacts for debugging
       - name: List Artifacts
-        shell: bash
         run: |
           echo "=== Build Artifacts ==="
           find build -name "*.vst3" -o -name "*.component" -o -name "*.app" -o -name "*.exe" 2>/dev/null || true
@@ -264,7 +263,6 @@ jobs:
       # Package - Windows
       - name: Package Windows
         if: runner.os == 'Windows'
-        shell: bash
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           mkdir -p dist
@@ -329,7 +327,6 @@ jobs:
       # Find the archive file (name includes version)
       - name: Find Archive
         id: find_archive
-        shell: bash
         run: |
           cd dist
           ARCHIVE=$(ls ${{ matrix.archive_pattern }} 2>/dev/null | head -1)
@@ -344,7 +341,6 @@ jobs:
       # Extract VST3 from the build archive
       - name: Extract VST3 (macOS/Windows)
         if: runner.os != 'Linux'
-        shell: bash
         run: |
           mkdir -p extracted
           cd dist
@@ -363,14 +359,12 @@ jobs:
 
       # Download pluginval
       - name: Download pluginval
-        shell: bash
         run: |
           curl -L -o pluginval.zip ${{ matrix.pluginval_url }}
           unzip pluginval.zip -d pluginval
 
       # Run pluginval against extracted VST3
       - name: Run pluginval
-        shell: bash
         run: |
           VST3_PATH="extracted/VST3/Boomerang+.vst3"
           echo "Validating: $VST3_PATH"

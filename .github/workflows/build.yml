@@ -129,11 +129,13 @@ jobs:
         run: echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
 
       # Configure CMake
+      # Note: Windows uses Ninja generator because CMAKE_*_COMPILER_LAUNCHER
+      # does not work with the Visual Studio generator (MSBuild).
       - name: Configure CMake
         shell: bash
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
               -DCMAKE_C_COMPILER_LAUNCHER=sccache \
               -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
               ${{ matrix.cmake_flags }}

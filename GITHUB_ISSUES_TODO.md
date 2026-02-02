@@ -7,15 +7,16 @@ Based on the code review findings, here are the recommended GitHub issues to cre
 - ✅ **#33** - Once mode regressions in overdub/stack path (CLOSED)  
 - ✅ **#34** - Missing switch cases for LooperState (CLOSED)
 - ✅ **#35** - Sign-conversion and shadow warnings in LooperEngine (CLOSED)
-- ❌ **#36** - VST3 ad-hoc signing / missing resources warning during install (OPEN)
+- ✅ **#36** - VST3 ad-hoc signing / missing resources warning during install (CLOSED)
 - ✅ **#38** - Fix thread safety violations between UI and audio threads (CLOSED)
 - ✅ **#39** - Migrate to AudioProcessorValueTreeState (APVTS) (CLOSED)
 - ❌ **#40** - Feature: Adjustable feedback (OPEN)
-- ❌ **#43** - Activate Rec LED when stacking (OPEN)
-- ❌ **#44** - Boomerang output controls entire signal, not just loop level (OPEN - needs testing)
-- ❌ **#45** - Implement code signing for macOS, Windows, and Linux releases (OPEN)
-- ❌ **#46** - Set up CI/CD pipeline for multi-platform builds and automated releases (OPEN)
-- ❌ **#47** - CI: Separate release workflow to avoid duplicate builds on tag push (OPEN)
+- ❌ **#43** - Activate Rec LED when stacking (OPEN - low priority)
+- ✅ **#44** - Boomerang output controls entire signal, not just loop level (CLOSED)
+- ✅ **#45** - Implement code signing for macOS, Windows, and Linux releases (CLOSED - macOS done, Windows/Linux N/A)
+- ✅ **#46** - Set up CI/CD pipeline for multi-platform builds and automated releases (CLOSED)
+- ✅ **#47** - CI: Separate release workflow to avoid duplicate builds on tag push (CLOSED)
+- ❌ **#55** - Windows Authenticode signing (OPEN - low priority)
 
 ## TODO from Parameter Notification Work 📝
 

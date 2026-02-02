@@ -97,9 +97,10 @@ jobs:
           path: |
             build/JUCE
             build/_deps
-          key: juce-${{ runner.os }}-${{ steps.juce-hash.outputs.hash }}
+          # Include 'ninja' suffix on Windows to invalidate old VS-generator caches
+          key: juce-${{ runner.os }}${{ runner.os == 'Windows' && '-ninja' || '' }}-${{ steps.juce-hash.outputs.hash }}
           restore-keys: |
-            juce-${{ runner.os }}-
+            juce-${{ runner.os }}${{ runner.os == 'Windows' && '-ninja' || '' }}-
 
       - name: Cache status
         shell: bash
@@ -126,7 +127,12 @@ jobs:
       # Enable sccache GitHub Actions cache for Windows
       - name: Enable sccache GHA cache
         if: runner.os == 'Windows'
-        run: echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+        run: echo "SCCACHE_GHA_ENABLED=true" >> $env:GITHUB_ENV
+
+      # Setup MSVC environment for Ninja on Windows
+      - name: Setup MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
 
       # Configure CMake
       # Note: Windows uses Ninja generator because CMAKE_*_COMPILER_LAUNCHER

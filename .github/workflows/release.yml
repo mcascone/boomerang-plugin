@@ -147,10 +147,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Stable Gumroad URLs:**" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.zip" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.pkg" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-Windows.zip" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/mcascone/boomerang-plugin/releases/latest/download/Boomerang-latest-Linux.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.zip" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.pkg" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-Windows.zip" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-Linux.tar.gz" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           
           ls -la dist/
@@ -160,13 +160,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.find-build.outputs.tag }}
+          make_latest: true
           files: |
             artifacts/boomerang-macos/*
             artifacts/boomerang-windows/*
             artifacts/boomerang-linux/*
             dist/*
           generate_release_notes: true
-          draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       

@@ -181,5 +181,4 @@ jobs:
             echo "- Release tag: $RELEASE_TAG"
             echo "- [Release Link]($RELEASE_URL)"
           } >> $GITHUB_STEP_SUMMARY
-          } >> $GITHUB_STEP_SUMMARY
 

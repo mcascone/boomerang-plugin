@@ -144,14 +144,16 @@ jobs:
             echo "✓ Created: Boomerang-latest-macOS.pkg" >> $GITHUB_STEP_SUMMARY
           fi
           
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Stable Gumroad URLs:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.zip" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.pkg" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-Windows.zip" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-Linux.tar.gz" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "**Stable Gumroad URLs:**"
+            echo "\`\`\`"
+            echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.zip"
+            echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-macOS.pkg"
+            echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-Windows.zip"
+            echo "https://github.com/MC-Music-Workshop/boomerang-plugin/releases/latest/download/Boomerang-latest-Linux.tar.gz"
+            echo "\`\`\`" 
+          } >> $GITHUB_STEP_SUMMARY
           
           ls -la dist/
 

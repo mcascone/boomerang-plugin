@@ -290,11 +290,6 @@ jobs:
           # Import the private key
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
           
-          # Configure GPG to use batch mode with passphrase
-          if [ -n "$GPG_PASSPHRASE" ]; then
-            echo "$GPG_PASSPHRASE" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback --import 2>/dev/null || true
-          fi
-          
           # Get the key ID for signing
           KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep sec | awk '{print $2}' | cut -d'/' -f2 | head -1)
           if [ -z "$KEY_ID" ]; then
@@ -334,11 +329,13 @@ jobs:
             fi
             
             # Verify the signature
-            if gpg --verify "dist/Boomerang-${VERSION}-Linux.tar.gz.asc" "dist/Boomerang-${VERSION}-Linux.tar.gz"; then
+            echo "Verifying signature..."
+            if gpg --verify "dist/Boomerang-${VERSION}-Linux.tar.gz.asc" "dist/Boomerang-${VERSION}-Linux.tar.gz" 2>&1 | tee verify.log && grep -q "Good signature" verify.log; then
               echo "✓ Signature verified successfully"
               SIGNED=true
             else
-              echo "::warning::Signature verification failed"
+              echo "::warning::Signature verification failed - see verify.log"
+              cat verify.log
               SIGNED=false
             fi
           else

@@ -287,11 +287,11 @@ jobs:
             exit 0
           fi
           
-          # Import the private key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Import the private key (allow warnings/errors during import)
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import 2>&1 || true
           
           # Get the key ID for signing
-          KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep sec | awk '{print $2}' | cut -d'/' -f2 | head -1)
+          KEY_ID=$(gpg --list-secret-keys --keyid-format=long 2>/dev/null | grep sec | awk '{print $2}' | cut -d'/' -f2 | head -1)
           if [ -z "$KEY_ID" ]; then
             echo "::warning::Failed to import GPG key — Linux release will not be signed"
             echo "can_sign=false" >> $GITHUB_OUTPUT

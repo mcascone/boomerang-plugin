@@ -280,22 +280,22 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          # Skip if no GPG key configured
+          # Skip if no GPG key configured (legitimate case for unsigned builds)
           if [ -z "$GPG_PRIVATE_KEY" ]; then
             echo "::warning::No GPG key configured — Linux release will not be signed"
             echo "can_sign=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           
-          # Import the private key (allow warnings/errors during import)
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import 2>/dev/null || true
+          # Import the private key - fail if this doesn't work
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
           
-          # Get the key ID for signing
-          KEY_ID=$(gpg --list-secret-keys --keyid-format=long 2>/dev/null | grep sec | awk '{print $2}' | cut -d'/' -f2 | head -1 || true)
+          # Get the key ID for signing - fail if no secret key found
+          KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep sec | awk '{print $2}' | cut -d'/' -f2 | head -1)
           if [ -z "$KEY_ID" ]; then
-            echo "::warning::Failed to import GPG key — Linux release will not be signed"
-            echo "can_sign=false" >> $GITHUB_OUTPUT
-            exit 0
+            echo "::error::Failed to import GPG secret key. Ensure GPG_PRIVATE_KEY contains a secret key (not just public key)."
+            echo "Export with: gpg --export-secret-keys --armor <KEY_ID>"
+            exit 1
           fi
           
           echo "KEY_ID=$KEY_ID" >> $GITHUB_OUTPUT
@@ -328,30 +328,30 @@ jobs:
                 "dist/Boomerang-${VERSION}-Linux.tar.gz"
             fi
             
-            # Verify the signature
+            # Verify the signature - fail if verification doesn't pass
             echo "Verifying signature..."
-            if gpg --verify "dist/Boomerang-${VERSION}-Linux.tar.gz.asc" "dist/Boomerang-${VERSION}-Linux.tar.gz" 2>&1 | tee verify.log && grep -q "Good signature" verify.log; then
+            gpg --verify "dist/Boomerang-${VERSION}-Linux.tar.gz.asc" "dist/Boomerang-${VERSION}-Linux.tar.gz" 2>&1 | tee verify.log
+            if grep -q "Good signature" verify.log; then
               echo "✓ Signature verified successfully"
-              SIGNED=true
             else
-              echo "::warning::Signature verification failed - see verify.log"
+              echo "::error::Signature verification failed - see verify.log"
               cat verify.log
-              SIGNED=false
+              exit 1
             fi
-          else
-            SIGNED=false
-          fi
-          
-          # Report signing status
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Linux Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "Created artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "$SIGNED" = "true" ]; then
+            
+            # Report signing status
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Linux Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "Created artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             echo "✅ Release is **GPG signed** with detached signature (\`.asc\` file)" >> $GITHUB_STEP_SUMMARY
             echo "Users can verify authenticity with: \`gpg --verify Boomerang-${VERSION}-Linux.tar.gz.asc\`" >> $GITHUB_STEP_SUMMARY
           else
+            # No GPG key configured - create unsigned release
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Linux Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "Created artifacts for \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             echo "⚠️ **Warning:** Release is **unsigned** — users cannot verify authenticity. Not suitable for release." >> $GITHUB_STEP_SUMMARY
           fi
 

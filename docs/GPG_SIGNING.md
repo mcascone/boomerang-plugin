@@ -16,13 +16,16 @@ First time only, import the MC Music Workshop public GPG key:
 
 ```bash
 # Option A: From a keyserver
-gpg --keyserver keys.openpgp.org --recv-keys <KEY_ID>
+gpg --keyserver keys.openpgp.org --recv-keys 241C529DF2E79E51
 
 # Option B: Import from a file (if provided)
 gpg --import mc-music-workshop.asc
 ```
 
-The key ID and fingerprint will be published in release notes and on the project website.
+**Key Information:**
+- Key ID: `241C529DF2E79E51`
+- Fingerprint: `0E9C 74CD 0BE6 5EB3 8296 46FC 241C 529D F2E7 9E51`
+- Owner: Maximilian A Cascone
 
 ### Step 2: Verify the Signature
 
@@ -36,12 +39,15 @@ gpg --verify Boomerang-2.0.0-Linux.tar.gz.asc Boomerang-2.0.0-Linux.tar.gz
 
 **Good signature:**
 ```
-gpg: Signature made Wed 12 Feb 2026 04:52:00 AM UTC
-gpg:                using RSA key XXXXXXXXXXXXXXXX
-gpg: Good signature from "MC Music Workshop <contact@example.com>"
+gpg: Signature made Mon Feb 16 18:01:02 2026 UTC
+gpg:                using RSA key 0E9C74CD0BE65EB3829646FC241C529DF2E79E51
+gpg: Good signature from "Maximilian A Cascone <email>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 0E9C 74CD 0BE6 5EB3 8296  46FC 241C 529D F2E7 9E51
 ```
 
-✅ The archive is authentic and hasn't been tampered with.
+✅ The archive is authentic and hasn't been tampered with. The warning about trust is normal and expected (see below).
 
 **Bad signature:**
 ```
@@ -59,7 +65,7 @@ This warning is normal if you haven't explicitly trusted the key. The important 
 
 ```bash
 # Trust the key (optional)
-gpg --edit-key <KEY_ID>
+gpg --edit-key 241C529DF2E79E51
 gpg> trust
 # Select trust level (usually 5 = ultimate)
 gpg> quit

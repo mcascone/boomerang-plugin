@@ -106,7 +106,7 @@ To verify the authenticity and integrity of a Linux release:
 1. **Import the GPG public key** (first time only):
    ```bash
    # Download the public key from a keyserver
-   gpg --keyserver keys.openpgp.org --recv-keys <KEY_ID>
+   gpg --keyserver keys.openpgp.org --recv-keys 241C529DF2E79E51
    
    # Or import directly if provided in the release notes
    ```

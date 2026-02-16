@@ -52,7 +52,7 @@ Use this template when creating release notes for new versions.
 **Verify Authenticity (Recommended):**
 ```bash
 # Import the MC Music Workshop GPG key (first time only)
-gpg --keyserver keys.openpgp.org --recv-keys {KEY_ID}
+gpg --keyserver keys.openpgp.org --recv-keys 241C529DF2E79E51
 
 # Verify the signature
 gpg --verify Boomerang-{VERSION}-Linux.tar.gz.asc Boomerang-{VERSION}-Linux.tar.gz
@@ -79,8 +79,8 @@ cp Standalone/Boomerang+ ~/bin/  # or any location in your PATH
 - ⚠️ **Windows**: Currently unsigned (code signing in progress)
 
 **GPG Key Information:**
-- Key ID: `{KEY_ID}`
-- Fingerprint: `{FINGERPRINT}`
+- Key ID: `241C529DF2E79E51`
+- Fingerprint: `0E9C 74CD 0BE6 5EB3 8296  46FC 241C 529D F2E7 9E51`
 - Available on: keys.openpgp.org, keyserver.ubuntu.com
 
 For detailed verification instructions, see: [Installation & Security](README.md#installation--security)
@@ -182,8 +182,8 @@ cp Standalone/Boomerang+ ~/bin/  # or any location in your PATH
 - ⚠️ **Windows**: Currently unsigned (code signing in progress)
 
 **GPG Key Information:**
-- Key ID: `XXXXXXXXXXXXXXXX`
-- Fingerprint: `XXXX XXXX XXXX XXXX XXXX  XXXX XXXX XXXX XXXX XXXX`
+- Key ID: `241C529DF2E79E51`
+- Fingerprint: `0E9C 74CD 0BE6 5EB3 8296  46FC 241C 529D F2E7 9E51`
 - Available on: keys.openpgp.org, keyserver.ubuntu.com
 
 For detailed verification instructions, see: [Installation & Security](README.md#installation--security)
